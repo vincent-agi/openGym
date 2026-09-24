@@ -1,0 +1,8 @@
+{
+    "gitmojiCommit.scopes": [
+        {
+            "name": "api",
+            "description": "Web API Restfull"
+        }
+    ]
+}
