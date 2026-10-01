@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.3.0 — 2026-10-01
+
+A full nutrition tracker, plus a couple of fixes that had been sitting in the bundle and the
+reminder log since before this release.
+
+### Nutrition tracking
+
+- 🍎 **A Nutrition tab.** Pick a goal — cut, maintain or bulk — and an activity level, and get a
+  suggested daily calorie and macro target computed from your logged bodyweight (no height or
+  age field exists on the profile, so this is a weight x activity-level estimate rather than a
+  full Mifflin-St Jeor calculation).
+- **Food log.** Log what you ate — name, calories, protein, carbs, fat — with a running total
+  against today's target, progress bars per macro, and day-by-day navigation to look back or
+  plan ahead.
+- **Plan a meal.** Meals can be planned ahead of the day you'll eat them, separately from the
+  log, and marked eaten when the day comes — planning something never counts toward the day's
+  totals until you do.
+- A compact summary of today's progress sits on Home once a goal is set, and the whole module is
+  translated across all 11 languages the app already supports.
+
+### Fixes
+
+- The exercise dataset (~900KB) no longer inflates the main JS bundle — it now builds into its
+  own chunk, so app code changes stop invalidating its cache and vice versa.
+- Removed a per-user debug log that fired on every scheduled workout reminder.
+
 ## v1.2.4 — 2026-08-01
 
 The effort ratings you have been recording since v1.2.3 now answer questions, and bodyweight
