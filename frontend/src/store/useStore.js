@@ -43,7 +43,11 @@ export const DEF = {
   // effectiveLargeTouch below), true/false is an explicit override once the user has tapped
   // the Settings switch. Kept tri-state rather than a plain boolean so setting a mobility
   // profile turns this on with no extra step, while still being overridable either way.
-  largeTouchTargets: null
+  largeTouchTargets: null,
+  // Pressure-relief reminders (issue #26) — off by default for everyone, and only ever offered
+  // to a wheelchair profile in Settings (see lib/pressureRelief.js isWheelchairProfile).
+  // intervalMin is minutes of total session time between reminders, not minutes of rest.
+  pressureRelief: { on: false, intervalMin: 20 }
 }
 const clone = o => JSON.parse(JSON.stringify(o))
 

@@ -5,6 +5,7 @@ import { useUI } from '../store/useUI.js'
 import { ACCENTS, todayISO, localTZ } from '../lib/format.js'
 import { effortOf } from '../lib/history.js'
 import { POSTURES } from '../lib/exercises.js'
+import { isWheelchairProfile, PRESSURE_RELIEF_INTERVALS } from '../lib/pressureRelief.js'
 import { api, webauthnOK, passkeyLogin, passkeyRegister, IS_ANDROID } from '../lib/api.js'
 import { pushSupported, enablePush, disablePush, sendTestPush } from '../lib/push.js'
 import { wakeLockSupported } from '../lib/wakelock.js'
@@ -293,6 +294,20 @@ function MobilityProfileCard({ S, update }) {
         subtitle={t('Bigger buttons during a workout and on the rest timer.')}>
         <Switch checked={effectiveLargeTouch(S)} onChange={v => update(s => { s.largeTouchTargets = v })} />
       </Row>
+      {/* Only offered to the profile it's for (issue #26) — meaningless, and pure alarm
+          fatigue, for anyone else. */}
+      {isWheelchairProfile(S) && <>
+        <Row icon="heart" iconTint="var(--pink)" title={t('Pressure-relief reminders')}
+          subtitle={t('An occasional nudge during rest to shift your weight or do a chair push-up.')}>
+          <Switch checked={!!S.pressureRelief?.on} onChange={v => update(s => { s.pressureRelief = { ...(s.pressureRelief || DEF.pressureRelief), on: v } })} />
+        </Row>
+        {S.pressureRelief?.on && (
+          <SelectRow icon="clock" iconTint="var(--purple)" title={t('Reminder interval')}
+            value={S.pressureRelief?.intervalMin || DEF.pressureRelief.intervalMin}
+            onChange={v => update(s => { s.pressureRelief = { ...(s.pressureRelief || DEF.pressureRelief), intervalMin: v } })}
+            options={PRESSURE_RELIEF_INTERVALS.map(m => ({ value: m, label: t('Every {0} min', m) }))} />
+        )}
+      </>}
     </Section>
   )
 }
