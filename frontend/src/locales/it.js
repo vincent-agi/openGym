@@ -599,4 +599,14 @@ export default {
   'Planned meal updated': 'Pasto pianificato aggiornato',
   'Meal planned': 'Pasto pianificato',
   'Marked as eaten': 'Segnato come mangiato',
+
+  // --- music & playlists ---
+  'Playlist': 'Playlist',
+  'None set': 'Nessuna impostata',
+  'Playlist link': 'Link playlist',
+  'Paste a Spotify, YouTube or Apple Music link — it opens from this routine during a workout.': 'Incolla un link Spotify, YouTube o Apple Music — si apre da questa scheda durante un allenamento.',
+  "That doesn't look like a valid link.": 'Non sembra un link valido.',
+  'Remove playlist': 'Rimuovi playlist',
+  'Open playlist': 'Apri playlist',
+  'Link': 'Link',
 }

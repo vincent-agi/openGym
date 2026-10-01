@@ -599,4 +599,14 @@ export default {
   'Planned meal updated': 'Запланированный приём пищи обновлён',
   'Meal planned': 'Приём пищи запланирован',
   'Marked as eaten': 'Отмечено как съедено',
+
+  // --- music & playlists ---
+  'Playlist': 'Плейлист',
+  'None set': 'Не задан',
+  'Playlist link': 'Ссылка на плейлист',
+  'Paste a Spotify, YouTube or Apple Music link — it opens from this routine during a workout.': 'Вставь ссылку на Spotify, YouTube или Apple Music — она откроется из этой программы во время тренировки.',
+  "That doesn't look like a valid link.": 'Это не похоже на рабочую ссылку.',
+  'Remove playlist': 'Удалить плейлист',
+  'Open playlist': 'Открыть плейлист',
+  'Link': 'Ссылка',
 }

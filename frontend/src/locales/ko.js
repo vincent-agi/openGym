@@ -599,4 +599,14 @@ export default {
   'Planned meal updated': '계획된 식사가 수정되었습니다',
   'Meal planned': '식사가 계획되었습니다',
   'Marked as eaten': '먹음으로 표시됨',
+
+  // --- music & playlists ---
+  'Playlist': '플레이리스트',
+  'None set': '설정 안 됨',
+  'Playlist link': '플레이리스트 링크',
+  'Paste a Spotify, YouTube or Apple Music link — it opens from this routine during a workout.': 'Spotify, YouTube 또는 Apple Music 링크를 붙여넣으세요 — 운동 중 이 루틴에서 열립니다.',
+  "That doesn't look like a valid link.": '올바른 링크가 아닌 것 같습니다.',
+  'Remove playlist': '플레이리스트 제거',
+  'Open playlist': '플레이리스트 열기',
+  'Link': '링크',
 }

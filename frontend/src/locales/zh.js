@@ -599,4 +599,14 @@ export default {
   'Planned meal updated': '计划餐食已更新',
   'Meal planned': '已计划餐食',
   'Marked as eaten': '已标记为已吃',
+
+  // --- music & playlists ---
+  'Playlist': '播放列表',
+  'None set': '未设置',
+  'Playlist link': '播放列表链接',
+  'Paste a Spotify, YouTube or Apple Music link — it opens from this routine during a workout.': '粘贴 Spotify、YouTube 或 Apple Music 链接——训练时会从这个计划打开。',
+  "That doesn't look like a valid link.": '这似乎不是一个有效的链接。',
+  'Remove playlist': '移除播放列表',
+  'Open playlist': '打开播放列表',
+  'Link': '链接',
 }

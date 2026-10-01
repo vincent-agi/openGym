@@ -599,4 +599,14 @@ export default {
   'Planned meal updated': 'योजनाबद्ध भोजन अपडेट किया गया',
   'Meal planned': 'भोजन की योजना बनाई गई',
   'Marked as eaten': 'खाया हुआ चिह्नित किया गया',
+
+  // --- music & playlists ---
+  'Playlist': 'प्लेलिस्ट',
+  'None set': 'कोई सेट नहीं',
+  'Playlist link': 'प्लेलिस्ट लिंक',
+  'Paste a Spotify, YouTube or Apple Music link — it opens from this routine during a workout.': 'Spotify, YouTube या Apple Music का लिंक पेस्ट करें — यह वर्कआउट के दौरान इस रूटीन से खुलेगा।',
+  "That doesn't look like a valid link.": 'यह एक मान्य लिंक जैसा नहीं दिखता।',
+  'Remove playlist': 'प्लेलिस्ट हटाएं',
+  'Open playlist': 'प्लेलिस्ट खोलें',
+  'Link': 'लिंक',
 }

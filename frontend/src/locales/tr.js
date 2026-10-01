@@ -599,4 +599,14 @@ export default {
   'Planned meal updated': 'Planlanan yemek güncellendi',
   'Meal planned': 'Yemek planlandı',
   'Marked as eaten': 'Yenildi olarak işaretlendi',
+
+  // --- music & playlists ---
+  'Playlist': 'Çalma listesi',
+  'None set': 'Ayarlanmadı',
+  'Playlist link': 'Çalma listesi bağlantısı',
+  'Paste a Spotify, YouTube or Apple Music link — it opens from this routine during a workout.': 'Bir Spotify, YouTube veya Apple Music bağlantısı yapıştır — antrenman sırasında bu rutinden açılır.',
+  "That doesn't look like a valid link.": 'Bu geçerli bir bağlantıya benzemiyor.',
+  'Remove playlist': 'Çalma listesini kaldır',
+  'Open playlist': 'Çalma listesini aç',
+  'Link': 'Bağlantı',
 }
