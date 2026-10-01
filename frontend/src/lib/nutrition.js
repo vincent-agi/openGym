@@ -31,3 +31,13 @@ export function latestWeightKg(S) {
   if (!last) return null
   return S.unit === 'lb' ? last.w * LB_TO_KG : last.w
 }
+
+// Summed kcal/macros logged for one ISO date — shared by the Nutrition view and the Home
+// summary card so the two never drift on what "today's total" means.
+export function dayTotals(S, iso) {
+  const entries = S.nutrition?.log?.[iso] || []
+  return entries.reduce((a, e) => ({
+    kcal: a.kcal + (e.kcal || 0), protein: a.protein + (e.protein || 0),
+    carbs: a.carbs + (e.carbs || 0), fat: a.fat + (e.fat || 0)
+  }), { kcal: 0, protein: 0, carbs: 0, fat: 0 })
+}

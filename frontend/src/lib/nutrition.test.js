@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcTargets, latestWeightKg } from './nutrition.js'
+import { calcTargets, latestWeightKg, dayTotals } from './nutrition.js'
 
 describe('calcTargets', () => {
   it('returns null without a known weight', () => {
@@ -58,5 +58,23 @@ describe('latestWeightKg', () => {
   it('converts the most recent entry from lb to kg', () => {
     const S = { unit: 'lb', bodyweight: [{ d: '2026-02-01', w: 176.37 }] }
     expect(latestWeightKg(S)).toBeCloseTo(80, 0)
+  })
+})
+
+describe('dayTotals', () => {
+  it('sums all entries logged for the given date', () => {
+    const S = { nutrition: { log: { '2026-01-01': [
+      { kcal: 400, protein: 30, carbs: 40, fat: 10 },
+      { kcal: 200, protein: 10, carbs: 20, fat: 5 }
+    ] } } }
+    expect(dayTotals(S, '2026-01-01')).toEqual({ kcal: 600, protein: 40, carbs: 60, fat: 15 })
+  })
+
+  it('returns all-zero totals for a date with nothing logged', () => {
+    expect(dayTotals({ nutrition: { log: {} } }, '2026-01-01')).toEqual({ kcal: 0, protein: 0, carbs: 0, fat: 0 })
+  })
+
+  it('tolerates a profile with no nutrition key at all', () => {
+    expect(dayTotals({}, '2026-01-01')).toEqual({ kcal: 0, protein: 0, carbs: 0, fat: 0 })
   })
 })

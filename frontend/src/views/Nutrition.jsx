@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { t } from '../lib/i18n.js'
 import { todayISO, isoOf, fmtDate } from '../lib/format.js'
-import { calcTargets, latestWeightKg, GOALS, ACTIVITY_LEVELS } from '../lib/nutrition.js'
+import { calcTargets, latestWeightKg, dayTotals, GOALS, ACTIVITY_LEVELS } from '../lib/nutrition.js'
 import Icon from '../components/Icon.jsx'
 import { Button, Segmented, SelectRow } from '../components/ui.jsx'
 import { mealLogSheet, deleteMealEntry } from '../sheets.jsx'
@@ -28,17 +28,6 @@ function MacroBar({ macro, label, grams, target }) {
       </div>
     </div>
   )
-}
-
-// Reading S.nutrition.log directly (rather than a selector in lib/) is deliberate: the shape
-// is still settling across issues #3-#4/#17, so the sum stays local until it's stable enough
-// to share with the Home summary card (#5).
-function dayTotals(S, iso) {
-  const entries = S.nutrition?.log?.[iso] || []
-  return entries.reduce((a, e) => ({
-    kcal: a.kcal + (e.kcal || 0), protein: a.protein + (e.protein || 0),
-    carbs: a.carbs + (e.carbs || 0), fat: a.fat + (e.fat || 0)
-  }), { kcal: 0, protein: 0, carbs: 0, fat: 0 })
 }
 
 export default function Nutrition() {

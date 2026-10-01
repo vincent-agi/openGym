@@ -5,6 +5,7 @@ import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW, setsDoneActi
 import { fmtNum, fmtDate, todayISO, isoOf, weekKey, DAYS } from '../lib/format.js'
 import { t, dateLocale } from '../lib/i18n.js'
 import { bwSheet, goalSheet, dayOverrideSheet, calendarSheet, startFlow, loadStarterPlan, bwDeltaColor } from '../sheets.jsx'
+import { dayTotals } from '../lib/nutrition.js'
 import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
@@ -41,6 +42,8 @@ export default function Home() {
   const wThisWeek = S.workouts.filter(w => weekKey(w.d) === weekKey(todayISO())).length
   const plannedPerWeek = Object.keys(S.week).filter(k => S.week[k]).length
   const bwPoints = S.bodyweight.slice(-30).map(b => ({ t: b.t || new Date(b.d).getTime(), y: b.w, d: b.d }))
+  const nutritionTargets = S.nutrition?.targets?.kcal ? S.nutrition.targets : null
+  const nutritionToday = nutritionTargets ? dayTotals(S, todayISO()) : null
 
   // today's session shown right under the week strip
   const onToday = () => { if (S.active) nav('/workout'); else if (routine) startFlow(routine.id); else dayOverrideSheet(todayISO()) }
@@ -128,5 +131,24 @@ export default function Home() {
         <Icon name="calendar" className="chev" style={{ fontSize: 20 }} />
       </div>
     </div>
+
+    {/* Hidden until a nutrition goal is set (issue #3) — no half-finished 0/0g card on a
+        profile that never opened Nutrition. */}
+    {nutritionTargets && (
+      <div className="card tappable" style={{ cursor: 'pointer' }} onClick={() => nav('/nutrition')}>
+        <div className="row between">
+          <div>
+            <div className="row" style={{ gap: 7, fontSize: 22, fontWeight: 600, letterSpacing: '-.021em' }}>
+              <Icon name="flame" style={{ color: 'var(--yellow)' }} />
+              {Math.round(nutritionToday.kcal)} <span className="muted" style={{ fontSize: '1rem' }}>/ {nutritionTargets.kcal} kcal</span>
+            </div>
+            <div className="muted small" style={{ marginTop: 2 }}>
+              {t('P{0} · C{1} · F{2} g', Math.round(nutritionToday.protein), Math.round(nutritionToday.carbs), Math.round(nutritionToday.fat))}
+            </div>
+          </div>
+          <Icon name="chevronRight" className="chev" style={{ fontSize: 20 }} />
+        </div>
+      </div>
+    )}
   </div>
 }
