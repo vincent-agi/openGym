@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
-import { exOr } from '../lib/exercises.js'
+import { exOr, isUnilateralSupported } from '../lib/exercises.js'
 import { effectiveRoutine, lastEntryFor, bestWeightFor, buildSets, setsDoneActive, supersetUnits, unitOf, setLabel, modeOf, isBw, isPerSide, sideReps, repStep, EFFORT, effortOf, stepEffort, capEffort } from '../lib/history.js'
 import { fmtNum, fmtDate, todayISO, exCount, DAYN } from '../lib/format.js'
 import { beep, vibrate } from '../lib/sound.js'
@@ -91,6 +91,12 @@ function ExerciseBlock({ entryIdx, compact, onToggle, onField, onAddSet, onRemov
   const kind = effortOf(S)
   const eff = EFFORT[kind]
   const col3 = mode === 'reps' && eff ? { ...eff, eff: kind, dec: true, opt: true, hd: t(eff.hd) } : null
+  // Dual-side logging (issue #23) — only for reps-mode sets on an exercise the catalogue flags
+  // as unilateral-supported. A set's `side` ('L' | 'R' | undefined) is independent of any other
+  // field, so left and right stay two separate rows with their own weight/reps/effort instead
+  // of one averaged entry.
+  const unilateral = mode === 'reps' && isUnilateralSupported(ex)
+  const cycleSide = s => (s.side === 'L' ? 'R' : s.side === 'R' ? null : 'L')
   // The effort column walks its own scale — see stepEffort. Weight and reps step up from 0
   // with no ceiling, as they always did.
   const bump = (s, i, col, dir) => {
@@ -132,7 +138,11 @@ function ExerciseBlock({ entryIdx, compact, onToggle, onField, onAddSet, onRemov
       {/* the header carries the same eff3 sizing as the rows, or the labels drift off their columns */}
       <div className={'sethead' + (col3 ? ' eff3' : '')}><span className="n-sp" /><span className="w-sp">{col1.hd}</span>{col2 && <span className="r-sp">{col2.hd}</span>}{col3 && <span className="eff-sp">{col3.hd}</span>}{timed && <span className="ck-sp" />}<span className="ck-sp" /></div>
       {entry.sets.map((s, i) => <div key={i} className={'setrow' + (s.done ? ' done' : '') + (col3 ? ' eff3' : '')}>
-        <div className="n">{i + 1}</div>
+        {unilateral ? (
+          <button type="button" className={'n side' + (s.side ? ' side-' + s.side.toLowerCase() : '')}
+            aria-label={t('Side: {0} — tap to change', s.side ? t(s.side === 'L' ? 'Left' : 'Right') : t('Both'))}
+            onClick={() => onField(i, 'side', cycleSide(s))}>{s.side || i + 1}</button>
+        ) : <div className="n">{i + 1}</div>}
         {cell(s, i, col1, 'w')}
         {col2 && cell(s, i, col2, 'r')}
         {col3 && cell(s, i, col3, 'eff')}

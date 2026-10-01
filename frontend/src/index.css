@@ -582,6 +582,11 @@ h4.sec{
 .setrow.eff3 .stp .num{font-size:14px}
 .setrow.done .n{background:var(--acc);color:var(--on-acc)}
 .setrow.done{opacity:.45}
+/* dual-side logging (issue #23) — the set-number circle doubles as an L/R cycle button */
+.setrow .n.side{border:none;padding:0;cursor:pointer;font-weight:700;text-transform:uppercase}
+.setrow .n.side-l{background:var(--teal);color:var(--on-acc)}
+.setrow .n.side-r{background:var(--purple);color:var(--on-acc)}
+.setrow.done .n.side-l,.setrow.done .n.side-r{opacity:1}
 /* why the next target is what it is (issue #17) */
 .progline{
   display:flex;align-items:flex-start;gap:7px;margin:6px 0 2px;

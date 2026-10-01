@@ -89,13 +89,17 @@ const effortTail = s => {
   return k ? ` (${EFFORT[k].hd} ${fmtNum(s[k])})` : ''
 }
 
+// "L · " / "R · " prefix for a set logged independently per side (issue #23). Absent (null/
+// undefined `side`) reads as before — a bilateral set, or one from before this field existed.
+const sideTag = s => (s.side === 'L' || s.side === 'R' ? `${s.side} · ` : '')
+
 // One-line summary of a logged set. `cfg` carries the mode when the caller has it (a routine
 // entry or a workout entry); passing an id alone keeps the old body-part behaviour.
 export function setLabel(id, s, cfg) {
   const c = cfg || { id }
   const mode = modeOf(c)
   if (mode === 'cardio') return `${s.min || 0} min @ ${fmtNum(s.speed || 0)} km/h`
-  if (mode === 'time') return fmtSec(s.sec) + (s.w > 0 ? ` · ${fmtNum(s.w)}` : '')
+  if (mode === 'time') return sideTag(s) + fmtSec(s.sec) + (s.w > 0 ? ` · ${fmtNum(s.w)}` : '')
   // Bodyweight reads as what you did — "12", or "+10 × 12" once there is a belt involved —
   // rather than "0×12", which says a set was performed with no weight and means nothing.
   // A per-side set needs no mark here: the number logged is the total, the same as every
@@ -103,9 +107,9 @@ export function setLabel(id, s, cfg) {
   const reps = s.r || 0
   if (isBw({ ...c, id: c.id ?? id })) {
     const load = s.w > 0 ? `+${fmtNum(s.w)} × ` : ''
-    return `${load}${reps}` + effortTail(s)
+    return sideTag(s) + `${load}${reps}` + effortTail(s)
   }
-  return `${fmtNum(s.w || 0)}×${reps}` + effortTail(s)
+  return sideTag(s) + `${fmtNum(s.w || 0)}×${reps}` + effortTail(s)
 }
 // Default config for a freshly added exercise.
 export function defaultConfig(id, mode) {
@@ -158,6 +162,36 @@ export function bestWeightFor(S, exId) {
   }))
   return best
 }
+// Side-aware best weight (issue #23) — a left-side PR and a right-side PR must not be merged
+// into one number, or improving a stronger right side would mask a weaker left side never
+// actually progressing. `side` is `'L'`, `'R'`, or `null` for a bilateral/untagged set; `topW`
+// (a single confirmed working weight with no side of its own) only ever counts toward `null`.
+export function bestWeightForSide(S, exId, side) {
+  let best = 0
+  S.workouts.forEach(w => w.entries.forEach(e => {
+    if (e.id !== exId) return
+    e.sets.forEach(s => { if (s.done && (s.side || null) === side && s.w > best) best = s.w })
+    if (side === null && e.topW && e.topW > best) best = e.topW
+  }))
+  return best
+}
+// A PR is keyed by exercise id alone for a bilateral set, and `id::side` once sides are tracked
+// separately, so the finish-summary PR list and the exercise-card "PR" badge can tell a left-arm
+// PR apart from a right-arm one without a second array.
+export const prKey = (id, side) => (side ? `${id}::${side}` : id)
+export const hasPr = (prs, id) => !!(prs || []).some(k => k === id || k.startsWith(id + '::'))
+
+// Per-side training volume for a finished workout (issue #23) — only sets logged with a side
+// count here, so a fully bilateral session reports {L:0, R:0} and the summary can hide the
+// breakdown entirely (see hasSideSets).
+export function sideVolumes(w) {
+  const v = { L: 0, R: 0 }
+  w.entries.forEach(e => e.sets.forEach(s => {
+    if (s.done && (s.side === 'L' || s.side === 'R')) v[s.side] += (s.w || 0) * (s.r || 0)
+  }))
+  return v
+}
+export const hasSideSets = w => w.entries.some(e => e.sets.some(s => s.done && s.side))
 export function effectiveRoutineId(S, iso) {
   const ov = S.dayPlan[iso]
   if (ov === 'rest') return null
