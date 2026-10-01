@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.5.0 — 2026-10-01
+
+Beyond the scale: track measurements the scale doesn't show, and set goals with an actual
+deadline instead of just a target bodyweight.
+
+- 📏 **Body measurements.** Waist, chest, arms, hips and body-fat % — logged by date, each one
+  optional, with its own small evolution chart in Stats (they don't share a scale with each
+  other, so each gets its own).
+- 🎯 **Dated goals.** Set a lift target (e.g. squat 100kg), a bodyweight target, or a workout
+  count for a window of time, each with an optional deadline. Progress is computed from your
+  actual training history — lift goals read your estimated 1RM, bodyweight goals track a 0-100%
+  bar in whichever direction you're going, volume goals count workouts logged since the goal was
+  created.
+- Translated across all 11 languages.
+
 ## v1.4.0 — 2026-10-01
 
 Music, finally. Attach a playlist to a routine and it follows you from the workout screen to
