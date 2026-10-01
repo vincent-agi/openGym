@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { t } from '../lib/i18n.js'
 import { todayISO, isoOf, fmtDate } from '../lib/format.js'
@@ -31,7 +30,6 @@ function MacroBar({ macro, label, grams, target }) {
 }
 
 export default function Nutrition() {
-  const nav = useNavigate()
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
   const [dayOffset, setDayOffset] = useState(0)
@@ -55,10 +53,9 @@ export default function Nutrition() {
     })
   }
 
-  return <div className="narrow">
+  return <>
     <div className="hdr">
       <div><h1>{t('Nutrition')}</h1><div className="sub">{iso === todayISO() ? t('Today') : fmtDate(iso, true)}</div></div>
-      <button className="iconbtn" onClick={() => nav('/home')} aria-label={t('Close')}><Icon name="xmark" /></button>
     </div>
 
     <div className="card">
@@ -116,5 +113,5 @@ export default function Nutrition() {
         </div>
       ) : <div className="muted small">{t('Nothing logged for this day yet.')}</div>}
     </div>
-  </div>
+  </>
 }

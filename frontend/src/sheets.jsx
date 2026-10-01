@@ -134,7 +134,7 @@ export function bwSheet(opts = {}) {
 function MacroField({ label, value, onChange }) {
   return <div style={{ flex: 1, minWidth: 0 }}>
     <div className="muted small" style={{ marginBottom: 4 }}>{label}</div>
-    <NumberField value={value} onChange={onChange} nullable />
+    <NumberField value={value} onChange={onChange} nullable className="field" />
   </div>
 }
 function MealLogSheet({ iso, entry, close }) {
