@@ -1,0 +1,147 @@
+import { useState } from 'react'
+import { useStore } from '../store/useStore.js'
+import { t } from '../lib/i18n.js'
+import { todayISO, isoOf, fmtDate } from '../lib/format.js'
+import { calcTargets, latestWeightKg, dayTotals, GOALS, ACTIVITY_LEVELS } from '../lib/nutrition.js'
+import Icon from '../components/Icon.jsx'
+import { Button, Segmented, SelectRow } from '../components/ui.jsx'
+import { mealLogSheet, deleteMealEntry, planMealSheet, deletePlannedMeal, markMealEaten } from '../sheets.jsx'
+
+const GOAL_LABEL = { cut: 'Cut', maintain: 'Maintain', bulk: 'Bulk' }
+const ACTIVITY_LABEL = {
+  sedentary: 'Sedentary', light: 'Lightly active', moderate: 'Moderately active',
+  active: 'Active', very_active: 'Very active'
+}
+const MACRO_COLOR = { protein: 'var(--blue)', carbs: 'var(--yellow)', fat: 'var(--orange)' }
+
+function MacroBar({ macro, label, grams, target }) {
+  const pct = target ? Math.min(100, (grams / target) * 100) : 0
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div className="row between small" style={{ marginBottom: 4 }}>
+        <span>{label}</span>
+        <span className="muted">{Math.round(grams)}{target ? ' / ' + target : ''} g</span>
+      </div>
+      <div style={{ height: 6, borderRadius: 3, background: 'var(--surface-3)' }}>
+        <div style={{ height: '100%', borderRadius: 3, width: pct + '%', background: MACRO_COLOR[macro] || 'var(--acc)', transition: 'width .2s' }} />
+      </div>
+    </div>
+  )
+}
+
+// A plain button+trash-icon row — not the Row primitive, which renders a <button> for
+// onClick and would end up nesting the delete button inside it (invalid markup).
+function MealRow({ entry, onEdit, onDelete, trailing }) {
+  return (
+    <div className="row between" style={{ padding: '9px 2px', borderBottom: '1px solid var(--sep)' }}>
+      <button className="lrow tap" style={{ flex: 1, minWidth: 0, textAlign: 'left' }} onClick={onEdit}>
+        <span className="lrow-m">
+          <span className="lrow-t">{entry.name}</span>
+          <span className="lrow-s">{t('{0} kcal · P{1} C{2} F{3}', Math.round(entry.kcal), Math.round(entry.protein), Math.round(entry.carbs), Math.round(entry.fat))}</span>
+        </span>
+      </button>
+      {trailing}
+      <button className="iconbtn" style={{ width: 32, height: 30, borderRadius: 8, fontSize: 15, color: 'var(--red)' }}
+        onClick={onDelete} aria-label={t('Delete')}>
+        <Icon name="trash" />
+      </button>
+    </div>
+  )
+}
+
+export default function Nutrition() {
+  const S = useStore(s => s.S)
+  const update = useStore(s => s.update)
+  const [dayOffset, setDayOffset] = useState(0)
+  const [goalDraft, setGoalDraft] = useState(S.nutrition?.goal || 'maintain')
+  const [activityDraft, setActivityDraft] = useState('moderate')
+
+  const date = new Date()
+  date.setDate(date.getDate() + dayOffset)
+  const iso = isoOf(date)
+  const entries = S.nutrition?.log?.[iso] || []
+  const planned = S.nutrition?.mealPlan?.[iso] || []
+  const totals = dayTotals(S, iso)
+  const targets = S.nutrition?.targets?.kcal ? S.nutrition.targets : null
+
+  const applyGoal = () => {
+    const weightKg = latestWeightKg(S)
+    const computed = calcTargets({ weightKg, goal: goalDraft, activityLevel: activityDraft })
+    update(s => {
+      s.nutrition = s.nutrition || { goal: null, targets: {}, log: {}, mealPlan: {} }
+      s.nutrition.goal = goalDraft
+      if (computed) s.nutrition.targets = computed
+    })
+  }
+
+  return <>
+    <div className="hdr">
+      <div><h1>{t('Nutrition')}</h1><div className="sub">{iso === todayISO() ? t('Today') : fmtDate(iso, true)}</div></div>
+    </div>
+
+    <div className="card">
+      <div className="row between" style={{ marginBottom: 8 }}>
+        <button className="iconbtn" style={{ width: 30, height: 30, fontSize: 15 }} onClick={() => setDayOffset(o => o - 1)} aria-label={t('Previous day')}><Icon name="chevronLeft" /></button>
+        <div className="small muted" style={{ fontWeight: 500 }}>{fmtDate(iso, true)}</div>
+        <button className="iconbtn" style={{ width: 30, height: 30, fontSize: 15 }} onClick={() => setDayOffset(o => o + 1)} aria-label={t('Next day')}><Icon name="chevronRight" /></button>
+      </div>
+
+      {!targets ? (
+        <>
+          <div className="muted small" style={{ marginBottom: 12 }}>{t('Pick a goal to get suggested calorie and macro targets from your logged bodyweight.')}</div>
+          <Segmented options={GOALS.map(g => ({ value: g, label: t(GOAL_LABEL[g]) }))} value={goalDraft} onChange={setGoalDraft} />
+          <div style={{ height: 8 }} />
+          <SelectRow title={t('Activity level')} value={activityDraft}
+            options={ACTIVITY_LEVELS.map(a => ({ value: a, label: t(ACTIVITY_LABEL[a]) }))}
+            onChange={setActivityDraft} />
+          <div style={{ height: 12 }} />
+          <Button variant="primary" onClick={applyGoal}>{t('Set targets')}</Button>
+        </>
+      ) : (
+        <>
+          <div className="row" style={{ gap: 8, alignItems: 'baseline', marginBottom: 14 }}>
+            <div className="big">{Math.round(totals.kcal)}</div>
+            <div className="muted">{t('/ {0} kcal', targets.kcal)}</div>
+          </div>
+          <MacroBar macro="protein" label={t('Protein')} grams={totals.protein} target={targets.protein} />
+          <MacroBar macro="carbs" label={t('Carbs')} grams={totals.carbs} target={targets.carbs} />
+          <MacroBar macro="fat" label={t('Fat')} grams={totals.fat} target={targets.fat} />
+        </>
+      )}
+    </div>
+
+    <div className="card">
+      <div className="row between" style={{ marginBottom: 8 }}>
+        <h2 style={{ margin: 0 }}>{t('Food log')}</h2>
+        <Button size="sm" icon="plus" onClick={() => mealLogSheet(iso)}>{t('Add food')}</Button>
+      </div>
+      {entries.length ? (
+        <div className="list" style={{ gap: 0 }}>
+          {entries.map(e => (
+            <MealRow key={e.id} entry={e} onEdit={() => mealLogSheet(iso, e)} onDelete={() => deleteMealEntry(iso, e.id)} />
+          ))}
+        </div>
+      ) : <div className="muted small">{t('Nothing logged for this day yet.')}</div>}
+    </div>
+
+    <div className="card">
+      <div className="row between" style={{ marginBottom: 8 }}>
+        <h2 style={{ margin: 0 }}>{t('Planned meals')}</h2>
+        <Button size="sm" icon="plus" onClick={() => planMealSheet(iso)}>{t('Plan a meal')}</Button>
+      </div>
+      {planned.length ? (
+        <div className="list" style={{ gap: 0 }}>
+          {planned.map(e => (
+            <MealRow key={e.id} entry={e} onEdit={() => planMealSheet(iso, e)} onDelete={() => deletePlannedMeal(iso, e.id)}
+              trailing={
+                <button className="iconbtn" style={{ width: 32, height: 30, borderRadius: 8, fontSize: 15, color: 'var(--acc)' }}
+                  onClick={() => markMealEaten(iso, e.id)} aria-label={t('Mark as eaten')}>
+                  <Icon name="check" />
+                </button>
+              } />
+          ))}
+        </div>
+      ) : <div className="muted small">{t('No meals planned for this day yet.')}</div>}
+    </div>
+  </>
+}

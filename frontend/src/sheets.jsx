@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
-import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf } from './lib/exercises.js'
+import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf, exOr } from './lib/exercises.js'
 import { fmtDate, fmtNum, fmtVol, fmtDur, durPart, todayISO, uid, exCount, DAYN, MONTHS_LONG, ACCENTS } from './lib/format.js'
 import { lastEntryFor, bestWeightFor, buildSets, effectiveRoutineId, workoutVolume, setsDone, setsDoneActive, lastBW, supersetUnits, unitOf, setLabel, defaultConfig, cleanupSg, modeOf, effortOf, isBw, isPerSide, sideReps } from './lib/history.js'
 import { beep, vibrate } from './lib/sound.js'
@@ -11,7 +11,7 @@ import { starterRoutines } from './lib/starter.js'
 import Media, { Thumb } from './components/Media.jsx'
 import Stepper from './components/Stepper.jsx'
 import Icon from './components/Icon.jsx'
-import { Button, Slider, Switch, Segmented, SelectRow, Row } from './components/ui.jsx'
+import { Button, Slider, Switch, Segmented, SelectRow, Row, NumberField, TextField } from './components/ui.jsx'
 import { glyphOf, GLYPH_GROUPS, DEFAULT_GLYPH } from './lib/glyphs.js'
 import BodyMap from './components/BodyMap.jsx'
 import { loadOfWorkouts } from './lib/muscles.js'
@@ -20,6 +20,10 @@ import { buildPlanBundle, parsePlan, mergePlan, printPlan } from './lib/plan-sha
 import { estimate1RM, best1RM, is1RMRecord, REP_CAP } from './lib/onerm.js'
 import { nextPrescription, applyPrescription, policyFor, defaultIncrement, POLICIES_FOR, POLICY_NAME, POLICY_DESC, MAX_BW_SETS } from './lib/progression.js'
 import { MOBILE, shareExport } from './lib/mobile.js'
+import { addLogEntry, updateLogEntry, removeLogEntry, markPlannedMealEaten } from './lib/nutrition.js'
+import { parsePlaylistUrl } from './lib/playlist.js'
+import { MEASUREMENT_FIELDS, setMeasurement, deleteMeasurement as removeMeasurement } from './lib/measurements.js'
+import { addGoal, removeGoal } from './lib/goals.js'
 
 const S = () => useStore.getState().S
 const update = (...a) => useStore.getState().update(...a)
@@ -128,6 +132,128 @@ function BwSheet({ required, onDone, close }) {
 export function bwSheet(opts = {}) {
   const h = ui().openSheet(close => <BwSheet {...opts} close={close} />, { locked: !!opts.required })
   return h
+}
+
+/* ============================ body measurements ============================ */
+function MeasurementSheet({ close }) {
+  const st = useStore(s => s.S)
+  const iso = todayISO()
+  const today = st.measurements?.[iso] || {}
+  const [draft, setDraft] = useState(today)
+
+  const save = () => {
+    update(s => { s.measurements = setMeasurement(s.measurements, iso, draft) })
+    close()
+    toast(t('Measurements saved'))
+  }
+  const recent = Object.entries(st.measurements || {}).sort(([a], [b]) => (a < b ? 1 : -1)).slice(0, 3)
+  const delDay = d => update(s => { s.measurements = removeMeasurement(s.measurements, d) })
+
+  return <>
+    <h3>{t('Log measurements')}</h3>
+    <div className="muted small">{fmtDate(iso, true)}</div>
+    {MEASUREMENT_FIELDS.map(f => (
+      <div key={f.key} style={{ marginTop: 10 }}>
+        <div className="muted small" style={{ marginBottom: 4 }}>{t(f.label)} ({f.unit})</div>
+        <NumberField value={draft[f.key] ?? null} onChange={v => setDraft(d => {
+          if (v == null) { const next = { ...d }; delete next[f.key]; return next }
+          return { ...d, [f.key]: v }
+        })} nullable className="field" />
+      </div>
+    ))}
+    <div style={{ height: 14 }} />
+    <Button variant="primary" onClick={save}>{t('Save')}</Button>
+    {recent.length > 0 && <>
+      <h4 className="sec">{t('Recent entries')}</h4>
+      <div className="list" style={{ gap: 0 }}>
+        {recent.map(([d, entry]) => (
+          <div key={d} className="row between" style={{ padding: '9px 2px', borderBottom: '1px solid var(--sep)' }}>
+            <span className="small muted">{fmtDate(d, true)}</span>
+            <span className="row" style={{ gap: 10 }}>
+              <span className="small">{MEASUREMENT_FIELDS.filter(f => entry[f.key] != null).map(f => f.label[0] + fmtNum(entry[f.key])).join(' · ') || '—'}</span>
+              <button className="iconbtn" style={{ width: 32, height: 30, borderRadius: 8, fontSize: 15, color: 'var(--red)' }} onClick={() => delDay(d)} aria-label="delete"><Icon name="trash" /></button>
+            </span>
+          </div>
+        ))}
+      </div>
+    </>}
+  </>
+}
+export function measurementSheet() {
+  return ui().openSheet(close => <MeasurementSheet close={close} />)
+}
+export function deleteMeasurement(iso) {
+  update(s => { s.measurements = removeMeasurement(s.measurements, iso) })
+}
+
+/* ============================ nutrition log ============================ */
+function MacroField({ label, value, onChange }) {
+  return <div style={{ flex: 1, minWidth: 0 }}>
+    <div className="muted small" style={{ marginBottom: 4 }}>{label}</div>
+    <NumberField value={value} onChange={onChange} nullable className="field" />
+  </div>
+}
+// target 'log' writes to today's food log, 'plan' to a future-dated meal plan (issue #17) —
+// same fields either way, so one form covers both rather than two near-identical copies.
+function MealLogSheet({ iso, entry, target = 'log', close }) {
+  const [name, setName] = useState(entry?.name || '')
+  const [kcal, setKcal] = useState(entry?.kcal ?? null)
+  const [protein, setProtein] = useState(entry?.protein ?? null)
+  const [carbs, setCarbs] = useState(entry?.carbs ?? null)
+  const [fat, setFat] = useState(entry?.fat ?? null)
+  const key = target === 'plan' ? 'mealPlan' : 'log'
+
+  const save = () => {
+    const n = name.trim()
+    if (!n) { toast(t('Enter a name')); return }
+    const vals = { name: n, kcal: kcal || 0, protein: protein || 0, carbs: carbs || 0, fat: fat || 0 }
+    update(s => {
+      s.nutrition = s.nutrition || { goal: null, targets: {}, log: {}, mealPlan: {} }
+      s.nutrition[key] = entry
+        ? updateLogEntry(s.nutrition[key], iso, entry.id, vals)
+        : addLogEntry(s.nutrition[key], iso, { id: uid(), ts: Date.now(), ...vals })
+    })
+    close()
+    toast(entry
+      ? (target === 'plan' ? t('Planned meal updated') : t('Food updated'))
+      : (target === 'plan' ? t('Meal planned') : t('Food logged')))
+  }
+  return <>
+    <h3>{entry
+      ? (target === 'plan' ? t('Edit planned meal') : t('Edit food'))
+      : (target === 'plan' ? t('Plan a meal') : t('Add food'))}</h3>
+    <div className="muted small" style={{ marginBottom: 4 }}>{t('Name')}</div>
+    <TextField value={name} onChange={e => setName(e.target.value)} placeholder={t('e.g. Chicken & rice')} style={{ marginBottom: 12 }} />
+    <MacroField label={t('Calories (kcal)')} value={kcal} onChange={setKcal} />
+    <div style={{ height: 10 }} />
+    <div className="row" style={{ gap: 10 }}>
+      <MacroField label={t('Protein (g)')} value={protein} onChange={setProtein} />
+      <MacroField label={t('Carbs (g)')} value={carbs} onChange={setCarbs} />
+      <MacroField label={t('Fat (g)')} value={fat} onChange={setFat} />
+    </div>
+    <div style={{ height: 14 }} />
+    <Button variant="primary" onClick={save}>{t('Save')}</Button>
+  </>
+}
+export function mealLogSheet(iso, entry) {
+  return ui().openSheet(close => <MealLogSheet iso={iso} entry={entry} close={close} />)
+}
+export function planMealSheet(iso, entry) {
+  return ui().openSheet(close => <MealLogSheet iso={iso} entry={entry} target="plan" close={close} />)
+}
+export function deleteMealEntry(iso, id) {
+  update(s => { s.nutrition.log = removeLogEntry(s.nutrition.log, iso, id) })
+}
+export function deletePlannedMeal(iso, id) {
+  update(s => { s.nutrition.mealPlan = removeLogEntry(s.nutrition.mealPlan, iso, id) })
+}
+export function markMealEaten(iso, id) {
+  update(s => {
+    const r = markPlannedMealEaten(s.nutrition.log, s.nutrition.mealPlan, iso, id)
+    s.nutrition.log = r.log
+    s.nutrition.mealPlan = r.mealPlan
+  })
+  toast(t('Marked as eaten'))
 }
 
 /* ============================ import from another app ============================ */
@@ -250,6 +376,56 @@ function GoalSheet({ close }) {
   </>
 }
 export const goalSheet = () => ui().openSheet(close => <GoalSheet close={close} />)
+
+/* ============================ dated goals (distinct from the single target-weight line above) ============================ */
+const GOAL_TYPE_LABEL = { lift: 'Lift', bodyweight: 'Bodyweight', volume: 'Workouts' }
+function NewGoalSheet({ close }) {
+  const st = useStore(s => s.S)
+  const [type, setType] = useState('lift')
+  const [exId, setExId] = useState(null)
+  const [target, setTarget] = useState(null)
+  const [deadline, setDeadline] = useState('')
+
+  const save = () => {
+    if (!target || target <= 0) { toast(t('Enter a target')); return }
+    if (type === 'lift' && !exId) { toast(t('Pick an exercise')); return }
+    const goal = {
+      id: uid(), type, target, deadline: deadline || null, createdAt: Date.now(),
+      ...(type === 'lift' ? { exerciseId: exId } : {}),
+      ...(type === 'bodyweight' ? { startValue: (lastBW(st) || {}).w ?? target } : {})
+    }
+    update(s => { s.goals = addGoal(s.goals, goal) })
+    close()
+    toast(t('Goal added'))
+  }
+  return <>
+    <h3>{t('New goal')}</h3>
+    <Segmented options={[
+      { value: 'lift', label: t(GOAL_TYPE_LABEL.lift) },
+      { value: 'bodyweight', label: t(GOAL_TYPE_LABEL.bodyweight) },
+      { value: 'volume', label: t(GOAL_TYPE_LABEL.volume) }
+    ]} value={type} onChange={v => { setType(v); setExId(null) }} />
+    <div style={{ height: 10 }} />
+    {type === 'lift' && <Row icon="dumbbell" title={t('Exercise')} subtitle={exId ? exOr(exId).n : t('Pick one')} accessory="chevron"
+      onClick={() => { const picker = exercisePicker(ex => { setExId(ex.id); picker.close() }) }} />}
+    <div style={{ height: 10 }} />
+    <div className="muted small" style={{ marginBottom: 4 }}>
+      {type === 'volume' ? t('Target workouts') : t('Target weight ({0})', st.unit)}
+    </div>
+    <NumberField value={target} onChange={setTarget} nullable className="field" />
+    <div style={{ height: 10 }} />
+    <div className="muted small" style={{ marginBottom: 4 }}>{t('Deadline (optional)')}</div>
+    <input type="date" className="field" value={deadline} onChange={e => setDeadline(e.target.value)} />
+    <div style={{ height: 14 }} />
+    <Button variant="primary" onClick={save}>{t('Add goal')}</Button>
+  </>
+}
+export function newGoalSheet() {
+  return ui().openSheet(close => <NewGoalSheet close={close} />)
+}
+export function deleteGoal(id) {
+  update(s => { s.goals = removeGoal(s.goals, id) })
+}
 
 /* ============================ exercise detail ============================ */
 // Estimated 1RM for one exercise (issue #18): what the log already implies, plus a calculator
@@ -620,6 +796,39 @@ export const glyphPicker = (current, onPick) => {
     ))}
     <div style={{ height: 4 }} />
   </>)
+}
+
+/* ============================ playlist link (routine) ============================ */
+function PlaylistSheet({ current, onSave, close }) {
+  const [url, setUrl] = useState(current?.url || '')
+  const trimmed = url.trim()
+  const parsed = trimmed ? parsePlaylistUrl(trimmed) : null
+
+  const save = () => {
+    if (!trimmed) { onSave(null); close(); return }
+    if (!parsed.valid) { toast(t("That doesn't look like a valid link.")); return }
+    onSave({ url: parsed.url, provider: parsed.provider })
+    close()
+  }
+  return <>
+    <h3>{t('Playlist link')}</h3>
+    <div className="muted small" style={{ marginBottom: 10 }}>
+      {t('Paste a Spotify, YouTube or Apple Music link — it opens from this routine during a workout.')}
+    </div>
+    <TextField value={url} onChange={e => setUrl(e.target.value)} placeholder="https://open.spotify.com/playlist/…" />
+    {trimmed && parsed && !parsed.valid && (
+      <div className="small" style={{ color: 'var(--red)', marginTop: 6 }}>{t("That doesn't look like a valid link.")}</div>
+    )}
+    <div style={{ height: 14 }} />
+    <Button variant="primary" onClick={save}>{t('Save')}</Button>
+    {current && <>
+      <div style={{ height: 8 }} />
+      <Button variant="ghost" className="dim" onClick={() => { onSave(null); close() }}>{t('Remove playlist')}</Button>
+    </>}
+  </>
+}
+export function playlistSheet(current, onSave) {
+  return ui().openSheet(close => <PlaylistSheet current={current} onSave={onSave} close={close} />)
 }
 
 /* ============================ share / print / import a plan ============================ */

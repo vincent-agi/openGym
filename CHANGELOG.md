@@ -1,5 +1,60 @@
 # Changelog
 
+## v1.5.0 — 2026-10-01
+
+Beyond the scale: track measurements the scale doesn't show, and set goals with an actual
+deadline instead of just a target bodyweight.
+
+- 📏 **Body measurements.** Waist, chest, arms, hips and body-fat % — logged by date, each one
+  optional, with its own small evolution chart in Stats (they don't share a scale with each
+  other, so each gets its own).
+- 🎯 **Dated goals.** Set a lift target (e.g. squat 100kg), a bodyweight target, or a workout
+  count for a window of time, each with an optional deadline. Progress is computed from your
+  actual training history — lift goals read your estimated 1RM, bodyweight goals track a 0-100%
+  bar in whichever direction you're going, volume goals count workouts logged since the goal was
+  created.
+- Translated across all 11 languages.
+
+## v1.4.0 — 2026-10-01
+
+Music, finally. Attach a playlist to a routine and it follows you from the workout screen to
+the end of every rest period.
+
+- 🎵 **Playlist link on a routine.** Paste a Spotify, YouTube or Apple Music link in the routine
+  editor — any other https link works too, just without a provider-specific label.
+- **Launch it from the workout.** A music-note button appears in the active session's header
+  whenever that session's routine has a playlist, opening it in a new tab.
+- **A nudge when rest ends.** The "rest over" toast now offers to resume your playlist, right
+  next to the usual beep and vibration — toggle it independently of Sounds in Settings, since
+  muting the beep and wanting the music nudge are different calls.
+- Translated across all 11 languages, same as the rest of the app.
+
+## v1.3.0 — 2026-10-01
+
+A full nutrition tracker, plus a couple of fixes that had been sitting in the bundle and the
+reminder log since before this release.
+
+### Nutrition tracking
+
+- 🍎 **A Nutrition tab.** Pick a goal — cut, maintain or bulk — and an activity level, and get a
+  suggested daily calorie and macro target computed from your logged bodyweight (no height or
+  age field exists on the profile, so this is a weight x activity-level estimate rather than a
+  full Mifflin-St Jeor calculation).
+- **Food log.** Log what you ate — name, calories, protein, carbs, fat — with a running total
+  against today's target, progress bars per macro, and day-by-day navigation to look back or
+  plan ahead.
+- **Plan a meal.** Meals can be planned ahead of the day you'll eat them, separately from the
+  log, and marked eaten when the day comes — planning something never counts toward the day's
+  totals until you do.
+- A compact summary of today's progress sits on Home once a goal is set, and the whole module is
+  translated across all 11 languages the app already supports.
+
+### Fixes
+
+- The exercise dataset (~900KB) no longer inflates the main JS bundle — it now builds into its
+  own chunk, so app code changes stop invalidating its cache and vice versa.
+- Removed a per-user debug log that fired on every scheduled workout reminder.
+
 ## v1.2.4 — 2026-08-01
 
 The effort ratings you have been recording since v1.2.3 now answer questions, and bodyweight

@@ -6,13 +6,14 @@ import { uid } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { supersetUnits, cleanupSg, exLine } from '../lib/history.js'
 import { Thumb } from '../components/Media.jsx'
-import { glyphPicker, exercisePicker, exConfigSheet, confirmSheet } from '../sheets.jsx'
+import { glyphPicker, exercisePicker, exConfigSheet, confirmSheet, playlistSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
 import { glyphOf } from '../lib/glyphs.js'
-import { Button, SelectRow } from '../components/ui.jsx'
+import { Button, SelectRow, Row } from '../components/ui.jsx'
 import { POLICIES_FOR, POLICY_NAME, POLICY_DESC } from '../lib/progression.js'
 import BodyMap from '../components/BodyMap.jsx'
 import { loadOfRoutine, rankOf, MUSCLE_NAME } from '../lib/muscles.js'
+import { PROVIDER_LABEL } from '../lib/playlist.js'
 
 export default function RoutineEdit() {
   const nav = useNavigate()
@@ -54,6 +55,13 @@ export default function RoutineEdit() {
     </div>
     <div className="small dim" style={{ margin: '-10px 2px 16px' }}>
       {t('Applies to every exercise in this routine that does not set its own rule.')}
+    </div>
+
+    <div className="sect-b" style={{ marginBottom: 16 }}>
+      <Row icon="musicNote" title={t('Playlist')}
+        subtitle={r.playlist ? t(PROVIDER_LABEL[r.playlist.provider] || PROVIDER_LABEL.generic) : t('None set')}
+        accessory="chevron"
+        onClick={() => playlistSheet(r.playlist, playlist => update(s => { s.routines.find(x => x.id === id).playlist = playlist || undefined }))} />
     </div>
 
     {r.ex.length ? <div className="list">{r.ex.map((e, i) => {

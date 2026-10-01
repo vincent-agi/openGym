@@ -131,7 +131,6 @@ setInterval(() => {
     const rid = effectiveRoutineId(S, now.date);
     if (!rid) continue; // rest day — nothing planned
     const routine = (S.routines || []).find(r => r.id === rid);
-    console.log('reminder firing', user.id, rid);
     user.lastReminder = now.date;
     saveDb();
     sendPush(user.id, {
