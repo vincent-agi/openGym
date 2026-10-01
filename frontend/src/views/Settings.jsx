@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useStore, DEF, hasData } from '../store/useStore.js'
+import { useStore, DEF, hasData, effectiveLargeTouch } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { ACCENTS, todayISO, localTZ } from '../lib/format.js'
 import { effortOf } from '../lib/history.js'
@@ -289,6 +289,10 @@ function MobilityProfileCard({ S, update }) {
           ))}
         </div>
       </div>
+      <Row icon="expand" iconTint="var(--orange)" title={t('Large touch targets')}
+        subtitle={t('Bigger buttons during a workout and on the rest timer.')}>
+        <Switch checked={effectiveLargeTouch(S)} onChange={v => update(s => { s.largeTouchTargets = v })} />
+      </Row>
     </Section>
   )
 }
