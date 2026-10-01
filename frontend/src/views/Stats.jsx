@@ -5,8 +5,10 @@ import { EXIDX } from '../lib/exercises.js'
 import { lastBW, streakWeeks, setLabel, modeOf, effortOf } from '../lib/history.js'
 import { fmtNum, fmtDate, fmtVol, todayISO, weekKey } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
-import { bwSheet, goalSheet, calendarSheet, workoutDetailSheet, WorkoutRow, bwDeltaColor, measurementSheet } from '../sheets.jsx'
+import { bwSheet, goalSheet, calendarSheet, workoutDetailSheet, WorkoutRow, bwDeltaColor, measurementSheet, newGoalSheet, deleteGoal } from '../sheets.jsx'
 import { MEASUREMENT_FIELDS, seriesFor } from '../lib/measurements.js'
+import { goalProgress } from '../lib/goals.js'
+import { exOr } from '../lib/exercises.js'
 import LineChart from '../components/LineChart.jsx'
 import Heatmap from '../components/Heatmap.jsx'
 import Icon from '../components/Icon.jsx'
@@ -148,6 +150,42 @@ function MeasurementsCard({ S }) {
   </div>
 }
 
+const GOAL_LABEL = g => g.type === 'lift' ? exOr(g.exerciseId).n : g.type === 'volume' ? t('Workouts') : t('Bodyweight')
+
+function GoalRow({ S, goal }) {
+  const p = goalProgress(S, goal)
+  const unit = goal.type === 'volume' ? '' : ' ' + S.unit
+  return <div style={{ marginBottom: 14 }}>
+    <div className="row between small" style={{ marginBottom: 4 }}>
+      <span className="row" style={{ gap: 6 }}>
+        {p.done && <Icon name="check" style={{ color: 'var(--acc)', fontSize: 13 }} />}
+        {GOAL_LABEL(goal)}
+      </span>
+      <span className="row" style={{ gap: 8 }}>
+        <span className="muted">{fmtNum(p.current)}{unit} / {fmtNum(p.target)}{unit}</span>
+        <button className="iconbtn" style={{ width: 28, height: 26, borderRadius: 7, fontSize: 13, color: 'var(--red)' }}
+          onClick={() => deleteGoal(goal.id)} aria-label={t('Delete')}><Icon name="trash" /></button>
+      </span>
+    </div>
+    <div style={{ height: 6, borderRadius: 3, background: 'var(--surface-3)' }}>
+      <div style={{ height: '100%', borderRadius: 3, width: (p.pct * 100) + '%', background: p.done ? 'var(--acc)' : 'var(--blue)', transition: 'width .2s' }} />
+    </div>
+    {goal.deadline && <div className="dim small" style={{ marginTop: 3 }}>{t('By {0}', fmtDate(goal.deadline, true))}</div>}
+  </div>
+}
+
+function GoalsCard({ S }) {
+  return <div className="card">
+    <div className="row between" style={{ marginBottom: 8 }}>
+      <h2 style={{ margin: 0 }}>{t('Goals')}</h2>
+      <Button size="sm" icon="plus" onClick={() => newGoalSheet()}>{t('Add goal')}</Button>
+    </div>
+    {(S.goals || []).length
+      ? S.goals.map(g => <GoalRow key={g.id} S={S} goal={g} />)
+      : <div className="muted small">{t('No goals set yet.')}</div>}
+  </div>
+}
+
 // Stats = the analytics hub: all charts, progress and history live here.
 export default function Stats() {
   const nav = useNavigate()
@@ -275,6 +313,7 @@ export default function Stats() {
       </div>
     </div>
 
+    <GoalsCard S={S} />
     <MeasurementsCard S={S} />
 
     {S.workouts.length > 0 && <>

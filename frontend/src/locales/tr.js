@@ -623,4 +623,20 @@ export default {
   'Recent entries': 'Son kayıtlar',
   'Measurements saved': 'Ölçümler kaydedildi',
   'No measurements logged yet.': 'Henüz ölçüm kaydedilmedi.',
+
+  // --- dated goals ---
+  'Lift': 'Kaldırış',
+  'Exercise': 'Egzersiz',
+  'Pick one': 'Birini seç',
+  'New goal': 'Yeni hedef',
+  'Target weight ({0})': 'Hedef kilo ({0})',
+  'Target workouts': 'Hedef antrenman sayısı',
+  'Deadline (optional)': 'Son tarih (isteğe bağlı)',
+  'Add goal': 'Hedef ekle',
+  'Enter a target': 'Bir hedef gir',
+  'Pick an exercise': 'Bir egzersiz seç',
+  'Goal added': 'Hedef eklendi',
+  'Goals': 'Hedefler',
+  'No goals set yet.': 'Henüz hedef belirlenmedi.',
+  'By {0}': '{0} tarihine kadar',
 }

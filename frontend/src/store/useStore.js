@@ -29,7 +29,10 @@ export const DEF = {
   // Body measurements beyond bodyweight — keyed by ISO date (one entry per day, like a weigh-in),
   // each field optional so a day can log just a waist reading without the rest. See
   // lib/measurements.js MEASUREMENT_FIELDS for the tracked set.
-  measurements: {}
+  measurements: {},
+  // Dated, numeric goals beyond the single targetW line above (a squat target, a monthly
+  // workout count...). See lib/goals.js for the shape and how progress is computed per type.
+  goals: []
 }
 const clone = o => JSON.parse(JSON.stringify(o))
 

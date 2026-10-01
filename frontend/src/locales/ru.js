@@ -623,4 +623,20 @@ export default {
   'Recent entries': 'Недавние записи',
   'Measurements saved': 'Замеры сохранены',
   'No measurements logged yet.': 'Замеры пока не записаны.',
+
+  // --- dated goals ---
+  'Lift': 'Сила',
+  'Exercise': 'Упражнение',
+  'Pick one': 'Выбери одно',
+  'New goal': 'Новая цель',
+  'Target weight ({0})': 'Целевой вес ({0})',
+  'Target workouts': 'Целевое количество тренировок',
+  'Deadline (optional)': 'Срок (необязательно)',
+  'Add goal': 'Добавить цель',
+  'Enter a target': 'Введите цель',
+  'Pick an exercise': 'Выберите упражнение',
+  'Goal added': 'Цель добавлена',
+  'Goals': 'Цели',
+  'No goals set yet.': 'Пока нет ни одной цели.',
+  'By {0}': 'К {0}',
 }

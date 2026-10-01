@@ -623,4 +623,20 @@ export default {
   'Recent entries': '최근 기록',
   'Measurements saved': '신체 치수가 저장되었습니다',
   'No measurements logged yet.': '아직 기록된 신체 치수가 없습니다.',
+
+  // --- dated goals ---
+  'Lift': '리프트',
+  'Exercise': '운동',
+  'Pick one': '하나 선택',
+  'New goal': '새 목표',
+  'Target weight ({0})': '목표 체중 ({0})',
+  'Target workouts': '목표 운동 횟수',
+  'Deadline (optional)': '마감일 (선택)',
+  'Add goal': '목표 추가',
+  'Enter a target': '목표를 입력하세요',
+  'Pick an exercise': '운동을 선택하세요',
+  'Goal added': '목표가 추가되었습니다',
+  'Goals': '목표',
+  'No goals set yet.': '아직 설정된 목표가 없습니다.',
+  'By {0}': '{0}까지',
 }

@@ -623,4 +623,20 @@ export default {
   'Recent entries': 'हाल की प्रविष्टियां',
   'Measurements saved': 'माप सहेजी गई',
   'No measurements logged yet.': 'अभी तक कोई माप दर्ज नहीं की गई।',
+
+  // --- dated goals ---
+  'Lift': 'लिफ्ट',
+  'Exercise': 'व्यायाम',
+  'Pick one': 'एक चुनें',
+  'New goal': 'नया लक्ष्य',
+  'Target weight ({0})': 'लक्ष्य वज़न ({0})',
+  'Target workouts': 'लक्ष्य वर्कआउट संख्या',
+  'Deadline (optional)': 'समय सीमा (वैकल्पिक)',
+  'Add goal': 'लक्ष्य जोड़ें',
+  'Enter a target': 'एक लक्ष्य दर्ज करें',
+  'Pick an exercise': 'एक व्यायाम चुनें',
+  'Goal added': 'लक्ष्य जोड़ा गया',
+  'Goals': 'लक्ष्य',
+  'No goals set yet.': 'अभी तक कोई लक्ष्य सेट नहीं किया गया।',
+  'By {0}': '{0} तक',
 }

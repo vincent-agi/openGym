@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
-import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf } from './lib/exercises.js'
+import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf, exOr } from './lib/exercises.js'
 import { fmtDate, fmtNum, fmtVol, fmtDur, durPart, todayISO, uid, exCount, DAYN, MONTHS_LONG, ACCENTS } from './lib/format.js'
 import { lastEntryFor, bestWeightFor, buildSets, effectiveRoutineId, workoutVolume, setsDone, setsDoneActive, lastBW, supersetUnits, unitOf, setLabel, defaultConfig, cleanupSg, modeOf, effortOf, isBw, isPerSide, sideReps } from './lib/history.js'
 import { beep, vibrate } from './lib/sound.js'
@@ -23,6 +23,7 @@ import { MOBILE, shareExport } from './lib/mobile.js'
 import { addLogEntry, updateLogEntry, removeLogEntry, markPlannedMealEaten } from './lib/nutrition.js'
 import { parsePlaylistUrl } from './lib/playlist.js'
 import { MEASUREMENT_FIELDS, setMeasurement, deleteMeasurement as removeMeasurement } from './lib/measurements.js'
+import { addGoal, removeGoal } from './lib/goals.js'
 
 const S = () => useStore.getState().S
 const update = (...a) => useStore.getState().update(...a)
@@ -375,6 +376,56 @@ function GoalSheet({ close }) {
   </>
 }
 export const goalSheet = () => ui().openSheet(close => <GoalSheet close={close} />)
+
+/* ============================ dated goals (distinct from the single target-weight line above) ============================ */
+const GOAL_TYPE_LABEL = { lift: 'Lift', bodyweight: 'Bodyweight', volume: 'Workouts' }
+function NewGoalSheet({ close }) {
+  const st = useStore(s => s.S)
+  const [type, setType] = useState('lift')
+  const [exId, setExId] = useState(null)
+  const [target, setTarget] = useState(null)
+  const [deadline, setDeadline] = useState('')
+
+  const save = () => {
+    if (!target || target <= 0) { toast(t('Enter a target')); return }
+    if (type === 'lift' && !exId) { toast(t('Pick an exercise')); return }
+    const goal = {
+      id: uid(), type, target, deadline: deadline || null, createdAt: Date.now(),
+      ...(type === 'lift' ? { exerciseId: exId } : {}),
+      ...(type === 'bodyweight' ? { startValue: (lastBW(st) || {}).w ?? target } : {})
+    }
+    update(s => { s.goals = addGoal(s.goals, goal) })
+    close()
+    toast(t('Goal added'))
+  }
+  return <>
+    <h3>{t('New goal')}</h3>
+    <Segmented options={[
+      { value: 'lift', label: t(GOAL_TYPE_LABEL.lift) },
+      { value: 'bodyweight', label: t(GOAL_TYPE_LABEL.bodyweight) },
+      { value: 'volume', label: t(GOAL_TYPE_LABEL.volume) }
+    ]} value={type} onChange={v => { setType(v); setExId(null) }} />
+    <div style={{ height: 10 }} />
+    {type === 'lift' && <Row icon="dumbbell" title={t('Exercise')} subtitle={exId ? exOr(exId).n : t('Pick one')} accessory="chevron"
+      onClick={() => { const picker = exercisePicker(ex => { setExId(ex.id); picker.close() }) }} />}
+    <div style={{ height: 10 }} />
+    <div className="muted small" style={{ marginBottom: 4 }}>
+      {type === 'volume' ? t('Target workouts') : t('Target weight ({0})', st.unit)}
+    </div>
+    <NumberField value={target} onChange={setTarget} nullable className="field" />
+    <div style={{ height: 10 }} />
+    <div className="muted small" style={{ marginBottom: 4 }}>{t('Deadline (optional)')}</div>
+    <input type="date" className="field" value={deadline} onChange={e => setDeadline(e.target.value)} />
+    <div style={{ height: 14 }} />
+    <Button variant="primary" onClick={save}>{t('Add goal')}</Button>
+  </>
+}
+export function newGoalSheet() {
+  return ui().openSheet(close => <NewGoalSheet close={close} />)
+}
+export function deleteGoal(id) {
+  update(s => { s.goals = removeGoal(s.goals, id) })
+}
 
 /* ============================ exercise detail ============================ */
 // Estimated 1RM for one exercise (issue #18): what the log already implies, plus a calculator

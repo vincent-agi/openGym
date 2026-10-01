@@ -623,4 +623,20 @@ export default {
   'Recent entries': '最近记录',
   'Measurements saved': '身体数据已保存',
   'No measurements logged yet.': '还没有记录身体数据。',
+
+  // --- dated goals ---
+  'Lift': '力量训练',
+  'Exercise': '动作',
+  'Pick one': '选择一个',
+  'New goal': '新目标',
+  'Target weight ({0})': '目标体重 ({0})',
+  'Target workouts': '目标训练次数',
+  'Deadline (optional)': '截止日期（可选）',
+  'Add goal': '添加目标',
+  'Enter a target': '输入目标',
+  'Pick an exercise': '选择一个动作',
+  'Goal added': '目标已添加',
+  'Goals': '目标',
+  'No goals set yet.': '还没有设置目标。',
+  'By {0}': '截至 {0}',
 }

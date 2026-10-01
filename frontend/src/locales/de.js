@@ -640,4 +640,20 @@ export default {
   'Recent entries': 'Letzte Einträge',
   'Measurements saved': 'Maße gespeichert',
   'No measurements logged yet.': 'Noch keine Maße erfasst.',
+
+  // --- dated goals ---
+  'Lift': 'Kraftübung',
+  'Exercise': 'Übung',
+  'Pick one': 'Eine auswählen',
+  'New goal': 'Neues Ziel',
+  'Target weight ({0})': 'Zielgewicht ({0})',
+  'Target workouts': 'Ziel-Trainings',
+  'Deadline (optional)': 'Frist (optional)',
+  'Add goal': 'Ziel hinzufügen',
+  'Enter a target': 'Gib ein Ziel ein',
+  'Pick an exercise': 'Wähle eine Übung',
+  'Goal added': 'Ziel hinzugefügt',
+  'Goals': 'Ziele',
+  'No goals set yet.': 'Noch keine Ziele festgelegt.',
+  'By {0}': 'Bis {0}',
 }
