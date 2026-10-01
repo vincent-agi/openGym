@@ -4,6 +4,7 @@ import { useStore, DEF, hasData } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { ACCENTS, todayISO, localTZ } from '../lib/format.js'
 import { effortOf } from '../lib/history.js'
+import { POSTURES } from '../lib/exercises.js'
 import { api, webauthnOK, passkeyLogin, passkeyRegister, IS_ANDROID } from '../lib/api.js'
 import { pushSupported, enablePush, disablePush, sendTestPush } from '../lib/push.js'
 import { wakeLockSupported } from '../lib/wakelock.js'
@@ -146,6 +147,9 @@ export default function Settings() {
 
     {(user || MOBILE) && <NotificationsCard S={S} update={update} toast={toast} />}
 
+    {/* ---------- accessibility / mobility profile (issue #21) ---------- */}
+    <MobilityProfileCard S={S} update={update} />
+
     {/* ---------- appearance ---------- */}
     <Section title={t('Appearance')} footer={DEMO || MOBILE ? undefined : t('synced with your profile')}>
       <Row icon="moon" iconTint="var(--indigo)" title={t('Theme')}>
@@ -239,6 +243,54 @@ function effortHelpSheet() {
     </div>
     <div style={{ height: 8 }} />
   </>)
+}
+
+const MOBILITY_LEVELS = [
+  { value: 'full', label: t('Full mobility') },
+  { value: 'partial', label: t('Partial mobility') },
+  { value: 'wheelchair', label: t('Wheelchair user') },
+  { value: 'limited', label: t('Limited mobility') },
+]
+const POSTURE_LABELS = {
+  'Seated-Wheelchair': t('Seated — wheelchair'),
+  'Seated-Chair': t('Seated — chair'),
+  'Lying-Bed': t('Lying down / bed'),
+  'Standing-Support': t('Standing (with or without support)'),
+}
+const DISABLED_LIMBS = [
+  { value: 'left_leg', label: t('Left leg') },
+  { value: 'right_leg', label: t('Right leg') },
+  { value: 'left_arm', label: t('Left arm') },
+  { value: 'right_arm', label: t('Right arm') },
+]
+
+// Opt-in mobility/accessibility profile (issue #21). Unset by default — the exercise catalogue
+// filter in lib/exercises.js only kicks in once at least one of these fields is set.
+function MobilityProfileCard({ S, update }) {
+  const toggleLimb = v => update(s => {
+    const list = s.disabledLimbs || []
+    s.disabledLimbs = list.includes(v) ? list.filter(x => x !== v) : [...list, v]
+  })
+  return (
+    <Section title={t('Accessibility & mobility')}
+      footer={t('Narrows the exercise list to what fits your profile. Leave unset to see everything, as before.')}>
+      <SelectRow icon="figureStrength" iconTint="var(--teal)" title={t('Mobility level')}
+        value={S.mobilityLevel || ''} onChange={v => update(s => { s.mobilityLevel = v || null })}
+        options={[{ value: '', label: t('Not set') }, ...MOBILITY_LEVELS]} />
+      <SelectRow icon="personCircle" iconTint="var(--purple)" title={t('Preferred posture')}
+        value={S.preferredPosture || ''} onChange={v => update(s => { s.preferredPosture = v || null })}
+        options={[{ value: '', label: t('Not set') }, ...POSTURES.map(p => ({ value: p, label: POSTURE_LABELS[p] }))]} />
+      <div className="lrow" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10, paddingTop: 13, paddingBottom: 14 }}>
+        <span className="lrow-t">{t('Limbs not trained')}</span>
+        <div className="chips">
+          {DISABLED_LIMBS.map(l => (
+            <button key={l.value} className={'chip' + ((S.disabledLimbs || []).includes(l.value) ? ' on' : '')}
+              onClick={() => toggleLimb(l.value)}>{l.label}</button>
+          ))}
+        </div>
+      </div>
+    </Section>
+  )
 }
 
 function NotificationsCard({ S, update, toast }) {
