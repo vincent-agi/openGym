@@ -25,7 +25,11 @@ export const DEF = {
   // of { id, name, kcal, protein, carbs, fat, ts }. mealPlan has the same per-date shape as log
   // but holds meals planned ahead of time — "mark as eaten" copies one into log, it never moves
   // there on its own, so planning a day doesn't silently count toward it.
-  nutrition: { goal: null, targets: { kcal: null, protein: null, carbs: null, fat: null }, log: {}, mealPlan: {} }
+  nutrition: { goal: null, targets: { kcal: null, protein: null, carbs: null, fat: null }, log: {}, mealPlan: {} },
+  // Body measurements beyond bodyweight — keyed by ISO date (one entry per day, like a weigh-in),
+  // each field optional so a day can log just a waist reading without the rest. See
+  // lib/measurements.js MEASUREMENT_FIELDS for the tracked set.
+  measurements: {}
 }
 const clone = o => JSON.parse(JSON.stringify(o))
 

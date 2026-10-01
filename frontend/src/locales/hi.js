@@ -612,4 +612,15 @@ export default {
   'Playlist cue on rest end': 'आराम खत्म होने पर प्लेलिस्ट संकेत',
   "Offers to resume your routine's playlist when a rest timer finishes.": 'जब आराम टाइमर खत्म होता है तो आपकी रूटीन की प्लेलिस्ट फिर से शुरू करने का सुझाव देता है।',
   'Resume playlist': 'प्लेलिस्ट फिर से शुरू करें',
+
+  // --- body measurements ---
+  'Waist': 'कमर',
+  'Arms': 'बाहें',
+  'Hips': 'कूल्हे',
+  'Body fat': 'शरीर की चर्बी',
+  'Measurements': 'माप',
+  'Log measurements': 'माप दर्ज करें',
+  'Recent entries': 'हाल की प्रविष्टियां',
+  'Measurements saved': 'माप सहेजी गई',
+  'No measurements logged yet.': 'अभी तक कोई माप दर्ज नहीं की गई।',
 }

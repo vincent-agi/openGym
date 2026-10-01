@@ -22,6 +22,7 @@ import { nextPrescription, applyPrescription, policyFor, defaultIncrement, POLIC
 import { MOBILE, shareExport } from './lib/mobile.js'
 import { addLogEntry, updateLogEntry, removeLogEntry, markPlannedMealEaten } from './lib/nutrition.js'
 import { parsePlaylistUrl } from './lib/playlist.js'
+import { MEASUREMENT_FIELDS, setMeasurement, deleteMeasurement as removeMeasurement } from './lib/measurements.js'
 
 const S = () => useStore.getState().S
 const update = (...a) => useStore.getState().update(...a)
@@ -130,6 +131,58 @@ function BwSheet({ required, onDone, close }) {
 export function bwSheet(opts = {}) {
   const h = ui().openSheet(close => <BwSheet {...opts} close={close} />, { locked: !!opts.required })
   return h
+}
+
+/* ============================ body measurements ============================ */
+function MeasurementSheet({ close }) {
+  const st = useStore(s => s.S)
+  const iso = todayISO()
+  const today = st.measurements?.[iso] || {}
+  const [draft, setDraft] = useState(today)
+
+  const save = () => {
+    update(s => { s.measurements = setMeasurement(s.measurements, iso, draft) })
+    close()
+    toast(t('Measurements saved'))
+  }
+  const recent = Object.entries(st.measurements || {}).sort(([a], [b]) => (a < b ? 1 : -1)).slice(0, 3)
+  const delDay = d => update(s => { s.measurements = removeMeasurement(s.measurements, d) })
+
+  return <>
+    <h3>{t('Log measurements')}</h3>
+    <div className="muted small">{fmtDate(iso, true)}</div>
+    {MEASUREMENT_FIELDS.map(f => (
+      <div key={f.key} style={{ marginTop: 10 }}>
+        <div className="muted small" style={{ marginBottom: 4 }}>{t(f.label)} ({f.unit})</div>
+        <NumberField value={draft[f.key] ?? null} onChange={v => setDraft(d => {
+          if (v == null) { const next = { ...d }; delete next[f.key]; return next }
+          return { ...d, [f.key]: v }
+        })} nullable className="field" />
+      </div>
+    ))}
+    <div style={{ height: 14 }} />
+    <Button variant="primary" onClick={save}>{t('Save')}</Button>
+    {recent.length > 0 && <>
+      <h4 className="sec">{t('Recent entries')}</h4>
+      <div className="list" style={{ gap: 0 }}>
+        {recent.map(([d, entry]) => (
+          <div key={d} className="row between" style={{ padding: '9px 2px', borderBottom: '1px solid var(--sep)' }}>
+            <span className="small muted">{fmtDate(d, true)}</span>
+            <span className="row" style={{ gap: 10 }}>
+              <span className="small">{MEASUREMENT_FIELDS.filter(f => entry[f.key] != null).map(f => f.label[0] + fmtNum(entry[f.key])).join(' · ') || '—'}</span>
+              <button className="iconbtn" style={{ width: 32, height: 30, borderRadius: 8, fontSize: 15, color: 'var(--red)' }} onClick={() => delDay(d)} aria-label="delete"><Icon name="trash" /></button>
+            </span>
+          </div>
+        ))}
+      </div>
+    </>}
+  </>
+}
+export function measurementSheet() {
+  return ui().openSheet(close => <MeasurementSheet close={close} />)
+}
+export function deleteMeasurement(iso) {
+  update(s => { s.measurements = removeMeasurement(s.measurements, iso) })
 }
 
 /* ============================ nutrition log ============================ */

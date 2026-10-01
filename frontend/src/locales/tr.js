@@ -612,4 +612,15 @@ export default {
   'Playlist cue on rest end': 'Dinlenme sonunda çalma listesi hatırlatması',
   "Offers to resume your routine's playlist when a rest timer finishes.": 'Dinlenme sayacı bittiğinde rutininin çalma listesine devam etmeyi önerir.',
   'Resume playlist': 'Çalma listesine devam et',
+
+  // --- body measurements ---
+  'Waist': 'Bel',
+  'Arms': 'Kollar',
+  'Hips': 'Kalça',
+  'Body fat': 'Vücut yağı',
+  'Measurements': 'Ölçümler',
+  'Log measurements': 'Ölçüm kaydet',
+  'Recent entries': 'Son kayıtlar',
+  'Measurements saved': 'Ölçümler kaydedildi',
+  'No measurements logged yet.': 'Henüz ölçüm kaydedilmedi.',
 }

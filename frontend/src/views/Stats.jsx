@@ -5,7 +5,8 @@ import { EXIDX } from '../lib/exercises.js'
 import { lastBW, streakWeeks, setLabel, modeOf, effortOf } from '../lib/history.js'
 import { fmtNum, fmtDate, fmtVol, todayISO, weekKey } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
-import { bwSheet, goalSheet, calendarSheet, workoutDetailSheet, WorkoutRow, bwDeltaColor } from '../sheets.jsx'
+import { bwSheet, goalSheet, calendarSheet, workoutDetailSheet, WorkoutRow, bwDeltaColor, measurementSheet } from '../sheets.jsx'
+import { MEASUREMENT_FIELDS, seriesFor } from '../lib/measurements.js'
 import LineChart from '../components/LineChart.jsx'
 import Heatmap from '../components/Heatmap.jsx'
 import Icon from '../components/Icon.jsx'
@@ -126,6 +127,24 @@ function EffortCard({ S }) {
         {t('Most working sets belong close to failure without living there — half at the floor and half at the top average out to a healthy-looking middle.')}
       </div>
     </>}
+  </div>
+}
+
+// One small chart per tracked field rather than overlaying them on one axis — waist (cm) and
+// body fat (%) live on scales far enough apart that a shared axis would flatten one of them.
+function MeasurementsCard({ S }) {
+  const tracked = MEASUREMENT_FIELDS.map(f => ({ ...f, pts: seriesFor(S.measurements, f.key) })).filter(f => f.pts.length)
+  return <div className="card">
+    <div className="row between" style={{ marginBottom: 8 }}>
+      <h2 style={{ margin: 0 }}>{t('Measurements')}</h2>
+      <Button size="sm" icon="plus" onClick={() => measurementSheet()}>{t('Log')}</Button>
+    </div>
+    {tracked.length ? tracked.map(f => (
+      <div key={f.key} style={{ marginBottom: 14 }}>
+        <div className="muted small" style={{ marginBottom: 4 }}>{t(f.label)}</div>
+        <div className="chart"><LineChart points={f.pts} h={110} unit={f.unit} axes={false} /></div>
+      </div>
+    )) : <div className="muted small">{t('No measurements logged yet.')}</div>}
   </div>
 }
 
@@ -255,6 +274,8 @@ export default function Stats() {
         </> : <div className="muted small">{t('Finish your first workout to see progress curves here.')}</div>}
       </div>
     </div>
+
+    <MeasurementsCard S={S} />
 
     {S.workouts.length > 0 && <>
       <div className="row between" style={{ marginBottom: 10 }}>

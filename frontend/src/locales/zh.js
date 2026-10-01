@@ -612,4 +612,15 @@ export default {
   'Playlist cue on rest end': '休息结束播放列表提示',
   "Offers to resume your routine's playlist when a rest timer finishes.": '休息计时结束时，建议继续播放该计划的播放列表。',
   'Resume playlist': '继续播放列表',
+
+  // --- body measurements ---
+  'Waist': '腰围',
+  'Arms': '手臂',
+  'Hips': '臀围',
+  'Body fat': '体脂',
+  'Measurements': '身体数据',
+  'Log measurements': '记录身体数据',
+  'Recent entries': '最近记录',
+  'Measurements saved': '身体数据已保存',
+  'No measurements logged yet.': '还没有记录身体数据。',
 }

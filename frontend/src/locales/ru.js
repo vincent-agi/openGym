@@ -612,4 +612,15 @@ export default {
   'Playlist cue on rest end': 'Напоминание о плейлисте после отдыха',
   "Offers to resume your routine's playlist when a rest timer finishes.": 'Предлагает возобновить плейлист программы, когда таймер отдыха заканчивается.',
   'Resume playlist': 'Возобновить плейлист',
+
+  // --- body measurements ---
+  'Waist': 'Талия',
+  'Arms': 'Руки',
+  'Hips': 'Бёдра',
+  'Body fat': 'Процент жира',
+  'Measurements': 'Замеры',
+  'Log measurements': 'Записать замеры',
+  'Recent entries': 'Недавние записи',
+  'Measurements saved': 'Замеры сохранены',
+  'No measurements logged yet.': 'Замеры пока не записаны.',
 }

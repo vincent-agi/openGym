@@ -629,4 +629,15 @@ export default {
   'Playlist cue on rest end': 'Playlist-Hinweis nach der Pause',
   "Offers to resume your routine's playlist when a rest timer finishes.": 'Bietet an, die Playlist deiner Routine fortzusetzen, wenn ein Pausentimer abläuft.',
   'Resume playlist': 'Playlist fortsetzen',
+
+  // --- body measurements ---
+  'Waist': 'Taille',
+  'Arms': 'Arme',
+  'Hips': 'Hüfte',
+  'Body fat': 'Körperfett',
+  'Measurements': 'Maße',
+  'Log measurements': 'Maße erfassen',
+  'Recent entries': 'Letzte Einträge',
+  'Measurements saved': 'Maße gespeichert',
+  'No measurements logged yet.': 'Noch keine Maße erfasst.',
 }

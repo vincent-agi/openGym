@@ -612,4 +612,15 @@ export default {
   'Playlist cue on rest end': 'Repère musical en fin de repos',
   "Offers to resume your routine's playlist when a rest timer finishes.": 'Propose de reprendre la playlist de ta routine à la fin du minuteur de repos.',
   'Resume playlist': 'Reprendre la playlist',
+
+  // --- body measurements ---
+  'Waist': 'Taille',
+  'Arms': 'Bras',
+  'Hips': 'Hanches',
+  'Body fat': 'Masse grasse',
+  'Measurements': 'Mensurations',
+  'Log measurements': 'Enregistrer des mensurations',
+  'Recent entries': 'Entrées récentes',
+  'Measurements saved': 'Mensurations enregistrées',
+  'No measurements logged yet.': 'Aucune mensuration enregistrée pour l’instant.',
 }

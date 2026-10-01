@@ -612,4 +612,15 @@ export default {
   'Playlist cue on rest end': '휴식 종료 플레이리스트 알림',
   "Offers to resume your routine's playlist when a rest timer finishes.": '휴식 타이머가 끝나면 루틴의 플레이리스트를 이어서 재생할지 제안합니다.',
   'Resume playlist': '플레이리스트 이어서 재생',
+
+  // --- body measurements ---
+  'Waist': '허리',
+  'Arms': '팔',
+  'Hips': '엉덩이',
+  'Body fat': '체지방',
+  'Measurements': '신체 치수',
+  'Log measurements': '신체 치수 기록',
+  'Recent entries': '최근 기록',
+  'Measurements saved': '신체 치수가 저장되었습니다',
+  'No measurements logged yet.': '아직 기록된 신체 치수가 없습니다.',
 }
