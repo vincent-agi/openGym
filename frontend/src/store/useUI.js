@@ -5,11 +5,16 @@ import { restEndPlaylist } from '../lib/playlist.js'
 import { api } from '../lib/api.js'
 import { t } from '../lib/i18n.js'
 import { useStore } from './useStore.js'
+import { pressureReliefDue } from '../lib/pressureRelief.js'
 
 // Fire-and-forget: lets the server push a "rest over" alert if this tab gets suspended
 // before the local timer completes. No-ops for guests / offline.
 const pushRestTimer = sec => { if (useStore.getState().user) api('/api/push/rest-timer', { method: 'POST', body: JSON.stringify({ seconds: sec }) }).catch(() => {}) }
 const cancelPushRestTimer = () => { if (useStore.getState().user) api('/api/push/rest-timer/cancel', { method: 'POST', body: '{}' }).catch(() => {}) }
+// Pressure-relief reminder (issue #26) — parallel, lower-frequency schedule, only ever armed
+// for a rest period that pressureReliefDue() already said is due one.
+const pushPressureRelief = () => { if (useStore.getState().user) api('/api/push/pressure-relief', { method: 'POST', body: '{}' }).catch(() => {}) }
+const cancelPushPressureRelief = () => { if (useStore.getState().user) api('/api/push/pressure-relief/cancel', { method: 'POST', body: '{}' }).catch(() => {}) }
 
 let toastTm = null
 let timerInt = null
@@ -43,7 +48,14 @@ export const useUI = create((set, get) => ({
   startRest(sec) {
     get().stopRest()
     const endsAt = Date.now() + sec * 1000
-    set({ timer: { left: sec, total: sec, endsAt } })
+    // Pressure-relief reminder (issue #26): checked once per rest, not per tick, and stamped
+    // immediately so it fires at most once per interval even if this rest gets extended.
+    const pressureRelief = pressureReliefDue(useStore.getState().S)
+    if (pressureRelief) {
+      useStore.getState().update(s => { if (s.active) s.active.lastPressureReliefAt = Date.now() }, false)
+      pushPressureRelief()
+    }
+    set({ timer: { left: sec, total: sec, endsAt, pressureRelief } })
     pushRestTimer(sec)
     timerTick = () => {
       const tm = get().timer
@@ -79,7 +91,11 @@ export const useUI = create((set, get) => ({
   stopRest() {
     if (timerInt) clearInterval(timerInt); timerInt = null
     if (timerTick) document.removeEventListener('visibilitychange', timerTick); timerTick = null
-    if (get().timer) cancelPushRestTimer()
+    const tm = get().timer
+    if (tm) {
+      cancelPushRestTimer()
+      if (tm.pressureRelief) cancelPushPressureRelief()
+    }
     set({ timer: null })
   },
 

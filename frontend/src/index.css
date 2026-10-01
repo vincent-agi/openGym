@@ -637,6 +637,14 @@ h4.sec{
 /* +30s (issue #24): the one you reach for most — a sweaty thumb shouldn't have to land on
    the small −15 button's twin, so it gets its own bigger, tinted target. */
 #timer.rest .acts .rest-ext30{flex:1;min-height:44px;font-weight:600;background:var(--surface-2)}
+/* pressure-relief reminder (issue #26) — unobtrusive, inline, never blocks the countdown or
+   set logging underneath; dismissing it only hides this row. */
+.pr-reminder{
+  display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r-card);
+  background:color-mix(in srgb,var(--pink) 14%,var(--surface-2));color:var(--label);font-size:13px;
+}
+.pr-reminder .icn{color:var(--pink);flex:none}
+.pr-reminder .iconbtn{width:28px;height:28px;flex:none}
 /* work timer (issue #16): the same bar doing the opposite job — outlined and tinted so a
    glance tells "you are holding this" apart from "you are recovering". */
 #timer.working{border:var(--hair) solid var(--acc)}

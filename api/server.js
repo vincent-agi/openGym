@@ -98,6 +98,24 @@ function cancelRestTimer(userId) {
   if (t) { clearTimeout(t); restTimers.delete(userId); }
 }
 
+// Pressure-relief reminder (issue #26) — same shape as the rest-timer alert above, scheduled in
+// parallel rather than through a new pipeline. The client only calls this for a rest period that
+// already decided (client-side, against the profile + interval) it's due one, so this just
+// covers the tab-backgrounded case; it fires a few seconds in, while the rest is still running.
+const pressureReliefTimers = new Map(); // userId -> Timeout
+function schedulePressureRelief(userId) {
+  const t = pressureReliefTimers.get(userId);
+  if (t) clearTimeout(t);
+  pressureReliefTimers.set(userId, setTimeout(() => {
+    pressureReliefTimers.delete(userId);
+    sendPush(userId, { title: 'Pressure relief 🧘', body: 'Shift your weight or do a chair push-up.', tag: 'pressure-relief' });
+  }, 5000));
+}
+function cancelPressureRelief(userId) {
+  const t = pressureReliefTimers.get(userId);
+  if (t) { clearTimeout(t); pressureReliefTimers.delete(userId); }
+}
+
 // "Workout planned today" reminder — one per user per day, at their chosen time.
 // Duplicated (not imported) from frontend/src/lib/history.js effectiveRoutineId — tiny pure helper, not worth sharing across the two runtimes.
 function effectiveRoutineId(S, iso) {
@@ -434,6 +452,20 @@ const routes = {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
     cancelRestTimer(user.id);
+    json(res, 200, { ok: true });
+  },
+
+  'POST /api/push/pressure-relief': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    schedulePressureRelief(user.id);
+    json(res, 200, { ok: true });
+  },
+
+  'POST /api/push/pressure-relief/cancel': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    cancelPressureRelief(user.id);
     json(res, 200, { ok: true });
   },
 
