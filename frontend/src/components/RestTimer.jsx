@@ -46,7 +46,9 @@ export default function RestTimer() {
       </div>
       <div className="acts">
         <Button size="sm" icon="minus" onClick={() => addRest(-15)}>15s</Button>
-        <Button size="sm" icon="plus" onClick={() => addRest(15)}>15s</Button>
+        {/* A dedicated, bigger "+30s" target (issue #24) — tappable repeatedly without ever
+            resetting or ending the rest in progress, reachable right here with no extra nav. */}
+        <Button size="sm" icon="plus" className="rest-ext30" onClick={() => addRest(30)}>30s</Button>
         <Button size="sm" variant="primary" className="skip" onClick={stopRest}>{t('Skip')}</Button>
       </div>
     </div>

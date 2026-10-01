@@ -634,9 +634,25 @@ h4.sec{
 #timer.rest .acts{display:flex;align-items:center;gap:8px}
 #timer.rest .acts .btn{padding-top:11px;padding-bottom:11px}   /* sweaty hands, mid-set */
 #timer.rest .acts .skip{margin-left:auto;min-width:84px}
+/* +30s (issue #24): the one you reach for most — a sweaty thumb shouldn't have to land on
+   the small −15 button's twin, so it gets its own bigger, tinted target. */
+#timer.rest .acts .rest-ext30{flex:1;min-height:44px;font-weight:600;background:var(--surface-2)}
 /* work timer (issue #16): the same bar doing the opposite job — outlined and tinted so a
    glance tells "you are holding this" apart from "you are recovering". */
 #timer.working{border:var(--hair) solid var(--acc)}
+
+/* --- large touch targets (issue #24) --- */
+/* Opt-in (Settings → Accessibility, auto-on once a mobility profile is set — see
+   effectiveLargeTouch()). Scoped to the active-workout and rest-timer screens for now, per the
+   issue; a full-app sweep is separate follow-up work. */
+[data-touch="large"] .setrow{padding:10px 0;gap:11px}
+[data-touch="large"] .setrow .n{width:34px;height:34px;font-size:13px}
+[data-touch="large"] .setrow .stp button{width:40px;height:46px}
+[data-touch="large"] .setrow .setgo{width:38px;height:38px}
+[data-touch="large"] .setrow .chk,[data-touch="large"] .setrow .ck{width:38px;height:38px}
+[data-touch="large"] #timer.rest .acts{gap:10px}
+[data-touch="large"] #timer.rest .acts .btn{min-height:48px;padding-left:16px;padding-right:16px}
+[data-touch="large"] .wk-navbtn{min-height:52px}
 #timer.working .t{color:var(--acc)}
 #timer.working .grow{flex:1;min-width:0}
 #timer.working .lbl{

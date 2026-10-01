@@ -38,9 +38,16 @@ export const DEF = {
   // is one of 'full' | 'partial' | 'wheelchair' | 'limited'; disabledLimbs holds values like
   // 'left_leg' / 'right_arm'; preferredPosture matches an exercise's `posture` list (see
   // lib/exercises.js POSTURES) and both drive the catalogue filter in allExercises().
-  mobilityLevel: null, disabledLimbs: [], preferredPosture: null
+  mobilityLevel: null, disabledLimbs: [], preferredPosture: null,
+  // Large touch targets (issue #24) — null means "follow the mobility profile" (see
+  // effectiveLargeTouch below), true/false is an explicit override once the user has tapped
+  // the Settings switch. Kept tri-state rather than a plain boolean so setting a mobility
+  // profile turns this on with no extra step, while still being overridable either way.
+  largeTouchTargets: null
 }
 const clone = o => JSON.parse(JSON.stringify(o))
+
+export { effectiveLargeTouch } from '../lib/touch.js'
 
 function loadState() {
   try {
