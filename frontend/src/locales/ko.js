@@ -609,4 +609,7 @@ export default {
   'Remove playlist': '플레이리스트 제거',
   'Open playlist': '플레이리스트 열기',
   'Link': '링크',
+  'Playlist cue on rest end': '휴식 종료 플레이리스트 알림',
+  "Offers to resume your routine's playlist when a rest timer finishes.": '휴식 타이머가 끝나면 루틴의 플레이리스트를 이어서 재생할지 제안합니다.',
+  'Resume playlist': '플레이리스트 이어서 재생',
 }

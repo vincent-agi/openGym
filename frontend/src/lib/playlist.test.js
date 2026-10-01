@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parsePlaylistUrl } from './playlist.js'
+import { parsePlaylistUrl, restEndPlaylist } from './playlist.js'
 
 describe('parsePlaylistUrl', () => {
   it('recognizes Spotify links, with or without www', () => {
@@ -39,5 +39,36 @@ describe('parsePlaylistUrl', () => {
 
   it('trims surrounding whitespace before parsing', () => {
     expect(parsePlaylistUrl('  https://open.spotify.com/playlist/abc  ').valid).toBe(true)
+  })
+})
+
+describe('restEndPlaylist', () => {
+  const playlist = { url: 'https://open.spotify.com/playlist/abc', provider: 'spotify' }
+  const base = { routines: [{ id: 'r1', playlist }], active: { routineId: 'r1' }, playlistCue: true }
+
+  it('returns the active routine\'s playlist when the cue is on', () => {
+    expect(restEndPlaylist(base)).toBe(playlist)
+  })
+
+  it('returns null when the cue is explicitly off', () => {
+    expect(restEndPlaylist({ ...base, playlistCue: false })).toBe(null)
+  })
+
+  it('treats a missing playlistCue as on (default true)', () => {
+    const { playlistCue, ...rest } = base
+    expect(restEndPlaylist(rest)).toBe(playlist)
+  })
+
+  it('returns null when there is no active session', () => {
+    expect(restEndPlaylist({ ...base, active: null })).toBe(null)
+  })
+
+  it('returns null when the active routine has no playlist', () => {
+    const S = { routines: [{ id: 'r1' }], active: { routineId: 'r1' }, playlistCue: true }
+    expect(restEndPlaylist(S)).toBe(null)
+  })
+
+  it('returns null when the active routine id matches nothing (deleted routine)', () => {
+    expect(restEndPlaylist({ ...base, active: { routineId: 'gone' } })).toBe(null)
   })
 })

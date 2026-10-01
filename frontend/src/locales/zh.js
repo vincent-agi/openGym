@@ -609,4 +609,7 @@ export default {
   'Remove playlist': '移除播放列表',
   'Open playlist': '打开播放列表',
   'Link': '链接',
+  'Playlist cue on rest end': '休息结束播放列表提示',
+  "Offers to resume your routine's playlist when a rest timer finishes.": '休息计时结束时，建议继续播放该计划的播放列表。',
+  'Resume playlist': '继续播放列表',
 }

@@ -824,8 +824,12 @@ h4.sec{
   box-shadow:0 10px 30px -6px rgba(0,0,0,.5);
   opacity:0;pointer-events:none;transition:opacity var(--med),transform var(--med) var(--ease);
   max-width:88vw;text-align:center;
+  display:flex;align-items:center;gap:10px;
 }
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* The toast itself stays click-through (pointer-events:none above) so it never blocks a tap
+   on whatever's underneath — the action button opts back in on its own. */
+.toast-action{pointer-events:auto;flex:none;color:var(--acc);font-weight:600;white-space:nowrap}
 
 /* ---------------------------------------------------------------- misc --- */
 .empty{text-align:center;color:var(--label-2);padding:44px 20px;font-size:15px;line-height:1.45}

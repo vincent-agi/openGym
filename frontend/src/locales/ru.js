@@ -609,4 +609,7 @@ export default {
   'Remove playlist': 'Удалить плейлист',
   'Open playlist': 'Открыть плейлист',
   'Link': 'Ссылка',
+  'Playlist cue on rest end': 'Напоминание о плейлисте после отдыха',
+  "Offers to resume your routine's playlist when a rest timer finishes.": 'Предлагает возобновить плейлист программы, когда таймер отдыха заканчивается.',
+  'Resume playlist': 'Возобновить плейлист',
 }

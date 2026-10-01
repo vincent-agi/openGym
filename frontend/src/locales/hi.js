@@ -609,4 +609,7 @@ export default {
   'Remove playlist': 'प्लेलिस्ट हटाएं',
   'Open playlist': 'प्लेलिस्ट खोलें',
   'Link': 'लिंक',
+  'Playlist cue on rest end': 'आराम खत्म होने पर प्लेलिस्ट संकेत',
+  "Offers to resume your routine's playlist when a rest timer finishes.": 'जब आराम टाइमर खत्म होता है तो आपकी रूटीन की प्लेलिस्ट फिर से शुरू करने का सुझाव देता है।',
+  'Resume playlist': 'प्लेलिस्ट फिर से शुरू करें',
 }

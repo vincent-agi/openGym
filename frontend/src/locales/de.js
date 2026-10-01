@@ -626,4 +626,7 @@ export default {
   'Remove playlist': 'Playlist entfernen',
   'Open playlist': 'Playlist öffnen',
   'Link': 'Link',
+  'Playlist cue on rest end': 'Playlist-Hinweis nach der Pause',
+  "Offers to resume your routine's playlist when a rest timer finishes.": 'Bietet an, die Playlist deiner Routine fortzusetzen, wenn ein Pausentimer abläuft.',
+  'Resume playlist': 'Playlist fortsetzen',
 }

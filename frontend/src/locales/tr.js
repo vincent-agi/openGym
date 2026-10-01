@@ -609,4 +609,7 @@ export default {
   'Remove playlist': 'Çalma listesini kaldır',
   'Open playlist': 'Çalma listesini aç',
   'Link': 'Bağlantı',
+  'Playlist cue on rest end': 'Dinlenme sonunda çalma listesi hatırlatması',
+  "Offers to resume your routine's playlist when a rest timer finishes.": 'Dinlenme sayacı bittiğinde rutininin çalma listesine devam etmeyi önerir.',
+  'Resume playlist': 'Çalma listesine devam et',
 }

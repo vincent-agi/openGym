@@ -609,4 +609,7 @@ export default {
   'Remove playlist': 'Usuń playlistę',
   'Open playlist': 'Otwórz playlistę',
   'Link': 'Link',
+  'Playlist cue on rest end': 'Przypomnienie o playliście po przerwie',
+  "Offers to resume your routine's playlist when a rest timer finishes.": 'Proponuje wznowienie playlisty Twojego planu po zakończeniu minutnika przerwy.',
+  'Resume playlist': 'Wznów playlistę',
 }

@@ -28,3 +28,13 @@ export function parsePlaylistUrl(raw) {
   if (parsed.protocol !== 'https:') return { valid: false, provider: null, url }
   return { valid: true, provider: providerOf(parsed.hostname), url }
 }
+
+// The playlist to offer resuming when a rest timer ends, or null when there's nothing to
+// offer — no active session, its routine has no playlist, or the user turned the cue off
+// (independent of the `sound` toggle: muting the beep and wanting the music nudge are
+// different decisions).
+export function restEndPlaylist(S) {
+  if (S.playlistCue === false) return null
+  const routine = S.routines.find(r => r.id === S.active?.routineId)
+  return routine?.playlist || null
+}

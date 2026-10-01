@@ -130,6 +130,10 @@ export default function Settings() {
       <Row icon="bell" iconTint="var(--pink)" title={t('Sounds')}>
         <Switch checked={!!S.sound} onChange={v => update(s => { s.sound = v })} />
       </Row>
+      <Row icon="musicNote" iconTint="var(--green)" title={t('Playlist cue on rest end')}
+        subtitle={t('Offers to resume your routine\'s playlist when a rest timer finishes.')}>
+        <Switch checked={S.playlistCue !== false} onChange={v => update(s => { s.playlistCue = v })} />
+      </Row>
       {/* Two names for the same judgement, so the column asks in the scale you already think in.
           The (i) sits before the control — you read it on the way to the choice, not after it. */}
       <Row icon="target" iconTint="var(--purple)" title={t('Effort per set')}>
