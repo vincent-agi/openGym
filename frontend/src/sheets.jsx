@@ -11,7 +11,7 @@ import { starterRoutines } from './lib/starter.js'
 import Media, { Thumb } from './components/Media.jsx'
 import Stepper from './components/Stepper.jsx'
 import Icon from './components/Icon.jsx'
-import { Button, Slider, Switch, Segmented, SelectRow, Row } from './components/ui.jsx'
+import { Button, Slider, Switch, Segmented, SelectRow, Row, NumberField, TextField } from './components/ui.jsx'
 import { glyphOf, GLYPH_GROUPS, DEFAULT_GLYPH } from './lib/glyphs.js'
 import BodyMap from './components/BodyMap.jsx'
 import { loadOfWorkouts } from './lib/muscles.js'
@@ -128,6 +128,57 @@ function BwSheet({ required, onDone, close }) {
 export function bwSheet(opts = {}) {
   const h = ui().openSheet(close => <BwSheet {...opts} close={close} />, { locked: !!opts.required })
   return h
+}
+
+/* ============================ nutrition log ============================ */
+function MacroField({ label, value, onChange }) {
+  return <div style={{ flex: 1, minWidth: 0 }}>
+    <div className="muted small" style={{ marginBottom: 4 }}>{label}</div>
+    <NumberField value={value} onChange={onChange} nullable />
+  </div>
+}
+function MealLogSheet({ iso, entry, close }) {
+  const [name, setName] = useState(entry?.name || '')
+  const [kcal, setKcal] = useState(entry?.kcal ?? null)
+  const [protein, setProtein] = useState(entry?.protein ?? null)
+  const [carbs, setCarbs] = useState(entry?.carbs ?? null)
+  const [fat, setFat] = useState(entry?.fat ?? null)
+
+  const save = () => {
+    const n = name.trim()
+    if (!n) { toast(t('Enter a name')); return }
+    const vals = { name: n, kcal: kcal || 0, protein: protein || 0, carbs: carbs || 0, fat: fat || 0 }
+    update(s => {
+      s.nutrition = s.nutrition || { goal: null, targets: {}, log: {} }
+      const day = s.nutrition.log[iso] = s.nutrition.log[iso] || []
+      if (entry) {
+        const e = day.find(x => x.id === entry.id)
+        if (e) Object.assign(e, vals)
+      } else day.push({ id: uid(), ts: Date.now(), ...vals })
+    })
+    close()
+    toast(entry ? t('Food updated') : t('Food logged'))
+  }
+  return <>
+    <h3>{entry ? t('Edit food') : t('Add food')}</h3>
+    <div className="muted small" style={{ marginBottom: 4 }}>{t('Name')}</div>
+    <TextField value={name} onChange={e => setName(e.target.value)} placeholder={t('e.g. Chicken & rice')} style={{ marginBottom: 12 }} />
+    <MacroField label={t('Calories (kcal)')} value={kcal} onChange={setKcal} />
+    <div style={{ height: 10 }} />
+    <div className="row" style={{ gap: 10 }}>
+      <MacroField label={t('Protein (g)')} value={protein} onChange={setProtein} />
+      <MacroField label={t('Carbs (g)')} value={carbs} onChange={setCarbs} />
+      <MacroField label={t('Fat (g)')} value={fat} onChange={setFat} />
+    </div>
+    <div style={{ height: 14 }} />
+    <Button variant="primary" onClick={save}>{t('Save')}</Button>
+  </>
+}
+export function mealLogSheet(iso, entry) {
+  return ui().openSheet(close => <MealLogSheet iso={iso} entry={entry} close={close} />)
+}
+export function deleteMealEntry(iso, id) {
+  update(s => { s.nutrition.log[iso] = (s.nutrition.log[iso] || []).filter(e => e.id !== id) })
 }
 
 /* ============================ import from another app ============================ */

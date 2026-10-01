@@ -6,6 +6,7 @@ import { todayISO, isoOf, fmtDate } from '../lib/format.js'
 import { calcTargets, latestWeightKg, GOALS, ACTIVITY_LEVELS } from '../lib/nutrition.js'
 import Icon from '../components/Icon.jsx'
 import { Button, Segmented, SelectRow } from '../components/ui.jsx'
+import { mealLogSheet, deleteMealEntry } from '../sheets.jsx'
 
 const GOAL_LABEL = { cut: 'Cut', maintain: 'Maintain', bulk: 'Bulk' }
 const ACTIVITY_LABEL = {
@@ -51,6 +52,7 @@ export default function Nutrition() {
   const date = new Date()
   date.setDate(date.getDate() + dayOffset)
   const iso = isoOf(date)
+  const entries = S.nutrition?.log?.[iso] || []
   const totals = dayTotals(S, iso)
   const targets = S.nutrition?.targets?.kcal ? S.nutrition.targets : null
 
@@ -99,6 +101,31 @@ export default function Nutrition() {
           <MacroBar macro="fat" label={t('Fat')} grams={totals.fat} target={targets.fat} />
         </>
       )}
+    </div>
+
+    <div className="card">
+      <div className="row between" style={{ marginBottom: 8 }}>
+        <h2 style={{ margin: 0 }}>{t('Food log')}</h2>
+        <Button size="sm" icon="plus" onClick={() => mealLogSheet(iso)}>{t('Add food')}</Button>
+      </div>
+      {entries.length ? (
+        <div className="list" style={{ gap: 0 }}>
+          {entries.map(e => (
+            <div key={e.id} className="row between" style={{ padding: '9px 2px', borderBottom: '1px solid var(--sep)' }}>
+              <button className="lrow tap" style={{ flex: 1, minWidth: 0, textAlign: 'left' }} onClick={() => mealLogSheet(iso, e)}>
+                <span className="lrow-m">
+                  <span className="lrow-t">{e.name}</span>
+                  <span className="lrow-s">{t('{0} kcal · P{1} C{2} F{3}', Math.round(e.kcal), Math.round(e.protein), Math.round(e.carbs), Math.round(e.fat))}</span>
+                </span>
+              </button>
+              <button className="iconbtn" style={{ width: 32, height: 30, borderRadius: 8, fontSize: 15, color: 'var(--red)' }}
+                onClick={() => deleteMealEntry(iso, e.id)} aria-label={t('Delete')}>
+                <Icon name="trash" />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : <div className="muted small">{t('Nothing logged for this day yet.')}</div>}
     </div>
   </div>
 }
