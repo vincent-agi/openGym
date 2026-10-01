@@ -32,7 +32,13 @@ export const DEF = {
   measurements: {},
   // Dated, numeric goals beyond the single targetW line above (a squat target, a monthly
   // workout count...). See lib/goals.js for the shape and how progress is computed per type.
-  goals: []
+  goals: [],
+  // Mobility/accessibility profile (issue #21) — all null/empty by default so an existing user
+  // sees no change in which exercises are offered until they opt in from Settings. mobilityLevel
+  // is one of 'full' | 'partial' | 'wheelchair' | 'limited'; disabledLimbs holds values like
+  // 'left_leg' / 'right_arm'; preferredPosture matches an exercise's `posture` list (see
+  // lib/exercises.js POSTURES) and both drive the catalogue filter in allExercises().
+  mobilityLevel: null, disabledLimbs: [], preferredPosture: null
 }
 const clone = o => JSON.parse(JSON.stringify(o))
 
