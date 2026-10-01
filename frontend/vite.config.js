@@ -14,5 +14,17 @@ export default defineConfig({
       '/gif': { target: media, changeOrigin: true }
     }
   },
-  build: { chunkSizeWarningLimit: 1500 }
+  build: {
+    rollupOptions: {
+      output: {
+        // exercises-data.js is a ~900KB literal, eagerly reachable from every view that
+        // renders an exercise name (Home, Workout, Library, ...) — no lazy boundary can
+        // defer it without an async refactor of EXDB/EXIDX across the app and its tests.
+        // Isolating it in its own chunk at least keeps it out of the app-code chunk, so
+        // app changes don't invalidate its cache (and vice versa) and the warning limit
+        // below doesn't have to be inflated for everything else.
+        manualChunks: id => id.includes('lib/exercises-data.js') ? 'exercises-data' : undefined
+      }
+    }
+  }
 })
