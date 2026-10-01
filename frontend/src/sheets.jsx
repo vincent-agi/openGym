@@ -13,6 +13,7 @@ import Stepper from './components/Stepper.jsx'
 import Icon from './components/Icon.jsx'
 import { Button, Slider, Switch, Segmented, SelectRow, Row, NumberField, TextField } from './components/ui.jsx'
 import { glyphOf, GLYPH_GROUPS, DEFAULT_GLYPH } from './lib/glyphs.js'
+import { BORG_SCALE, borgLabel } from './lib/borg.js'
 import BodyMap from './components/BodyMap.jsx'
 import { loadOfWorkouts } from './lib/muscles.js'
 import { parseImport, mergeImport } from './lib/import-csv.js'
@@ -959,7 +960,7 @@ function WorkoutDetail({ w, close }) {
   const st = useStore(s => s.S)
   return <>
     <h3>{w.name}</h3>
-    <div className="muted small" style={{ marginBottom: 12 }}>{[fmtDate(w.d, true), ...durPart(w.end - w.start), fmtVol(w.vol, st.unit), ...(w.bw ? [fmtNum(w.bw) + ' ' + st.unit] : [])].join(' · ')}</div>
+    <div className="muted small" style={{ marginBottom: 12 }}>{[fmtDate(w.d, true), ...durPart(w.end - w.start), fmtVol(w.vol, st.unit), ...(w.bw ? [fmtNum(w.bw) + ' ' + st.unit] : []), ...(w.sessionRpe != null ? [t('RPE {0}/10', w.sessionRpe)] : [])].join(' · ')}</div>
     {w.entries.map((e, i) => {
       const ex = EXIDX[e.id]
       return <div key={i} className="row" style={{ marginBottom: 12, alignItems: 'flex-start' }}>
@@ -1113,15 +1114,33 @@ export const workoutCompleteSheet = () => ui().openSheet(close => <WorkoutComple
 
 function FinishSummary({ w, prs, e1prs = [], close }) {
   const st = useStore(s => s.S)
+  const [rpe, setRpe] = useState(w.sessionRpe ?? null)
+  // Load/volume numbers mean little without a working lower body or a heart-rate signal to
+  // read them against (issue #25) — for a profile that said so, perceived effort takes the
+  // Volume tile's spot instead of sitting underneath as an afterthought.
+  const reducedMobility = !!(st.mobilityLevel || st.preferredPosture)
+  const pickRpe = v => {
+    setRpe(v)
+    update(s => { const found = s.workouts.find(x => x.id === w.id); if (found) found.sessionRpe = v })
+  }
   return <div style={{ textAlign: 'center', padding: '8px 0' }}>
     <div style={{ fontSize: 44, display: 'flex', justifyContent: 'center', color: 'var(--acc)' }}><Icon name="trophy" /></div>
     <h3 style={{ margin: '8px 0' }}>{t('Workout complete!')}</h3>
     <div className="tiles" style={{ textAlign: 'left' }}>
       <div className="tile"><div className="l">{t('Duration')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{fmtDur(w.end - w.start)}</div></div>
-      <div className="tile"><div className="l">{t('Volume')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{fmtVol(w.vol, st.unit)}</div></div>
+      {reducedMobility
+        ? <div className="tile"><div className="l">{t('Effort (RPE)')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{rpe != null ? rpe + '/10' : '—'}</div></div>
+        : <div className="tile"><div className="l">{t('Volume')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{fmtVol(w.vol, st.unit)}</div></div>}
       <div className="tile"><div className="l">{t('Sets')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{setsDone(w)}</div></div>
       <div className="tile"><div className="l">{t('PRs')}</div><div className="v" style={{ fontSize: 20 }}>{prs.length || '—'}</div></div>
     </div>
+    <h4 className="sec" style={{ textAlign: 'left' }}>{t('How hard did that feel?')}</h4>
+    <div className="borgpicker">
+      {BORG_SCALE.map(n => (
+        <button key={n} type="button" className={'borgbtn' + (rpe === n ? ' on' : '')} onClick={() => pickRpe(n)} aria-label={t('RPE {0}', n)}>{n}</button>
+      ))}
+    </div>
+    {rpe != null && <div className="small dim" style={{ margin: '6px 0 2px' }}>{t(borgLabel(rpe))}</div>}
     {(prs.length > 0 || e1prs.length > 0) && <div style={{ textAlign: 'left', marginBottom: 12 }}>
       {prs.map(key => {
         const [id, side] = key.split('::')

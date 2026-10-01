@@ -827,6 +827,16 @@ h4.sec{
 .tile .v{font-size:26px;font-weight:600;letter-spacing:-.026em;margin-top:5px;line-height:1.1}
 .tile.tappable:active{background:var(--surface-2)}
 
+/* --- session RPE picker (issue #25) --- 10 big tap targets, not a slider: a profile that
+   needs this most is the one least served by a fiddly drag control. */
+.borgpicker{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:4px}
+.borgbtn{
+  min-height:44px;border-radius:var(--r-card);background:var(--surface);color:var(--label);
+  font-size:16px;font-weight:600;transition:background var(--fast),color var(--fast);
+}
+.borgbtn.on{background:var(--acc);color:var(--on-acc)}
+[data-touch="large"] .borgbtn{min-height:52px;font-size:18px}
+
 /* --- PR badge --- */
 .pr{
   display:inline-flex;align-items:center;gap:4px;
