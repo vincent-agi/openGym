@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcTargets, latestWeightKg, dayTotals } from './nutrition.js'
+import { calcTargets, latestWeightKg, dayTotals, addLogEntry, updateLogEntry, removeLogEntry } from './nutrition.js'
 
 describe('calcTargets', () => {
   it('returns null without a known weight', () => {
@@ -43,6 +43,24 @@ describe('calcTargets', () => {
     const r = calcTargets({ weightKg: 80, activityLevel: 'nonsense' })
     expect(r.kcal).toBe(Math.round(80 * 33))
   })
+
+  it('handles a very low bodyweight without going negative anywhere', () => {
+    const r = calcTargets({ weightKg: 35, goal: 'cut', activityLevel: 'sedentary' })
+    expect(r.kcal).toBeGreaterThan(0)
+    expect(r.protein).toBeGreaterThan(0)
+    expect(r.carbs).toBeGreaterThanOrEqual(0)
+    expect(r.fat).toBeGreaterThan(0)
+  })
+
+  it('handles a very high bodyweight without the carbs floor going negative', () => {
+    const r = calcTargets({ weightKg: 180, goal: 'bulk', activityLevel: 'very_active' })
+    expect(r.carbs).toBeGreaterThanOrEqual(0)
+    expect(r.kcal).toBe(Math.round(180 * 41 * 1.125))
+  })
+
+  it('rejects a negative weight the same as no weight at all', () => {
+    expect(calcTargets({ weightKg: -10 })).toBe(null)
+  })
 })
 
 describe('latestWeightKg', () => {
@@ -76,5 +94,53 @@ describe('dayTotals', () => {
 
   it('tolerates a profile with no nutrition key at all', () => {
     expect(dayTotals({}, '2026-01-01')).toEqual({ kcal: 0, protein: 0, carbs: 0, fat: 0 })
+  })
+})
+
+describe('addLogEntry', () => {
+  it('appends to an empty day without touching other days', () => {
+    const log = { '2026-01-02': [{ id: 'keep' }] }
+    const next = addLogEntry(log, '2026-01-01', { id: 'a', kcal: 100 })
+    expect(next['2026-01-01']).toEqual([{ id: 'a', kcal: 100 }])
+    expect(next['2026-01-02']).toEqual([{ id: 'keep' }])
+  })
+
+  it('appends to an existing day, keeping prior entries', () => {
+    const log = { '2026-01-01': [{ id: 'a', kcal: 100 }] }
+    const next = addLogEntry(log, '2026-01-01', { id: 'b', kcal: 200 })
+    expect(next['2026-01-01']).toEqual([{ id: 'a', kcal: 100 }, { id: 'b', kcal: 200 }])
+  })
+
+  it('does not mutate the input log', () => {
+    const log = { '2026-01-01': [{ id: 'a', kcal: 100 }] }
+    addLogEntry(log, '2026-01-01', { id: 'b', kcal: 200 })
+    expect(log['2026-01-01']).toEqual([{ id: 'a', kcal: 100 }])
+  })
+})
+
+describe('updateLogEntry', () => {
+  it('merges a patch into the matching entry only', () => {
+    const log = { '2026-01-01': [{ id: 'a', kcal: 100 }, { id: 'b', kcal: 200 }] }
+    const next = updateLogEntry(log, '2026-01-01', 'a', { kcal: 150 })
+    expect(next['2026-01-01']).toEqual([{ id: 'a', kcal: 150 }, { id: 'b', kcal: 200 }])
+  })
+
+  it('is a no-op when the id is not found', () => {
+    const log = { '2026-01-01': [{ id: 'a', kcal: 100 }] }
+    const next = updateLogEntry(log, '2026-01-01', 'missing', { kcal: 999 })
+    expect(next['2026-01-01']).toEqual([{ id: 'a', kcal: 100 }])
+  })
+})
+
+describe('removeLogEntry', () => {
+  it('removes only the matching entry', () => {
+    const log = { '2026-01-01': [{ id: 'a' }, { id: 'b' }] }
+    const next = removeLogEntry(log, '2026-01-01', 'a')
+    expect(next['2026-01-01']).toEqual([{ id: 'b' }])
+  })
+
+  it('tolerates removing from a day with no entries', () => {
+    const next = removeLogEntry({}, '2026-01-01', 'a')
+    expect(next['2026-01-01']).toEqual([])
   })
 })

@@ -20,6 +20,7 @@ import { buildPlanBundle, parsePlan, mergePlan, printPlan } from './lib/plan-sha
 import { estimate1RM, best1RM, is1RMRecord, REP_CAP } from './lib/onerm.js'
 import { nextPrescription, applyPrescription, policyFor, defaultIncrement, POLICIES_FOR, POLICY_NAME, POLICY_DESC, MAX_BW_SETS } from './lib/progression.js'
 import { MOBILE, shareExport } from './lib/mobile.js'
+import { addLogEntry, updateLogEntry, removeLogEntry } from './lib/nutrition.js'
 
 const S = () => useStore.getState().S
 const update = (...a) => useStore.getState().update(...a)
@@ -150,11 +151,9 @@ function MealLogSheet({ iso, entry, close }) {
     const vals = { name: n, kcal: kcal || 0, protein: protein || 0, carbs: carbs || 0, fat: fat || 0 }
     update(s => {
       s.nutrition = s.nutrition || { goal: null, targets: {}, log: {} }
-      const day = s.nutrition.log[iso] = s.nutrition.log[iso] || []
-      if (entry) {
-        const e = day.find(x => x.id === entry.id)
-        if (e) Object.assign(e, vals)
-      } else day.push({ id: uid(), ts: Date.now(), ...vals })
+      s.nutrition.log = entry
+        ? updateLogEntry(s.nutrition.log, iso, entry.id, vals)
+        : addLogEntry(s.nutrition.log, iso, { id: uid(), ts: Date.now(), ...vals })
     })
     close()
     toast(entry ? t('Food updated') : t('Food logged'))
@@ -178,7 +177,7 @@ export function mealLogSheet(iso, entry) {
   return ui().openSheet(close => <MealLogSheet iso={iso} entry={entry} close={close} />)
 }
 export function deleteMealEntry(iso, id) {
-  update(s => { s.nutrition.log[iso] = (s.nutrition.log[iso] || []).filter(e => e.id !== id) })
+  update(s => { s.nutrition.log = removeLogEntry(s.nutrition.log, iso, id) })
 }
 
 /* ============================ import from another app ============================ */

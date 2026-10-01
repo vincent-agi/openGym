@@ -41,3 +41,18 @@ export function dayTotals(S, iso) {
     carbs: a.carbs + (e.carbs || 0), fat: a.fat + (e.fat || 0)
   }), { kcal: 0, protein: 0, carbs: 0, fat: 0 })
 }
+
+// Pure add/edit/delete reducers over S.nutrition.log, kept out of sheets.jsx (which can't be
+// unit tested without a DOM — useStore.js touches `document` at module scope) so the actual
+// logic has real test coverage instead of a parallel copy living only in the test file.
+export function addLogEntry(log, iso, entry) {
+  return { ...log, [iso]: [...(log[iso] || []), entry] }
+}
+export function updateLogEntry(log, iso, id, patch) {
+  const day = log[iso] || []
+  return { ...log, [iso]: day.map(e => (e.id === id ? { ...e, ...patch } : e)) }
+}
+export function removeLogEntry(log, iso, id) {
+  const day = log[iso] || []
+  return { ...log, [iso]: day.filter(e => e.id !== id) }
+}
