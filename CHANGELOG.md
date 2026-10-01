@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.4.0 — 2026-10-01
+
+Music, finally. Attach a playlist to a routine and it follows you from the workout screen to
+the end of every rest period.
+
+- 🎵 **Playlist link on a routine.** Paste a Spotify, YouTube or Apple Music link in the routine
+  editor — any other https link works too, just without a provider-specific label.
+- **Launch it from the workout.** A music-note button appears in the active session's header
+  whenever that session's routine has a playlist, opening it in a new tab.
+- **A nudge when rest ends.** The "rest over" toast now offers to resume your playlist, right
+  next to the usual beep and vibration — toggle it independently of Sounds in Settings, since
+  muting the beep and wanting the music nudge are different calls.
+- Translated across all 11 languages, same as the rest of the app.
+
 ## v1.3.0 — 2026-10-01
 
 A full nutrition tracker, plus a couple of fixes that had been sitting in the bundle and the
