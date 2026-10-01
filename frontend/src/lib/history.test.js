@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { modeOf, isTimed, fmtSec, setLabel, defaultConfig, buildSets, exLine, workoutVolume, effortOf, stepEffort, capEffort, isBw, isPerSide, sideReps, repStep } from './history.js'
+import { modeOf, isTimed, fmtSec, setLabel, defaultConfig, buildSets, exLine, workoutVolume, effortOf, stepEffort, capEffort, isBw, isPerSide, sideReps, repStep, bestWeightForSide, prKey, hasPr, sideVolumes, hasSideSets } from './history.js'
 import { EXDB } from './exercises.js'
 
 // Real ids out of the shipped catalogue, so the body-part fallback is exercised for real.
@@ -394,5 +394,75 @@ describe('workoutVolume', () => {
   it('leaves an unloaded bodyweight set at zero volume rather than inventing a number', () => {
     const w = { entries: [{ id: BW, target: { bodyweight: true }, sets: [{ w: 0, r: 20, done: true }] }] }
     expect(workoutVolume(w)).toBe(0)
+  })
+})
+
+// Asymmetric / unilateral tracking (issue #23) — a `side` on the SET is unrelated to the older
+// `target.side` boolean above, which only changes how a combined total is displayed.
+describe('setLabel — per-side sets', () => {
+  it('tags a side-logged set without changing the rest of the label', () => {
+    expect(setLabel(LIFT, { w: 20, r: 8, side: 'L' }, { id: LIFT })).toBe('L · 20×8')
+    expect(setLabel(LIFT, { w: 22.5, r: 8, side: 'R' }, { id: LIFT })).toBe('R · 22.5×8')
+  })
+
+  it('reads exactly as before when side is absent', () => {
+    expect(setLabel(LIFT, { w: 20, r: 8 }, { id: LIFT })).toBe('20×8')
+  })
+})
+
+describe('bestWeightForSide', () => {
+  const S = { workouts: [{ entries: [
+    { id: LIFT, sets: [{ w: 20, r: 8, side: 'L', done: true }, { w: 24, r: 8, side: 'R', done: true }] },
+  ] }] }
+
+  it('tracks each side against its own history, never the other side\'s', () => {
+    expect(bestWeightForSide(S, LIFT, 'L')).toBe(20)
+    expect(bestWeightForSide(S, LIFT, 'R')).toBe(24)
+  })
+
+  it('returns 0 for a side that was never logged', () => {
+    expect(bestWeightForSide(S, LIFT, null)).toBe(0)
+  })
+
+  it('only counts a bilateral topW toward the null side', () => {
+    const bilateral = { workouts: [{ entries: [{ id: LIFT, sets: [], topW: 50 }] }] }
+    expect(bestWeightForSide(bilateral, LIFT, null)).toBe(50)
+    expect(bestWeightForSide(bilateral, LIFT, 'L')).toBe(0)
+  })
+})
+
+describe('prKey / hasPr', () => {
+  it('keys a bilateral PR by id alone', () => {
+    expect(prKey(LIFT, null)).toBe(LIFT)
+    expect(hasPr([LIFT], LIFT)).toBe(true)
+  })
+
+  it('keys a per-side PR distinctly, and hasPr finds it regardless of side', () => {
+    const key = prKey(LIFT, 'L')
+    expect(key).toBe(`${LIFT}::L`)
+    expect(hasPr([key], LIFT)).toBe(true)
+    expect(hasPr([prKey(LIFT, 'R')], LIFT)).toBe(true)
+  })
+
+  it('does not match an unrelated exercise id', () => {
+    expect(hasPr([prKey(LIFT, 'L')], CARDIO)).toBe(false)
+  })
+})
+
+describe('sideVolumes / hasSideSets', () => {
+  it('sums volume per side and ignores sets with no side', () => {
+    const w = { entries: [{ id: LIFT, sets: [
+      { w: 20, r: 8, side: 'L', done: true },
+      { w: 24, r: 8, side: 'R', done: true },
+      { w: 60, r: 10, done: true },
+    ] }] }
+    expect(sideVolumes(w)).toEqual({ L: 160, R: 192 })
+    expect(hasSideSets(w)).toBe(true)
+  })
+
+  it('reports no side sets for a fully bilateral workout', () => {
+    const w = { entries: [{ id: LIFT, sets: [{ w: 60, r: 10, done: true }] }] }
+    expect(hasSideSets(w)).toBe(false)
+    expect(sideVolumes(w)).toEqual({ L: 0, R: 0 })
   })
 })
