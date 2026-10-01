@@ -21,6 +21,7 @@ import { estimate1RM, best1RM, is1RMRecord, REP_CAP } from './lib/onerm.js'
 import { nextPrescription, applyPrescription, policyFor, defaultIncrement, POLICIES_FOR, POLICY_NAME, POLICY_DESC, MAX_BW_SETS } from './lib/progression.js'
 import { MOBILE, shareExport } from './lib/mobile.js'
 import { addLogEntry, updateLogEntry, removeLogEntry, markPlannedMealEaten } from './lib/nutrition.js'
+import { parsePlaylistUrl } from './lib/playlist.js'
 
 const S = () => useStore.getState().S
 const update = (...a) => useStore.getState().update(...a)
@@ -691,6 +692,39 @@ export const glyphPicker = (current, onPick) => {
     ))}
     <div style={{ height: 4 }} />
   </>)
+}
+
+/* ============================ playlist link (routine) ============================ */
+function PlaylistSheet({ current, onSave, close }) {
+  const [url, setUrl] = useState(current?.url || '')
+  const trimmed = url.trim()
+  const parsed = trimmed ? parsePlaylistUrl(trimmed) : null
+
+  const save = () => {
+    if (!trimmed) { onSave(null); close(); return }
+    if (!parsed.valid) { toast(t("That doesn't look like a valid link.")); return }
+    onSave({ url: parsed.url, provider: parsed.provider })
+    close()
+  }
+  return <>
+    <h3>{t('Playlist link')}</h3>
+    <div className="muted small" style={{ marginBottom: 10 }}>
+      {t('Paste a Spotify, YouTube or Apple Music link — it opens from this routine during a workout.')}
+    </div>
+    <TextField value={url} onChange={e => setUrl(e.target.value)} placeholder="https://open.spotify.com/playlist/…" />
+    {trimmed && parsed && !parsed.valid && (
+      <div className="small" style={{ color: 'var(--red)', marginTop: 6 }}>{t("That doesn't look like a valid link.")}</div>
+    )}
+    <div style={{ height: 14 }} />
+    <Button variant="primary" onClick={save}>{t('Save')}</Button>
+    {current && <>
+      <div style={{ height: 8 }} />
+      <Button variant="ghost" className="dim" onClick={() => { onSave(null); close() }}>{t('Remove playlist')}</Button>
+    </>}
+  </>
+}
+export function playlistSheet(current, onSave) {
+  return ui().openSheet(close => <PlaylistSheet current={current} onSave={onSave} close={close} />)
 }
 
 /* ============================ share / print / import a plan ============================ */

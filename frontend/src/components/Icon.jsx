@@ -38,6 +38,11 @@ const P = {
   // rim + one arc) is two strokes and stays legible that small.
   bowl: <><path d="M4.2 11h15.6a7.8 7.8 0 0 1-15.6 0Z" /><path d="M12 8.4V5.6" /></>,
 
+  /* ---- music ---- */
+  // Two connected eighth notes — filled noteheads read clearly even small, same lesson as
+  // the nutrition "bowl" icon: simple filled shapes survive shrinking better than fine curves.
+  musicNote: <><circle cx="8.5" cy="17" r="2.6" fill="currentColor" stroke="none" /><circle cx="17" cy="15" r="2.6" fill="currentColor" stroke="none" /><path d="M11.1 17V6.2l8.5-1.8V13.2" /></>,
+
   /* ---- status / achievement ---- */
   trophy: <><path d="M7.6 4h8.8v4.6a4.4 4.4 0 0 1-8.8 0Z" /><path d="M7.6 5.6H4.9v1.5a3 3 0 0 0 2.9 3M16.4 5.6h2.7v1.5a3 3 0 0 1-2.9 3M12 13v3.4M8.6 20.4h6.8l-.7-4H9.3Z" /></>,
   medal: <><circle cx="12" cy="14.8" r="5.2" /><circle cx="12" cy="14.8" r="1.9" /><path d="M9.1 9.9 6.4 3.6M14.9 9.9l2.7-6.3" /></>,

@@ -7,6 +7,10 @@ const PROVIDER_HOSTS = {
   apple: ['music.apple.com']
 }
 
+export const PROVIDER_LABEL = {
+  spotify: 'Spotify', youtube: 'YouTube', apple: 'Apple Music', generic: 'Link'
+}
+
 function providerOf(hostname) {
   const h = hostname.replace(/^www\./, '')
   for (const [provider, hosts] of Object.entries(PROVIDER_HOSTS)) {
