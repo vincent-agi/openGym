@@ -20,7 +20,7 @@ import { buildPlanBundle, parsePlan, mergePlan, printPlan } from './lib/plan-sha
 import { estimate1RM, best1RM, is1RMRecord, REP_CAP } from './lib/onerm.js'
 import { nextPrescription, applyPrescription, policyFor, defaultIncrement, POLICIES_FOR, POLICY_NAME, POLICY_DESC, MAX_BW_SETS } from './lib/progression.js'
 import { MOBILE, shareExport } from './lib/mobile.js'
-import { addLogEntry, updateLogEntry, removeLogEntry } from './lib/nutrition.js'
+import { addLogEntry, updateLogEntry, removeLogEntry, markPlannedMealEaten } from './lib/nutrition.js'
 
 const S = () => useStore.getState().S
 const update = (...a) => useStore.getState().update(...a)
@@ -138,28 +138,35 @@ function MacroField({ label, value, onChange }) {
     <NumberField value={value} onChange={onChange} nullable className="field" />
   </div>
 }
-function MealLogSheet({ iso, entry, close }) {
+// target 'log' writes to today's food log, 'plan' to a future-dated meal plan (issue #17) —
+// same fields either way, so one form covers both rather than two near-identical copies.
+function MealLogSheet({ iso, entry, target = 'log', close }) {
   const [name, setName] = useState(entry?.name || '')
   const [kcal, setKcal] = useState(entry?.kcal ?? null)
   const [protein, setProtein] = useState(entry?.protein ?? null)
   const [carbs, setCarbs] = useState(entry?.carbs ?? null)
   const [fat, setFat] = useState(entry?.fat ?? null)
+  const key = target === 'plan' ? 'mealPlan' : 'log'
 
   const save = () => {
     const n = name.trim()
     if (!n) { toast(t('Enter a name')); return }
     const vals = { name: n, kcal: kcal || 0, protein: protein || 0, carbs: carbs || 0, fat: fat || 0 }
     update(s => {
-      s.nutrition = s.nutrition || { goal: null, targets: {}, log: {} }
-      s.nutrition.log = entry
-        ? updateLogEntry(s.nutrition.log, iso, entry.id, vals)
-        : addLogEntry(s.nutrition.log, iso, { id: uid(), ts: Date.now(), ...vals })
+      s.nutrition = s.nutrition || { goal: null, targets: {}, log: {}, mealPlan: {} }
+      s.nutrition[key] = entry
+        ? updateLogEntry(s.nutrition[key], iso, entry.id, vals)
+        : addLogEntry(s.nutrition[key], iso, { id: uid(), ts: Date.now(), ...vals })
     })
     close()
-    toast(entry ? t('Food updated') : t('Food logged'))
+    toast(entry
+      ? (target === 'plan' ? t('Planned meal updated') : t('Food updated'))
+      : (target === 'plan' ? t('Meal planned') : t('Food logged')))
   }
   return <>
-    <h3>{entry ? t('Edit food') : t('Add food')}</h3>
+    <h3>{entry
+      ? (target === 'plan' ? t('Edit planned meal') : t('Edit food'))
+      : (target === 'plan' ? t('Plan a meal') : t('Add food'))}</h3>
     <div className="muted small" style={{ marginBottom: 4 }}>{t('Name')}</div>
     <TextField value={name} onChange={e => setName(e.target.value)} placeholder={t('e.g. Chicken & rice')} style={{ marginBottom: 12 }} />
     <MacroField label={t('Calories (kcal)')} value={kcal} onChange={setKcal} />
@@ -176,8 +183,22 @@ function MealLogSheet({ iso, entry, close }) {
 export function mealLogSheet(iso, entry) {
   return ui().openSheet(close => <MealLogSheet iso={iso} entry={entry} close={close} />)
 }
+export function planMealSheet(iso, entry) {
+  return ui().openSheet(close => <MealLogSheet iso={iso} entry={entry} target="plan" close={close} />)
+}
 export function deleteMealEntry(iso, id) {
   update(s => { s.nutrition.log = removeLogEntry(s.nutrition.log, iso, id) })
+}
+export function deletePlannedMeal(iso, id) {
+  update(s => { s.nutrition.mealPlan = removeLogEntry(s.nutrition.mealPlan, iso, id) })
+}
+export function markMealEaten(iso, id) {
+  update(s => {
+    const r = markPlannedMealEaten(s.nutrition.log, s.nutrition.mealPlan, iso, id)
+    s.nutrition.log = r.log
+    s.nutrition.mealPlan = r.mealPlan
+  })
+  toast(t('Marked as eaten'))
 }
 
 /* ============================ import from another app ============================ */

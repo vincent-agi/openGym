@@ -589,4 +589,14 @@ export default {
   'Food updated': '食物已更新',
   'Food logged': '食物已记录',
   'P{0} · C{1} · F{2} g': '蛋{0} · 碳{1} · 脂{2} g',
+
+  // --- meal planning (issue #17) ---
+  'Planned meals': '计划中的餐食',
+  'Plan a meal': '计划一餐',
+  'No meals planned for this day yet.': '这一天还没有计划任何餐食。',
+  'Mark as eaten': '标记为已吃',
+  'Edit planned meal': '编辑计划餐食',
+  'Planned meal updated': '计划餐食已更新',
+  'Meal planned': '已计划餐食',
+  'Marked as eaten': '已标记为已吃',
 }

@@ -19,8 +19,10 @@ export const DEF = {
   // goal: 'bulk' | 'cut' | 'maintain' | null (not chosen yet). targets are daily, in grams for
   // macros and kcal for energy — null fields mean "not set", not zero, so an unset target never
   // renders as a 0/0g progress bar. log is keyed by ISO date ('YYYY-MM-DD'), each entry an array
-  // of { id, name, kcal, protein, carbs, fat, ts }.
-  nutrition: { goal: null, targets: { kcal: null, protein: null, carbs: null, fat: null }, log: {} }
+  // of { id, name, kcal, protein, carbs, fat, ts }. mealPlan has the same per-date shape as log
+  // but holds meals planned ahead of time — "mark as eaten" copies one into log, it never moves
+  // there on its own, so planning a day doesn't silently count toward it.
+  nutrition: { goal: null, targets: { kcal: null, protein: null, carbs: null, fat: null }, log: {}, mealPlan: {} }
 }
 const clone = o => JSON.parse(JSON.stringify(o))
 

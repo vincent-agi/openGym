@@ -589,4 +589,14 @@ export default {
   'Food updated': 'भोजन अपडेट किया गया',
   'Food logged': 'भोजन दर्ज किया गया',
   'P{0} · C{1} · F{2} g': 'प्रो{0} · कार्ब{1} · फैट{2} g',
+
+  // --- meal planning (issue #17) ---
+  'Planned meals': 'योजनाबद्ध भोजन',
+  'Plan a meal': 'भोजन योजना बनाएं',
+  'No meals planned for this day yet.': 'इस दिन के लिए कोई भोजन योजनाबद्ध नहीं है।',
+  'Mark as eaten': 'खाया हुआ चिह्नित करें',
+  'Edit planned meal': 'योजनाबद्ध भोजन संपादित करें',
+  'Planned meal updated': 'योजनाबद्ध भोजन अपडेट किया गया',
+  'Meal planned': 'भोजन की योजना बनाई गई',
+  'Marked as eaten': 'खाया हुआ चिह्नित किया गया',
 }

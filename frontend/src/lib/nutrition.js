@@ -1,3 +1,5 @@
+import { uid } from './format.js'
+
 // Calorie/macro target estimate from bodyweight alone — the profile has no height or age
 // field (DEF in store/useStore.js), so this uses a weight × activity-level multiplier instead
 // of a Mifflin-St Jeor formula, which needs both. Good enough for a starting target; the user
@@ -45,14 +47,31 @@ export function dayTotals(S, iso) {
 // Pure add/edit/delete reducers over S.nutrition.log, kept out of sheets.jsx (which can't be
 // unit tested without a DOM — useStore.js touches `document` at module scope) so the actual
 // logic has real test coverage instead of a parallel copy living only in the test file.
-export function addLogEntry(log, iso, entry) {
+//
+// `log` defaults to {} rather than assuming the caller has it: useStore's load/merge is a
+// shallow Object.assign(clone(DEF), state) — a profile whose saved `nutrition` predates a new
+// sub-key (mealPlan didn't exist before #17) keeps the old shape as-is, so s.nutrition.mealPlan
+// is genuinely undefined on real upgraded profiles, not just a theoretical case.
+export function addLogEntry(log = {}, iso, entry) {
   return { ...log, [iso]: [...(log[iso] || []), entry] }
 }
-export function updateLogEntry(log, iso, id, patch) {
+export function updateLogEntry(log = {}, iso, id, patch) {
   const day = log[iso] || []
   return { ...log, [iso]: day.map(e => (e.id === id ? { ...e, ...patch } : e)) }
 }
-export function removeLogEntry(log, iso, id) {
+export function removeLogEntry(log = {}, iso, id) {
   const day = log[iso] || []
   return { ...log, [iso]: day.filter(e => e.id !== id) }
+}
+
+// Copies a planned meal into the day's log (a fresh id/ts — the plan entry and the log entry
+// are independent from that point on) and drops it from the plan. Returns { log, mealPlan }.
+export function markPlannedMealEaten(log = {}, mealPlan = {}, iso, id) {
+  const planned = (mealPlan[iso] || []).find(e => e.id === id)
+  if (!planned) return { log, mealPlan }
+  const { id: _id, ts: _ts, ...vals } = planned
+  return {
+    log: addLogEntry(log, iso, { id: uid(), ts: Date.now(), ...vals }),
+    mealPlan: removeLogEntry(mealPlan, iso, id)
+  }
 }

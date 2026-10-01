@@ -589,4 +589,14 @@ export default {
   'Food updated': 'Alimento aggiornato',
   'Food logged': 'Alimento registrato',
   'P{0} · C{1} · F{2} g': 'P{0} · C{1} · G{2} g',
+
+  // --- meal planning (issue #17) ---
+  'Planned meals': 'Pasti pianificati',
+  'Plan a meal': 'Pianifica un pasto',
+  'No meals planned for this day yet.': 'Nessun pasto pianificato per questo giorno.',
+  'Mark as eaten': 'Segna come mangiato',
+  'Edit planned meal': 'Modifica pasto pianificato',
+  'Planned meal updated': 'Pasto pianificato aggiornato',
+  'Meal planned': 'Pasto pianificato',
+  'Marked as eaten': 'Segnato come mangiato',
 }

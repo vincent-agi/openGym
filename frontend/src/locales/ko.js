@@ -589,4 +589,14 @@ export default {
   'Food updated': '음식이 수정되었습니다',
   'Food logged': '음식이 기록되었습니다',
   'P{0} · C{1} · F{2} g': '단{0} · 탄{1} · 지{2} g',
+
+  // --- meal planning (issue #17) ---
+  'Planned meals': '계획된 식사',
+  'Plan a meal': '식사 계획하기',
+  'No meals planned for this day yet.': '이 날에는 계획된 식사가 없습니다.',
+  'Mark as eaten': '먹음으로 표시',
+  'Edit planned meal': '계획된 식사 수정',
+  'Planned meal updated': '계획된 식사가 수정되었습니다',
+  'Meal planned': '식사가 계획되었습니다',
+  'Marked as eaten': '먹음으로 표시됨',
 }

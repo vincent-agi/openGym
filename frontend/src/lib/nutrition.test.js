@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcTargets, latestWeightKg, dayTotals, addLogEntry, updateLogEntry, removeLogEntry } from './nutrition.js'
+import { calcTargets, latestWeightKg, dayTotals, addLogEntry, updateLogEntry, removeLogEntry, markPlannedMealEaten } from './nutrition.js'
 
 describe('calcTargets', () => {
   it('returns null without a known weight', () => {
@@ -98,6 +98,15 @@ describe('dayTotals', () => {
 })
 
 describe('addLogEntry', () => {
+  // Regression: a profile saved before S.nutrition.mealPlan existed keeps the old shape after
+  // useStore's shallow Object.assign(clone(DEF), state) merge — s.nutrition.mealPlan is
+  // genuinely undefined on a real upgraded profile, not just an empty object. Caught by
+  // exercising the actual UI in a browser, not by build or the test suite as it stood then.
+  it('tolerates an undefined log (profile saved before this field existed)', () => {
+    const next = addLogEntry(undefined, '2026-01-01', { id: 'a', kcal: 100 })
+    expect(next['2026-01-01']).toEqual([{ id: 'a', kcal: 100 }])
+  })
+
   it('appends to an empty day without touching other days', () => {
     const log = { '2026-01-02': [{ id: 'keep' }] }
     const next = addLogEntry(log, '2026-01-01', { id: 'a', kcal: 100 })
@@ -130,6 +139,10 @@ describe('updateLogEntry', () => {
     const next = updateLogEntry(log, '2026-01-01', 'missing', { kcal: 999 })
     expect(next['2026-01-01']).toEqual([{ id: 'a', kcal: 100 }])
   })
+
+  it('tolerates an undefined log', () => {
+    expect(updateLogEntry(undefined, '2026-01-01', 'a', { kcal: 1 })['2026-01-01']).toEqual([])
+  })
 })
 
 describe('removeLogEntry', () => {
@@ -142,5 +155,44 @@ describe('removeLogEntry', () => {
   it('tolerates removing from a day with no entries', () => {
     const next = removeLogEntry({}, '2026-01-01', 'a')
     expect(next['2026-01-01']).toEqual([])
+  })
+
+  it('tolerates an undefined log', () => {
+    expect(removeLogEntry(undefined, '2026-01-01', 'a')['2026-01-01']).toEqual([])
+  })
+})
+
+describe('markPlannedMealEaten', () => {
+  it('tolerates an undefined log and mealPlan (profile saved before mealPlan existed)', () => {
+    const r = markPlannedMealEaten(undefined, undefined, '2026-01-01', 'p1')
+    expect(r).toEqual({ log: {}, mealPlan: {} })
+  })
+
+  it('moves the planned meal into the log and out of the plan', () => {
+    const mealPlan = { '2026-01-01': [{ id: 'p1', ts: 1, name: 'Oats', kcal: 300, protein: 10, carbs: 50, fat: 5 }] }
+    const r = markPlannedMealEaten({}, mealPlan, '2026-01-01', 'p1')
+    expect(r.mealPlan['2026-01-01']).toEqual([])
+    expect(r.log['2026-01-01']).toHaveLength(1)
+    expect(r.log['2026-01-01'][0]).toMatchObject({ name: 'Oats', kcal: 300, protein: 10, carbs: 50, fat: 5 })
+  })
+
+  it('gives the moved entry a fresh id, independent from the plan entry', () => {
+    const mealPlan = { '2026-01-01': [{ id: 'p1', ts: 1, name: 'Oats', kcal: 300, protein: 10, carbs: 50, fat: 5 }] }
+    const r = markPlannedMealEaten({}, mealPlan, '2026-01-01', 'p1')
+    expect(r.log['2026-01-01'][0].id).not.toBe('p1')
+  })
+
+  it('is a no-op when the planned id is not found', () => {
+    const log = { '2026-01-01': [] }
+    const mealPlan = { '2026-01-01': [{ id: 'other' }] }
+    const r = markPlannedMealEaten(log, mealPlan, '2026-01-01', 'missing')
+    expect(r.log).toBe(log)
+    expect(r.mealPlan).toBe(mealPlan)
+  })
+
+  it('leaves other planned meals for the same day untouched', () => {
+    const mealPlan = { '2026-01-01': [{ id: 'p1', name: 'Oats' }, { id: 'p2', name: 'Rice' }] }
+    const r = markPlannedMealEaten({}, mealPlan, '2026-01-01', 'p1')
+    expect(r.mealPlan['2026-01-01']).toEqual([{ id: 'p2', name: 'Rice' }])
   })
 })

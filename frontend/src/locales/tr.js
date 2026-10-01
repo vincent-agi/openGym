@@ -589,4 +589,14 @@ export default {
   'Food updated': 'Yiyecek güncellendi',
   'Food logged': 'Yiyecek kaydedildi',
   'P{0} · C{1} · F{2} g': 'P{0} · K{1} · Y{2} g',
+
+  // --- meal planning (issue #17) ---
+  'Planned meals': 'Planlanan yemekler',
+  'Plan a meal': 'Bir yemek planla',
+  'No meals planned for this day yet.': 'Bu gün için planlanmış yemek yok.',
+  'Mark as eaten': 'Yenildi olarak işaretle',
+  'Edit planned meal': 'Planlanan yemeği düzenle',
+  'Planned meal updated': 'Planlanan yemek güncellendi',
+  'Meal planned': 'Yemek planlandı',
+  'Marked as eaten': 'Yenildi olarak işaretlendi',
 }

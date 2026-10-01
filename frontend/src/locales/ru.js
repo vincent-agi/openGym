@@ -589,4 +589,14 @@ export default {
   'Food updated': 'Запись обновлена',
   'Food logged': 'Запись добавлена',
   'P{0} · C{1} · F{2} g': 'Б{0} · У{1} · Ж{2} g',
+
+  // --- meal planning (issue #17) ---
+  'Planned meals': 'Запланированные приёмы пищи',
+  'Plan a meal': 'Запланировать приём пищи',
+  'No meals planned for this day yet.': 'На этот день ничего не запланировано.',
+  'Mark as eaten': 'Отметить как съедено',
+  'Edit planned meal': 'Изменить запланированный приём пищи',
+  'Planned meal updated': 'Запланированный приём пищи обновлён',
+  'Meal planned': 'Приём пищи запланирован',
+  'Marked as eaten': 'Отмечено как съедено',
 }
