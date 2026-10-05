@@ -1,0 +1,49 @@
+# Weekly, grouped, labelled. Dependabot PRs run the normal CI + Security workflows
+# (ci.yml / security.yml trigger on every pull_request), so a bump that breaks the build
+# is caught before merge.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    labels: [automation, chore]
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      npm-frontend:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /api
+    schedule:
+      interval: weekly
+    labels: [automation, chore]
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      npm-api:
+        patterns: ["*"]
+
+  # Base images in api/Dockerfile and web/Dockerfile.
+  - package-ecosystem: docker
+    directories: [/api, /web]
+    schedule:
+      interval: weekly
+    labels: [automation, chore]
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      docker-base-images:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels: [automation, chore]
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      github-actions:
+        patterns: ["*"]
