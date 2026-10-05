@@ -40,6 +40,13 @@ cd frontend && npm test
   rules are easy to get subtly wrong and nearly impossible to verify by clicking — the
   progression engine grew two real bugs that only a test pinned down.
 
+## Scripts (`scripts/`)
+
+Operational tooling is bash and runs on macOS and Linux, so it must work on **bash 3.2** (no `mapfile`, no associative
+arrays, no `readlink -f`). New commands start from `scripts/TEMPLATE.sh`, need a `# desc:` header and must pass
+`shellcheck -S warning`. Run `bash scripts/tests/run.sh` (and `/bin/bash scripts/tests/run.sh` on macOS) before pushing; see
+[docs/technical/automation.md](docs/technical/automation.md).
+
 ## Commit messages (Conventional Commits)
 
 Releases are automated from commit history ([release-please](https://github.com/googleapis/release-please)),

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Fake `age`: encrypt = header line + plaintext, decrypt = drop header. Needs an identity file to decrypt.
+[ -n "${MOCK_LOG:-}" ] && printf 'age %s\n' "$*" >>"$MOCK_LOG"
+[ "${MOCK_EXIT_AGE:-0}" != 0 ] && exit "$MOCK_EXIT_AGE"
+mode=enc out='' rec='' ident='' in=''
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -d) mode=dec ;;
+    -r) rec="$2"; shift ;;
+    -i) ident="$2"; shift ;;
+    -o) out="$2"; shift ;;
+    *) in="$1" ;;
+  esac
+  shift
+done
+if [ "$mode" = enc ]; then
+  { echo "AGE-MOCK $rec"; cat "$in"; } >"$out"
+else
+  if [ -z "$ident" ] || [ ! -f "$ident" ]; then echo "age: no identity" >&2; exit 1; fi
+  tail -n +2 "$in" >"$out"
+fi

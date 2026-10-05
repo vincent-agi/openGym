@@ -29,6 +29,9 @@ curl http://localhost:8080/api/health      # {"ok":true,...}
 
 Logs: `docker compose logs -f`. Stop: `docker compose down`.
 
+> **Shortcut:** the [`opengym` CLI](technical/automation.md) wraps all of this: `scripts/opengym install`
+> (checks Docker, writes `.env`, asks for your domain), `opengym start`, `opengym status`, `opengym logs`, `opengym stop`.
+
 ## 2. Understand the passkey requirement (important)
 
 openGym signs you in with **passkeys** (WebAuthn). Browsers enforce two rules:
@@ -118,6 +121,10 @@ tar czf opengym-backup-$(date +%F).tar.gz data/
 That archive contains all profiles, passkeys and workout history. Restore by unpacking it back
 into the project folder. (Individual users can also export their own data as JSON from Settings.)
 
+With the CLI: `opengym backup` (checksum, 30-day retention, optional `age` encryption, optional copy off the machine) and
+`opengym restore <archive>` (validates the archive first and keeps your previous data as `data.broken.*`). Schedule it with
+the cron line `opengym install` prints.
+
 ## 6. Notifications
 
 openGym can push two kinds of alert to your phone/desktop, even when the app isn't open:
@@ -154,6 +161,9 @@ docker compose up -d --build
 
 The app shell is versioned (`?v=N`) so clients pick up changes on next load. Your `./data` and the
 downloaded media are untouched.
+
+Or in one safe step: `opengym update` backs up, shows the CHANGELOG entry, pulls, restarts, checks the API and the user
+count, and tells you how to go back if anything fails.
 
 ## Troubleshooting
 

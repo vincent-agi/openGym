@@ -28,6 +28,7 @@ Triggers: every `pull_request`, and `push` to `main`. Concurrency: cancels super
 |---|---|
 | `Frontend (test + build)` | `npm ci` → `npm run test` (Vitest) → `npm run build` in `frontend/`. |
 | `API (syntax + boot smoke)` | `npm ci` → `node --check server.js` → start the server on port 3999 with a temp `DATA_DIR` and poll until it answers any HTTP status. |
+| `Scripts (shellcheck + tests) (ubuntu-latest / macos-latest)` | `shellcheck -S warning` on `scripts/`, then `scripts/tests/run.sh` under the system bash (3.2 on macOS) and `opengym help --check`. **Not required yet**: add it to branch protection once stable. |
 
 There is deliberately **no `paths:` filter**: a required check skipped by a path filter stays "pending" forever and blocks
 the merge.

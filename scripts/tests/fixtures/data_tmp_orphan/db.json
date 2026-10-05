@@ -1,0 +1,1 @@
+{"users":[{"id":"uAAAAAAAAAAAAAA1","name":"Alice","created":"2026-08-03T18:06:47.577Z"},{"id":"uBBBBBBBBBBBBBB2","name":"Bob","created":"2026-09-01T10:00:00.000Z","admin":true}],"creds":[{"id":"c1","userId":"uAAAAAAAAAAAAAA1","publicKey":"x","counter":0,"transports":[]},{"id":"c2","userId":"uBBBBBBBBBBBBBB2","publicKey":"y","counter":0,"transports":[]}],"subs":[],"invites":[]}

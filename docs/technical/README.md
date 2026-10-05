@@ -12,7 +12,7 @@ If you use openGym to train, read the [user guide](../user/README.md) instead.
 
 | You are… | Start with | Then |
 |---|---|---|
-| **Sysadmin / self-hoster** | [Deployment](deployment.md) | [Configuration](configuration.md), [Operations](operations.md) |
+| **Sysadmin / self-hoster** | [Deployment](deployment.md) | [Configuration](configuration.md), [Operations](operations.md), [Automation scripts](automation.md) |
 | **DevSecOps** | [Security](security.md) | [Deployment § reverse proxy](deployment.md#reverse-proxy-and-tls), [CI/CD](ci-cd.md) |
 | **DB admin** | [Data model and storage](data-model.md) | [Operations § backup and restore](operations.md#backup-and-restore) |
 | **Backend developer** | [Architecture](architecture.md) | [API reference](api-reference.md) |
@@ -30,6 +30,7 @@ If you use openGym to train, read the [user guide](../user/README.md) instead.
 7. [Security](security.md) — threat model, hardening checklist, secrets, incident response.
 8. [CI/CD and releases](ci-cd.md) — workflows, release-please, image publishing, supply-chain checks.
 9. [Development guide](development.md) — local setup, code layout, state management, i18n, tests, mobile builds.
+10. [Automation scripts](automation.md) — the `opengym` CLI: maintenance, monitoring, alerts and reporting scripts, conventions, configuration.
 
 ## Existing documents
 

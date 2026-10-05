@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+# opengym — single entry point for the openGym scripts.
+#   opengym <command> [args]     run scripts/{user,ops,stats}/<command>.sh
+#   opengym help [--check]       list commands (--check: fail on missing "# desc:" or duplicate names)
+#   opengym --version
+set -euo pipefail
+
+# Resolve our own location through symlinks (no readlink -f on macOS).
+_src="${BASH_SOURCE[0]}"
+while [ -L "$_src" ]; do
+  _dir="$(cd "$(dirname "$_src")" && pwd)"
+  _src="$(readlink "$_src")"
+  case "$_src" in /*) ;; *) _src="$_dir/$_src" ;; esac
+done
+SCRIPTS_DIR="$(cd "$(dirname "$_src")" && pwd)"
+unset _src _dir
+
+# shellcheck source=lib/common.sh
+. "$SCRIPTS_DIR/lib/common.sh"
+
+SUITES="user ops stats"
+
+# desc_of <script>: the "# desc:" line of a command script
+desc_of() {
+  sed -n 's/^# desc: *//p' "$1" | head -n 1
+}
+
+# list_cmds <suite>: command names in a suite, sorted
+list_cmds() {
+  local f
+  for f in "$SCRIPTS_DIR/$1"/*.sh; do
+    [ -e "$f" ] || continue
+    basename "$f" .sh
+  done | sort
+}
+
+# find_scripts <cmd>: every script path that provides <cmd>
+find_scripts() {
+  local s
+  for s in $SUITES; do
+    [ -f "$SCRIPTS_DIR/$s/$1.sh" ] && printf '%s\n' "$SCRIPTS_DIR/$s/$1.sh"
+  done
+  return 0
+}
+
+print_version() {
+  local v=unknown f="$OPENGYM_ROOT/.release-please-manifest.json"
+  if [ -f "$f" ]; then
+    v="$(sed -n 's/.*"\.": *"\([^"]*\)".*/\1/p' "$f" | head -n 1)"
+    [ -n "$v" ] || v=unknown
+  fi
+  echo "opengym $v"
+}
+
+print_help() {
+  local s c any
+  echo "openGym CLI ($(print_version | cut -d' ' -f2))"
+  echo
+  echo "Usage: opengym <command> [args]"
+  echo "       opengym <command> --help     usage of a command"
+  for s in $SUITES; do
+    any=0
+    for c in $(list_cmds "$s"); do
+      if [ "$any" = 0 ]; then
+        echo
+        echo "$s commands:"
+        any=1
+      fi
+      printf '  %-14s %s\n' "$c" "$(desc_of "$SCRIPTS_DIR/$s/$c.sh")"
+    done
+  done
+}
+
+# help --check: every command needs a "# desc:" and a unique name across suites.
+check_commands() {
+  local s c rc=0 n
+  for s in $SUITES; do
+    for c in $(list_cmds "$s"); do
+      if [ -z "$(desc_of "$SCRIPTS_DIR/$s/$c.sh")" ]; then
+        echo "missing '# desc:' header: $s/$c.sh" >&2
+        rc=1
+      fi
+      n="$(find_scripts "$c" | wc -l | tr -d ' ')"
+      if [ "$n" -gt 1 ]; then
+        echo "ambiguous command name '$c' ($n suites)" >&2
+        rc=1
+      fi
+    done
+  done
+  return "$rc"
+}
+
+suggest() { # typed
+  local typed="$1" s c out=''
+  for s in $SUITES; do
+    for c in $(list_cmds "$s"); do
+      case "$c" in
+        "$typed"* ) out="$out $c" ; continue ;;
+      esac
+      case "$typed" in
+        "$c"* ) out="$out $c" ; continue ;;
+      esac
+      [ "${#typed}" -ge 3 ] && [ "${c:0:3}" = "${typed:0:3}" ] && out="$out $c"
+    done
+  done
+  printf '%s' "${out# }"
+}
+
+main() {
+  local cmd="${1:-help}" found n sugg
+  case "$cmd" in
+    help | -h | --help)
+      if [ "${2:-}" = "--check" ]; then check_commands; return $?; fi
+      print_help
+      return 0
+      ;;
+    --version | -V)
+      print_version
+      return 0
+      ;;
+  esac
+  shift || true
+
+  found="$(find_scripts "$cmd")"
+  if [ -z "$found" ]; then
+    printf 'error: unknown command: %s\n' "$cmd" >&2
+    sugg="$(suggest "$cmd")"
+    if [ -n "$sugg" ]; then
+      printf 'Did you mean: %s?\n' "$sugg" >&2
+    else
+      echo "Run 'opengym help' to list commands." >&2
+    fi
+    exit 2
+  fi
+  n="$(printf '%s\n' "$found" | wc -l | tr -d ' ')"
+  if [ "$n" -gt 1 ]; then
+    printf 'error: ambiguous command "%s" provided by:\n%s\n' "$cmd" "$found" >&2
+    exit 1
+  fi
+  exec "${BASH:-bash}" "$found" "$@"
+}
+
+main "$@"

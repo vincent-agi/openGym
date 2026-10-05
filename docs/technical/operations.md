@@ -5,6 +5,17 @@ directory.
 
 ## At a glance
 
+> The [`opengym` CLI](automation.md) automates these tasks. The raw commands below stay the reference for what the scripts do.
+>
+> | Task | CLI |
+> |---|---|
+> | Status | `opengym status` (`--json`; exit 0 / 10 attention / 20 problem) |
+> | Start / stop / restart | `opengym start`, `opengym stop [--down]`, `opengym restart [service]` |
+> | Logs | `opengym logs [service]` (`--errors` for problems only) |
+> | Backup | `opengym backup` (`--consistent`, `--quiet` for cron) |
+> | Restore | `opengym restore <archive>` (`--dry-run`) |
+> | Update | `opengym update` (`--dry-run`) |
+
 | Task | Command |
 |---|---|
 | Status | `docker compose ps` |

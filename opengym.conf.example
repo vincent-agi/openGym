@@ -1,0 +1,25 @@
+# opengym.conf — optional settings for the `opengym` CLI (copy to opengym.conf, git-ignored).
+# Precedence: environment variable > this file > .env > default.
+# Plain KEY=value lines; values are never executed by a shell.
+
+# --- backups ---------------------------------------------------------------
+#BACKUP_DIR=./backups              # where archives go (relative paths are under the repo)
+#BACKUP_KEEP_DAYS=30               # retention in days; 0 = never prune
+#BACKUP_MAX_AGE_HOURS=48           # `status`/`monitor` warn when the last backup is older
+#BACKUP_ENCRYPT_TO=                # `age` recipient; when set, archives are .tgz.age
+#BACKUP_OFFHOST_CMD=               # run with the archive path as $1 after each backup (rsync, rclone...)
+
+# --- health checks ---------------------------------------------------------
+#BASE_URL=http://127.0.0.1:8080    # default follows WEB_PORT
+#DISK_WARN_PCT=80
+#DISK_CRIT_PCT=92
+#STATE_WARN_KB=900                 # state-*.json size warning (nginx limit is 1 MB)
+
+# --- alerts (console + log + exit code are always on) ----------------------
+#ALERT_WEBHOOK_URL=                # POST JSON {level,title,message,host,time}
+#ALERT_EMAIL_TO=                   # needs sendmail or mail on the host
+#ALERT_DESKTOP=auto                # auto | on | off
+#ALERT_COOLDOWN=3600               # seconds a given alert stays muted
+
+# --- logs ------------------------------------------------------------------
+#LOG_FILE=./logs/opengym.log

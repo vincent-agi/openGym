@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# desc: Update openGym safely (backup, pull, restart, verify)
+set -euo pipefail
+_here="${BASH_SOURCE[0]%/*}/.."
+# shellcheck source=../lib/config.sh
+. "$_here/lib/config.sh"
+# shellcheck source=../lib/alert.sh
+. "$_here/lib/alert.sh"
+# shellcheck source=../lib/compose.sh
+. "$_here/lib/compose.sh"
+# shellcheck source=../lib/data.sh
+. "$_here/lib/data.sh"
+
+usage() {
+  cat <<'USAGE'
+Usage: opengym update [--yes] [--dry-run] [--no-backup] [--no-git]
+
+1. backs up (consistent snapshot)      2. shows what is new (CHANGELOG)     3. git pull --ff-only (when this is a clone)
+4. docker compose pull (falls back to building from source)               5. up -d, waits for /api/health
+6. checks that no user disappeared. If anything fails it tells you exactly how to go back.
+
+  --yes, -y     do not ask for confirmation
+  --dry-run     show the plan, change nothing
+  --no-backup   skip the pre-update backup (not recommended)
+  --no-git      do not touch the source checkout, only update images
+  -h, --help    this help
+USAGE
+}
+
+DRY_RUN=0 BACKUP=1 USE_GIT=1
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -y | --yes) ASSUME_YES=1 ;;
+    --dry-run) DRY_RUN=1 ;;
+    --no-backup) BACKUP=0 ;;
+    --no-git) USE_GIT=0 ;;
+    -h | --help) usage; exit 0 ;;
+    *) usage >&2; die_usage "unknown option '$1'" ;;
+  esac
+  shift
+done
+export ASSUME_YES="${ASSUME_YES:-0}"
+
+load_config
+secure_umask
+daemon_up || die "Docker is not running. Start Docker, then run: opengym update"
+
+G() { git -C "$OPENGYM_ROOT" "$@"; }
+
+IS_GIT=0 BEHIND=0 OLD_SHA='' UPSTREAM=''
+if [ "$USE_GIT" = 1 ]; then
+  if [ -d "$OPENGYM_ROOT/.git" ] && command -v git >/dev/null 2>&1; then
+    IS_GIT=1
+  else
+    info "This is not a git checkout: only the container images will be updated."
+  fi
+fi
+
+if [ "$IS_GIT" = 1 ]; then
+  OLD_SHA="$(G rev-parse HEAD 2>/dev/null || true)"
+  G fetch --quiet 2>/dev/null || warn "could not reach the git remote: using what is already fetched"
+  UPSTREAM="$(G rev-parse --abbrev-ref '@{u}' 2>/dev/null || true)"
+  if [ -z "$UPSTREAM" ]; then
+    info "The current branch has no upstream: the source is not updated."
+    IS_GIT=0
+  else
+    BEHIND="$(G rev-list --count 'HEAD..@{u}' 2>/dev/null || echo 0)"
+  fi
+fi
+
+if [ "$IS_GIT" = 1 ]; then
+  if [ "$BEHIND" -gt 0 ]; then
+    info "$BEHIND new commit(s) on $UPSTREAM:"
+    G log --oneline -n 15 'HEAD..@{u}' | sed 's/^/  /' >&2
+    entry="$(G show '@{u}:CHANGELOG.md' 2>/dev/null | awk '/^## /{n++} n==1{print} n>1{exit}' | head -n 40 || true)"
+    if [ -n "$entry" ]; then
+      info ""
+      info "What is new (CHANGELOG):"
+      printf '%s\n' "$entry" | sed 's/^/  /' >&2
+      info ""
+    fi
+  else
+    info "The source is up to date ($(G rev-parse --short HEAD))."
+  fi
+fi
+
+if [ "$DRY_RUN" = 1 ]; then
+  [ "$BACKUP" = 1 ] && info "dry-run: would back up first"
+  [ "$IS_GIT" = 1 ] && [ "$BEHIND" -gt 0 ] && info "dry-run: would run git pull --ff-only"
+  info "dry-run: would pull the images (build from source if that fails), restart and wait for health"
+  exit 0
+fi
+
+confirm "Update openGym now?" || die "aborted. Nothing was changed."
+
+users_before=''
+if body="$(fetch_health)"; then
+  users_before="$(printf '%s' "$body" | jq -r '.users // empty' 2>/dev/null || true)"
+fi
+
+BACKUP_FILE=''
+if [ "$BACKUP" = 1 ]; then
+  info "Backing up first…"
+  BACKUP_FILE="$("${BASH:-bash}" "${BASH_SOURCE[0]%/*}/backup.sh" --quiet --consistent 2>/dev/null | tail -n 1)" ||
+    die "the pre-update backup failed, so nothing was updated. Fix it (opengym backup) or skip it with --no-backup."
+  info "Backup: $BACKUP_FILE"
+fi
+
+STATE="$OPENGYM_ROOT/.opengym-state"
+(umask 077 && mkdir -p "$STATE")
+{
+  echo "git=$OLD_SHA"
+  echo "time=${OPENGYM_NOW:-$(date +%s)}"
+  echo "users=$users_before"
+  echo "backup=$BACKUP_FILE"
+} >"$STATE/pre-update"
+compose_cmd images >"$STATE/pre-update-images.txt" 2>/dev/null || true
+
+ROLLBACK=""
+[ -n "$OLD_SHA" ] && ROLLBACK="git checkout $OLD_SHA && opengym start"
+[ -n "$BACKUP_FILE" ] && ROLLBACK="${ROLLBACK:+$ROLLBACK ; }if data looks wrong: opengym restore $BACKUP_FILE"
+
+fail() {
+  log_error "update failed: $*"
+  alert crit update-failed "openGym update failed" "$*"
+  [ -n "$ROLLBACK" ] && info "To go back: $ROLLBACK"
+  exit 1
+}
+
+if [ "$IS_GIT" = 1 ] && [ "$BEHIND" -gt 0 ]; then
+  G pull --ff-only --quiet >/dev/null 2>&1 ||
+    fail "git could not fast-forward (local commits or changes?). Resolve it by hand with git, then run opengym update again. Nothing was restarted."
+fi
+
+if compose_cmd pull >/dev/null 2>&1; then
+  compose_cmd up -d >/dev/null 2>&1 || fail "docker compose up failed. See: opengym logs"
+else
+  warn "could not pull the images (offline or not published); building from source instead (slower)"
+  compose_cmd up -d --build >/dev/null 2>&1 || fail "docker compose up --build failed. See: opengym logs"
+fi
+
+wait_health "$BASE_URL/api/health" 120 || fail "the API does not answer at $BASE_URL after the update. Check: opengym logs"
+
+users_after=''
+if body="$(fetch_health)"; then
+  users_after="$(printf '%s' "$body" | jq -r '.users // empty' 2>/dev/null || true)"
+fi
+if [ -n "$users_before" ] && [ -n "$users_after" ] && [ "$users_after" -lt "$users_before" ]; then
+  alert crit update-users-dropped "openGym user count dropped during the update" "Users went from $users_before to $users_after. Do not use the instance: restore the backup."
+  fail "the user count dropped from $users_before to $users_after (users dropped during the update)"
+fi
+
+alert_clear update-failed "Update works again"
+ok "openGym updated ($("${BASH_SOURCE[0]%/*}/../opengym" --version))"
+info "Check: sign in, log a short workout, and look at: opengym logs"

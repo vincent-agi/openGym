@@ -1,6 +1,7 @@
 name: CI
 
 # Required status checks on `main`: "Frontend (test + build)" and "API (syntax + boot smoke)".
+# The "Scripts" job is informational for now (not a required check).
 # No `paths:` filter on purpose: a required check that is skipped by a path filter stays
 # "pending" forever and blocks the merge. Both jobs are fast and cached, so run them always.
 on:
@@ -66,3 +67,26 @@ jobs:
           done
           echo "API did not start" >&2
           exit 1
+
+  scripts:
+    # Not a required check (yet): promote it in branch protection once it has been stable for a while.
+    name: Scripts (shellcheck + tests) (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest] # macOS ships bash 3.2: the scripts must run there
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck and jq if missing
+        run: |
+          for t in shellcheck jq; do
+            command -v "$t" >/dev/null 2>&1 && continue
+            if [ "$RUNNER_OS" = macOS ]; then brew install "$t"; else sudo apt-get install -y "$t"; fi
+          done
+      - name: shellcheck
+        run: shellcheck -S warning scripts/opengym scripts/TEMPLATE.sh scripts/fetch-media.sh scripts/*/*.sh scripts/tests/mocks/*
+      - name: Unit tests (system bash)
+        run: /bin/bash scripts/tests/run.sh
+      - name: Command index (every command has a description, no duplicates)
+        run: scripts/opengym help --check
