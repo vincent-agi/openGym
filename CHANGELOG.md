@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.6.0](https://github.com/vincent-agi/openGym/compare/v1.5.0...v1.6.0) (2026-10-05)
+
+
+### Features
+
+* **ci:** automated container build, scan & publish pipeline to ghcr.io ([2779f58](https://github.com/vincent-agi/openGym/commit/2779f58079e9c2c1d00e626e3a1eefb670035ebb)), closes [#30](https://github.com/vincent-agi/openGym/issues/30)
+* **ci:** baseline pipeline for lint/test/build on every PR ([00b5505](https://github.com/vincent-agi/openGym/commit/00b5505883268c84801bbbec0c9f06688affd08d)), closes [#27](https://github.com/vincent-agi/openGym/issues/27)
+* **exercises:** adaptive exercise database schema & seeds ([4273d7b](https://github.com/vincent-agi/openGym/commit/4273d7b41466d2522397c842df5ffd7f51e47195))
+* **exercises:** seated/wheelchair exercise seeds with accessibility tags ([dbd5467](https://github.com/vincent-agi/openGym/commit/dbd5467ae92841c9312918e78c75be7b2f110875)), closes [#22](https://github.com/vincent-agi/openGym/issues/22)
+* **health:** pressure relief / chair push-up reminders ([0da3fbf](https://github.com/vincent-agi/openGym/commit/0da3fbf1dd7c80bf518502c098e03763493eb4b9))
+* **health:** pressure relief / chair push-up reminders ([6b2eb89](https://github.com/vincent-agi/openGym/commit/6b2eb894740f487976870a9a0a6ec3f9eec314c1)), closes [#26](https://github.com/vincent-agi/openGym/issues/26)
+* **metrics:** subjective effort tracking with Borg RPE scale ([5e2b3bd](https://github.com/vincent-agi/openGym/commit/5e2b3bd2408219b576c3815ba0f030c484ab9bd5))
+* **metrics:** subjective effort tracking with Borg RPE scale ([01ad187](https://github.com/vincent-agi/openGym/commit/01ad1876fdfc367eafffbb56262991eefa8bf8d5)), closes [#25](https://github.com/vincent-agi/openGym/issues/25)
+* **profile:** add mobility profile and exercise catalogue filtering ([049ee7b](https://github.com/vincent-agi/openGym/commit/049ee7b501b0608059a57fdba3032f39a8c7b0af)), closes [#21](https://github.com/vincent-agi/openGym/issues/21)
+* **profile:** mobility profile and exercise catalogue filtering ([c90432b](https://github.com/vincent-agi/openGym/commit/c90432ba09b360730f8c9490ad20f978025b96d8))
+* **release:** automated semantic versioning & changelog from conventional commits ([f48f117](https://github.com/vincent-agi/openGym/commit/f48f11787f328bb6bfc440d3de0594d968bea123)), closes [#31](https://github.com/vincent-agi/openGym/issues/31)
+* **security:** integrate SAST, secret, and dependency scanning into CI ([7756c4f](https://github.com/vincent-agi/openGym/commit/7756c4f2693510d0c75f361162c390ef59834734)), closes [#28](https://github.com/vincent-agi/openGym/issues/28)
+* **tracking:** asymmetric & unilateral tracking support ([1ef87f6](https://github.com/vincent-agi/openGym/commit/1ef87f68633f80ee7d1d4a818571ac9a7319f30a))
+* **tracking:** asymmetric & unilateral tracking support ([78c26ac](https://github.com/vincent-agi/openGym/commit/78c26ac66ecbc420a6c4d589fb7ae85f54b32835)), closes [#23](https://github.com/vincent-agi/openGym/issues/23)
+* **ui:** accessible touch mode & adaptive rest timer ([cbee4a5](https://github.com/vincent-agi/openGym/commit/cbee4a5ed89bc8f7fb67304192f925f84ecf257a))
+* **ui:** accessible touch mode & adaptive rest timer ([5f6563f](https://github.com/vincent-agi/openGym/commit/5f6563f40c1978822b425b172a77e5b6d6c527da)), closes [#24](https://github.com/vincent-agi/openGym/issues/24)
+
 ## v1.5.0 — 2026-10-01
 
 Beyond the scale: track measurements the scale doesn't show, and set goals with an actual
