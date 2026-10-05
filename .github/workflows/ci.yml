@@ -1,0 +1,68 @@
+name: CI
+
+# Required status checks on `main`: "Frontend (test + build)" and "API (syntax + boot smoke)".
+# No `paths:` filter on purpose: a required check that is skipped by a path filter stays
+# "pending" forever and blocks the merge. Both jobs are fast and cached, so run them always.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22" # matches api/Dockerfile and web/Dockerfile
+
+jobs:
+  frontend:
+    name: Frontend (test + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run test
+      - run: npm run build
+
+  api:
+    name: API (syntax + boot smoke)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci
+      - name: Syntax check
+        run: node --check server.js
+      - name: Boot smoke
+        # GAP: api/ has no automated test suite yet — this only proves the server starts and
+        # answers HTTP. Replace with real tests when a test-suite issue lands.
+        run: |
+          DATA_DIR="$(mktemp -d)" PORT=3999 node server.js &
+          pid=$!
+          trap 'kill $pid 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3999/ || true)
+            if [ "$code" != "000" ]; then echo "API answered HTTP $code"; exit 0; fi
+            sleep 0.5
+          done
+          echo "API did not start" >&2
+          exit 1
