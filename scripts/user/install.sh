@@ -128,8 +128,9 @@ cat >&2 <<NEXT
 
 Next:
   1. opengym start                 first start downloads ~140 MB of exercise media
-  2. Daily backup at 03:15, add this line with: crontab -e
-       15 3 * * * cd "$OPENGYM_ROOT" && scripts/opengym backup --quiet
+  2. Daily backup (03:15) and a watchdog every 15 minutes: opengym schedule install
+     (or by hand, with: crontab -e)
+       15 3 * * * cd "$OPENGYM_ROOT" && scripts/opengym backup --quiet >/dev/null
   3. Optional settings (alerts, retention, encryption): cp opengym.conf.example opengym.conf
 Remember: RP_ID and ORIGIN are bound to your users' passkeys; do not change them later.
 NEXT

@@ -15,6 +15,11 @@ directory.
 > | Backup | `opengym backup` (`--consistent`, `--quiet` for cron) |
 > | Restore | `opengym restore <archive>` (`--dry-run`) |
 > | Update | `opengym update` (`--dry-run`) |
+> | Diagnose | `opengym doctor` (fix hint per problem), `opengym verify` (data integrity, `--backup ARCHIVE`) |
+> | Watch | `opengym monitor` (cron-friendly, alerts), `opengym schedule install` |
+> | Clean up | `opengym prune` |
+> | Rotate keys | `opengym rotate-keys session` / `vapid` |
+> | Roll back | `opengym rollback <tag>` (`--clear`, `--with-data ARCHIVE`) |
 
 | Task | Command |
 |---|---|

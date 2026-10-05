@@ -57,4 +57,13 @@ assert_not_contains "reached" "$T_OUT" "execution stopped at unset var"
 # secure_umask
 assert_eq "0077" "$("$BASH" -c '. "$0"; secure_umask; umask' "$LIB")" "secure_umask sets 077"
 
+# run_with_timeout
+assert_exit 0 "run_with_timeout passes success" -- "$BASH" -c '. "$0"; run_with_timeout 5 true' "$LIB"
+assert_exit 3 "run_with_timeout passes the exit code" -- "$BASH" -c '. "$0"; run_with_timeout 5 bash -c "exit 3"' "$LIB"
+start="$(date +%s)"
+"$BASH" -c '. "$0"; run_with_timeout 1 sleep 8' "$LIB" >/dev/null 2>&1; rc=$?
+elapsed=$(( $(date +%s) - start ))
+if [ "$rc" -ne 0 ] && [ "$elapsed" -lt 5 ]; then _t_ok; else _t_fail "run_with_timeout kills a slow command (rc=$rc, ${elapsed}s)"; fi
+assert_eq "hello" "$("$BASH" -c '. "$0"; run_with_timeout 5 echo hello' "$LIB")" "run_with_timeout keeps stdout"
+
 t_summary

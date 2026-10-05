@@ -4,8 +4,8 @@ One entry point, `scripts/opengym`, runs the maintenance, monitoring and reporti
 with Docker Compose. Platform: **bash on macOS and Linux** (bash 3.2 compatible). Design:
 [`docs/superpowers/specs/2026-10-05-automation-scripts-design.md`](../superpowers/specs/2026-10-05-automation-scripts-design.md).
 
-> Status: the **foundation** and the **user suite** are in place. The `ops` and `stats` suites are delivered by later
-> sub-projects.
+> Status: the **foundation**, the **user suite** and the **ops suite** are in place. The `stats` suite is delivered by a
+> later sub-project.
 
 ## Install
 
@@ -34,7 +34,7 @@ optional (backup encryption).
 | Suite | Audience | Commands |
 |---|---|---|
 | `user` | Anyone self-hosting | `install start stop restart status update backup restore logs version` (available) |
-| `ops` | Admins, technical self-hosters | `doctor monitor verify prune rotate-keys rollback schedule` (planned) |
+| `ops` | Admins, technical self-hosters | `doctor monitor verify prune rotate-keys rollback schedule` (available) |
 | `stats` | Admins, project owners | `adoption engagement tech report` (planned) |
 
 New commands start from [`scripts/TEMPLATE.sh`](../../scripts/TEMPLATE.sh).
@@ -69,6 +69,30 @@ Notes:
   prints the exact commands to put the previous data back.
 - **Update safety.** The previous git commit, user count and backup path are saved in `.opengym-state/pre-update`.
 
+### Ops suite reference
+
+| Command | What it does | Useful options |
+|---|---|---|
+| `doctor` | One-shot diagnosis: Docker, containers (and restart loops), front door, API, `data/` writable, `db.json`, `secret`/`vapid.json` presence and mode, `.env` consistency (`ORIGIN` host = `RP_ID`) and whether the **running** API uses the same values, media, stray `*.tmp`, state file sizes vs nginx's 1 MB limit, disk, backup age, TLS expiry. Every problem comes with the fix. Exit `0` / `10` / `20`. | `--json` |
+| `monitor` | The same checks plus a **fall in the user count** (high-water mark: the signature of a `db.json` reset), **container restarts** since the last run and a **push-failure spike**. Prints only what is wrong. Each problem raises an alert (key `mon-<check>`, muted for `ALERT_COOLDOWN`); a recovery notice follows when it clears. Exit `0` / `10` / `20`. | `--quiet`, `--verbose`, `--json`, `--accept-users` |
+| `verify` | Read-only integrity: JSON validity, credentials / push subscriptions / invites pointing at existing users, unique ids, state files without a user. Never repairs or deletes. `--backup` opens an archive in a temporary folder with the same safety checks as `restore`. | `--backup ARCHIVE`, `--identity FILE`, `--json` |
+| `prune` | Lists then removes: `data/*.tmp` older than 1 h, backups past `BACKUP_KEEP_DAYS`, `data.broken.*` / `data.bak.*` older than 30 days (they hold user data), and rotates the log past `LOG_MAX_KB` (default 1024). Without a terminal it only reports. Live data files are never candidates. | `--dry-run`, `--yes`, `--images` |
+| `rotate-keys session\|vapid` | Backup (mandatory), impact warning, confirmation, delete `data/secret` or `data/vapid.json`, restart the API, check that a new key file exists. `session` = instance-wide logout; `vapid` = every user must re-enable notifications. | `--dry-run`, `--yes` |
+| `rollback TAG` | Pins api and web images to `X.Y.Z` or `sha-<short>` through a generated `docker-compose.override.yml` (marker-protected, a foreign override is never touched), pulls, restarts, waits for health. `update` refuses to run while a pin is active. | `--clear`, `--with-data ARCHIVE`, `--dry-run`, `--yes` |
+| `schedule install\|remove\|show` | Marked block in your crontab (other entries untouched, one block per folder): daily backup, `monitor` every N minutes, monthly report when the stats suite exists. `--system` writes `/etc/cron.d/opengym-<id>` instead; `show --systemd` prints timer units. | `--backup-time HH:MM`, `--monitor-every N`, `--no-backup`, `--no-monitor`, `--system`, `--user NAME`, `--yes` |
+
+Notes:
+
+- **Alert keys.** `monitor` uses `mon-<check id>` (for example `mon-docker`, `mon-users`, `mon-backup`), `backup` uses `backup-failed`
+  and `backup-offhost`, `update` uses `update-failed`, `rollback` and `restore` use `*-health`. All follow `ALERT_COOLDOWN` and
+  send a "recovered" notice when the condition clears.
+- **User-count reference.** `monitor` keeps the highest count seen in `.opengym-state/users` and never lowers it silently. After a
+  deliberate change run `opengym monitor --accept-users`.
+- **TLS.** The certificate check runs only when `ORIGIN` is `https://` on a real host (`openssl` required, 10 s timeout): warning under
+  14 days, failure under 3 days.
+- **Rotating keys** leaves the old key inside the backup taken just before: delete older backups if the key was compromised.
+- **Cron environment.** `schedule` writes the current `PATH` into the block so `docker` is found by cron.
+
 ## Conventions
 
 | | |
@@ -100,6 +124,8 @@ sourced: `KEY=$(command)` stays a literal string. `.env` is only read for the ke
 | `DISK_WARN_PCT` / `DISK_CRIT_PCT` | `80` / `92` | Disk thresholds (warn must be lower than crit). |
 | `STATE_WARN_KB` | `900` | `state-*.json` size warning (nginx limit is 1 MB). |
 | `LOG_FILE` | `./logs/opengym.log` | Log destination. |
+
+Environment only (not in `opengym.conf`): `LOG_MAX_KB` (default `1024`, log rotation threshold of `prune`), `BACKUP_AGE_IDENTITY` (age private key file used by `restore` and `verify --backup`), `OPENGYM_CRON_D` (directory for `schedule --system`, default `/etc/cron.d`).
 
 Invalid values (non-numeric, `warn >= crit`, unknown `ALERT_DESKTOP`) stop the command with exit code 2 and name the key.
 

@@ -52,6 +52,8 @@ mock_calls() { # pattern
 
 # Fresh sandbox: temp OPENGYM_ROOT with data/, mocks first in PATH, mock log.
 new_sandbox() {
+  local v
+  for v in $(compgen -v | grep '^MOCK_' || true); do unset "$v"; done
   SB="$(mktemp -d)"
   export OPENGYM_ROOT="$SB"
   export MOCK_LOG="$SB/mock.log"

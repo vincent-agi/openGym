@@ -193,3 +193,13 @@ Each sub-project ends with working, tested, documented commands and can ship on 
 ## 10. Open questions
 
 None blocking. Defaults above (retention 30 d, thresholds, cohort floor 5, cooldown 1 h) are proposals; adjust at review.
+
+## 11. Implementation notes (ops suite)
+
+- `doctor` and `monitor` share `scripts/lib/checks.sh`; `monitor` adds the user-count high-water mark (`--accept-users` resets it),
+  restart-count increase and push-failure spike (20+ per hour).
+- `rollback` takes an explicit tag (`X.Y.Z` or `sha-<short>`); there is no registry lookup. `update` refuses to run while a pin
+  exists.
+- `prune` is report-only without a terminal; `LOG_MAX_KB` is an environment-only setting.
+- `schedule` writes one marked block per folder, with the current `PATH`; `--system` uses `/etc/cron.d`.
+- `verify --backup` and `restore` share `scripts/lib/archive.sh` (checksum, safe paths, entry types, JSON validation).

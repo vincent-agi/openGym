@@ -10,6 +10,8 @@ _here="${BASH_SOURCE[0]%/*}/.."
 . "$_here/lib/compose.sh"
 # shellcheck source=../lib/data.sh
 . "$_here/lib/data.sh"
+# shellcheck source=../lib/archive.sh
+. "$_here/lib/archive.sh"
 
 usage() {
   cat <<'USAGE'
@@ -52,8 +54,6 @@ export ASSUME_YES="${ASSUME_YES:-0}"
 
 load_config
 secure_umask
-require_cmd tar
-require_cmd jq
 [ -f "$ARCHIVE" ] || die "archive not found: $ARCHIVE"
 
 STATE="$OPENGYM_ROOT/.opengym-state"
@@ -67,49 +67,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# 1. decrypt
-TGZ="$ARCHIVE"
-case "$ARCHIVE" in
-  *.age)
-    require_cmd age
-    IDENTITY="${IDENTITY:-${BACKUP_AGE_IDENTITY:-}}"
-    [ -n "$IDENTITY" ] && [ -f "$IDENTITY" ] || die "this archive is encrypted: pass --identity FILE (your age private key) or set BACKUP_AGE_IDENTITY"
-    TGZ="$WORK/archive.tgz"
-    age -d -i "$IDENTITY" -o "$TGZ" "$ARCHIVE" >/dev/null 2>&1 || die "could not decrypt the archive with that identity"
-    ;;
-esac
-
-# 2. checksum of the file as it was written by `opengym backup`
-if [ -f "$ARCHIVE.sha256" ]; then
-  expected="$(cut -d' ' -f1 "$ARCHIVE.sha256")"
-  actual="$(sha256_of "$ARCHIVE")"
-  [ "$expected" = "$actual" ] || die "checksum mismatch: the archive was modified or damaged. Nothing was changed."
-else
-  warn "no $(basename "$ARCHIVE").sha256 next to the archive: checksum not verified"
-fi
-
-# 3. safe content: only data/ and .env, only regular files and directories, no ".." or absolute paths
-tar tzf "$TGZ" >"$WORK/list" 2>/dev/null || die "the archive is not a readable .tgz"
-tar tvzf "$TGZ" 2>/dev/null | cut -c1 >"$WORK/types"
-while IFS= read -r entry; do
-  case "$entry" in /* | ../* | */../* | */..) die "unsafe path in archive: $entry. Nothing was changed." ;; esac
-  case "$entry" in
-    data | data/ | data/* | .env) ;;
-    *) die "unexpected path in archive: $entry. Nothing was changed." ;;
-  esac
-done <"$WORK/list"
-while IFS= read -r t; do
-  case "$t" in - | d) ;; *) die "unsupported entry type in archive (links and devices are refused). Nothing was changed." ;; esac
-done <"$WORK/types"
-
-# 4. extract aside and validate before touching anything
-mkdir "$WORK/x"
-tar xzf "$TGZ" -C "$WORK/x" 2>/dev/null || die "could not extract the archive"
-problems="$(validate_data_dir "$WORK/x/data" || true)"
-if [ -n "$problems" ]; then
-  printf '%s\n' "$problems" >&2
-  die "the archive failed validation. Nothing was changed."
-fi
+# 1-4. decrypt, checksum, safe content, extract aside and validate (nothing outside $WORK is touched)
+archive_open "$ARCHIVE" "$WORK" "$IDENTITY"
 
 arch_users="$(user_count "$WORK/x/data")"
 cur_users="$(user_count "$OPENGYM_ROOT/data")"

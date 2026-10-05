@@ -86,3 +86,18 @@ confirm() { # question
     *) return 1 ;;
   esac
 }
+
+# run_with_timeout <seconds> <command...>: run, kill after <seconds>. Exit code of the command (143 when killed).
+# Portable: macOS has no `timeout`.
+run_with_timeout() {
+  local secs="$1" pid watcher rc=0
+  shift
+  "$@" &
+  pid=$!
+  ( sleep "$secs"; kill "$pid" ) </dev/null >/dev/null 2>&1 &
+  watcher=$!
+  wait "$pid" 2>/dev/null || rc=$?
+  kill "$watcher" 2>/dev/null || true
+  wait "$watcher" 2>/dev/null || true
+  return "$rc"
+}
