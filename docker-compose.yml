@@ -23,6 +23,8 @@ services:
 
   # Passkey auth + per-user data (Node, no framework).
   # image: prebuilt (docker compose pull). build: from source (docker compose up --build).
+  # Images are built, Trivy-scanned and pushed by .github/workflows/publish.yml on every merge
+  # to main: tags :latest, :sha-<short> and (releases) :X.Y.Z. Pin one to roll back.
   api:
     image: ghcr.io/duartesantos8/opengym-api:latest
     build: ./api

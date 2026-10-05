@@ -2,5 +2,8 @@ services:
   - type: web
     name: opengym
     env: docker
-    dockerfilePath: ./Dockerfile
+    # Was ./Dockerfile, which does not exist in the repo (broken deploy). The web image is
+    # web/Dockerfile with the repo root as context. NOTE: this deploys the static web + nginx
+    # only; nginx proxies /api to a separate `api` service that Render must also run.
+    dockerfilePath: ./web/Dockerfile
     dockerContext: .
