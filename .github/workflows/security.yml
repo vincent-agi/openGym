@@ -1,0 +1,82 @@
+name: Security
+
+# Required status checks on `main`: "CodeQL (javascript-typescript)", "Dependency audit (frontend)",
+# "Dependency audit (api)", "Secret scan (gitleaks)".
+# High/critical findings fail the check. Lower severities are reported but never block.
+# Results land in the PR (check annotations) and in the repo Security tab (CodeQL SARIF).
+# Also enable in repo settings: Secret scanning + push protection, Dependabot alerts.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 4 * * 1" # weekly: new advisories hit existing code even without a PR
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    name: CodeQL (javascript-typescript)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # upload SARIF to the Security tab
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          # Covers frontend/ and api/. Skip generated/vendored output.
+          config: |
+            paths-ignore:
+              - frontend/android
+              - frontend/ios
+              - "**/dist"
+              - "**/node_modules"
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript-typescript
+
+  audit:
+    name: Dependency audit (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # audit both trees even if one fails
+      matrix:
+        project: [frontend, api]
+    defaults:
+      run:
+        working-directory: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ${{ matrix.project }}/package-lock.json
+      # Informational: everything, never blocks (avoid alert fatigue).
+      - name: Report all advisories
+        run: npm audit || true
+      # Blocking: high/critical in what ships (runtime deps). Dev-only tooling advisories
+      # (Capacitor CLI, vitest...) appear in the report above but don't block merges; Dependabot
+      # handles those via grouped weekly updates.
+      - name: Fail on high/critical (runtime deps)
+        run: npm audit --omit=dev --audit-level=high
+
+  gitleaks:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # gitleaks needs history to scan the PR's commit range
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Organization repos also need GITLEAKS_LICENSE; personal-account repos do not.

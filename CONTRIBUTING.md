@@ -40,6 +40,36 @@ cd frontend && npm test
   rules are easy to get subtly wrong and nearly impossible to verify by clicking — the
   progression engine grew two real bugs that only a test pinned down.
 
+## Commit messages (Conventional Commits)
+
+Releases are automated from commit history ([release-please](https://github.com/googleapis/release-please)),
+so the format matters — it decides the next version and fills the changelog:
+
+```
+<type>(<optional scope>): <summary>
+```
+
+| Type | Effect |
+| --- | --- |
+| `feat` | minor bump (1.5.0 → 1.6.0), listed under Features |
+| `fix` | patch bump (1.5.0 → 1.5.1), listed under Bug Fixes |
+| `perf`, `refactor` | listed in the changelog, no bump on their own |
+| `chore`, `docs`, `ci`, `test` | no release, not in the changelog |
+| `feat!:` / `fix!:` or a `BREAKING CHANGE:` footer | major bump |
+
+Examples: `feat(goals): dated goals`, `fix(api): reject expired invite`, `ci: pin nginx image`.
+Prefer **squash merge** with a conventional PR title so each PR is exactly one changelog line.
+
+How a release happens: merges to `main` update an open "release PR" (version in
+`frontend/package.json` + `api/package.json`, `CHANGELOG.md`). Merging it tags `vX.Y.Z`, creates the
+GitHub Release and publishes `ghcr.io` images tagged `:X.Y.Z`, `:X.Y`, `:latest` and `:sha-<short>`.
+
+## Pull requests
+
+Every PR runs CI (frontend tests + build, API smoke) and the security checks (CodeQL, `npm audit`,
+gitleaks). They must be green before merge. See [`docs/BRANCH_PROTECTION.md`](docs/BRANCH_PROTECTION.md)
+for the exact repo settings.
+
 ## Good first issues
 
 - Additional starter plans (upper/lower, full-body, 5×5…)

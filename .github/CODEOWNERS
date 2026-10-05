@@ -1,0 +1,8 @@
+# Default reviewer for everything; explicit routing for the sensitive paths.
+# Last matching pattern wins. Add teammates here as the team grows.
+*                    @vincent-agi
+/api/                @vincent-agi
+/frontend/           @vincent-agi
+/web/                @vincent-agi
+/.github/workflows/  @vincent-agi
+/.github/dependabot.yml @vincent-agi
