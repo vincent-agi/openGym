@@ -10,7 +10,9 @@ import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
-import { useSocial, useCrewSummary, useFeed } from '../lib/useSocial.js'
+import { useSocial, useCrewSummary, useFeed, useChallenges } from '../lib/useSocial.js'
+import { buildRecap, recapVisible, RECAP_DISMISS_KEY } from '../lib/recap.js'
+import RecapCard from '../components/RecapCard.jsx'
 import { cheerLine } from '../lib/cheers.js'
 import { rankCrew, crewHighlights } from '../lib/crew.js'
 
@@ -49,6 +51,15 @@ export default function Home() {
   const nutritionToday = nutritionTargets ? dayTotals(S, todayISO()) : null
   const social = useSocial()
   const crew = useCrewSummary(social.status === 'ready' && social.social.enabled)
+  const sharing = social.status === 'ready' && social.social.enabled
+  const challenges = useChallenges(sharing)
+  const dismissed = (() => { try { return localStorage.getItem(RECAP_DISMISS_KEY) } catch { return null } })()
+  const recap = recapVisible(todayISO(), dismissed)
+    ? buildRecap(S, sharing && crew.data ? {
+      crewSessions: crew.data.friends.reduce((n, f) => n + (f.summary?.weekSessions ?? 0), 0),
+      challenge: (() => { const c = (challenges || []).find(x => x.status === 'active'); const mine = c?.participants.find(p => p.handle === social.social.handle); return c ? { title: c.title, pct: c.mode === 'coop' ? c.pct : Math.min(1, (mine?.current ?? 0) / c.target) } : null })()
+    } : null, todayISO())
+    : null
   const feed = useFeed(social.status === 'ready' && social.social.enabled)
   const lastCheers = feed.data?.mine[0] ? cheerLine(feed.data.mine[0].cheers) : ''
   const crewTop = crew.data ? crewHighlights(rankCrew(crew.data.me, crew.data.friends, { metric: 'consistency', period: 'week', viewerHidesRank: !!social.social.hideRank })) : null
@@ -139,6 +150,8 @@ export default function Home() {
         <Icon name="calendar" className="chev" style={{ fontSize: 20 }} />
       </div>
     </div>
+
+    {recap && <RecapCard recap={recap} sharing={sharing} onOpenFriends={() => nav('/settings')} />}
 
     {/* Friends entry: only for people who opted in to sharing (v1.7) — nothing changes for everyone else. */}
     {social.status === 'ready' && social.social.enabled && (

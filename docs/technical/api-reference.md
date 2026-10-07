@@ -122,7 +122,7 @@ people, and revoked when its owner creates a new one.
 
 | Method & path | Description |
 |---|---|
-| `GET /api/social/friends/summary` | Needs a session and sharing. `{me, friends:[{handle, displayName, hideRank, summary, updatedAt, stale}]}`: `friends` are the **accepted** friends who are sharing, and `me` is the caller's own row, built the same way. `hideRank` is true for people who opted out of rankings. `summary` holds only the keys that friend chose to share, or `null` if they have not synced since enabling sharing. `stale` is true when `updatedAt` is older than 14 days. |
+| `GET /api/social/friends/summary` | Needs a session and sharing. `{me, friends:[{handle, displayName, hideRank, badges, summary, updatedAt, stale}]}`: `friends` are the **accepted** friends who are sharing, and `me` is the caller's own row, built the same way. `hideRank` is true for people who opted out of rankings. `summary` holds only the keys that friend chose to share, or `null` if they have not synced since enabling sharing. `stale` is true when `updatedAt` is older than 14 days. |
 
 The summary is computed by the server (`api/summary.js`) from the state saved with `PUT /api/data`; clients cannot submit one.
 Its keys are a fixed whitelist (a test fails if one is added unreviewed):
@@ -198,6 +198,25 @@ Delivery rules, all enforced and tested:
 - Wording is encouraging: no ranks, comparisons or "behind".
 
 Pending pushes live in `db.socialOutbox` so a restart does not lose a held one; a 30-second background job delivers them.
+
+#### Badges
+
+Implemented in `api/badges.js` (rules) and `api/badge-service.js`. Badges reward habits and kindness, never strength, size or
+rank. The server evaluates them when a sharing user saves their state, sends a cheer, or finishes a co-op challenge, and
+stores them in `social.earned` (`[{id, date}]`). Once earned, a badge is never removed or re-dated. `GET /api/social/me`
+returns `earned` and `showBadges`; clients cannot write `earned` (it is rejected as an unknown field).
+
+| Badge | Earned when |
+|---|---|
+| `first-week` | The first completed session. |
+| `hat-trick` | Three sessions in one calendar week. |
+| `four-in-a-row` | A session in each of four consecutive weeks. |
+| `back-on-track` | A session after a missed week, or within 7 days after a planned break ended. |
+| `team-player` | A co-op challenge you were in reached its target. |
+| `cheerleader` | Ten cheers sent (changing a cheer does not count again). |
+
+`PUT /api/social/me {showBadges:[id…]}` chooses which earned badges friends see; none by default. Friends receive them as
+`badges:[{id, date}]` on the summary rows, limited to earned and chosen ones.
 
 Adding by exact handle does reveal that a *sharing* user with that handle exists. Treat handles as findable by anyone
 who has an account on the instance; users who want to stay unlisted should not enable sharing or should add friends by code only.

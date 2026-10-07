@@ -4,7 +4,7 @@ import { api } from '../lib/api.js'
 import { t } from '../lib/i18n.js'
 import { fmtDate, isoOf } from '../lib/format.js'
 import { takePendingCode, addRequestBodies } from '../lib/friends.js'
-import { useSocial, useCrewSummary, useFeed } from '../lib/useSocial.js'
+import { useSocial, useCrewSummary, useFeed, useBadgeToasts } from '../lib/useSocial.js'
 import { useUI } from '../store/useUI.js'
 import { confirmSheet } from '../sheets.jsx'
 import { addFriendSheet, sendFriendRequest } from '../components/FriendSheets.jsx'
@@ -12,6 +12,7 @@ import { Button } from '../components/ui.jsx'
 import CrewBoard from '../components/CrewBoard.jsx'
 import ChallengesCard from '../components/ChallengesCard.jsx'
 import FeedCard from '../components/FeedCard.jsx'
+import BadgesCard from '../components/BadgesCard.jsx'
 
 const post = (path, body) => api('/api/social/friends/' + path, { method: 'POST', body: JSON.stringify(body) })
 
@@ -36,7 +37,8 @@ function PersonRow({ person, subtitle, children }) {
 export default function Crew() {
   const nav = useNavigate()
   const toast = useUI(s => s.toast)
-  const { status, social } = useSocial()
+  const { status, social, reload: reloadSocial } = useSocial()
+  useBadgeToasts(social?.enabled ? social.earned : undefined, toast, t)
   const [data, setData] = useState(null)
   const board = useCrewSummary(status === 'ready' && !!social?.enabled)
   const feed = useFeed(status === 'ready' && !!social?.enabled)
@@ -80,6 +82,8 @@ export default function Crew() {
     {feed.data && <FeedCard data={feed.data} onChanged={feed.reload} />}
 
     {board.data && <ChallengesCard myHandle={social.handle} friends={data.friends} />}
+
+    <BadgesCard earned={social.earned || []} shown={social.showBadges || []} onSaved={reloadSocial} />
 
     {data.incoming.length > 0 && (
       <div className="card">

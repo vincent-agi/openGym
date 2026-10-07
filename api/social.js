@@ -10,6 +10,7 @@
  */
 
 import { defaultNotify, validateNotify } from './notify-prefs.js';
+import { validateShowBadges } from './badges.js';
 
 /** Handles are 3-20 characters of lowercase letters, digits and underscore. */
 export const HANDLE_RE = /^[a-z0-9_]{3,20}$/;
@@ -20,7 +21,7 @@ export const DISPLAY_NAME_MAX = 30;
 /** Keys a user can individually choose to share with friends. */
 export const SHARE_KEYS = Object.freeze(['sessions', 'streak', 'consistency', 'prs']);
 
-const TOP_LEVEL_KEYS = Object.freeze(['enabled', 'handle', 'displayName', 'share', 'hideRank', 'notify']);
+const TOP_LEVEL_KEYS = Object.freeze(['enabled', 'handle', 'displayName', 'share', 'hideRank', 'notify', 'showBadges']);
 // C0/C1 control characters, which have no business in a name shown to friends.
 const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/;
 
@@ -33,6 +34,10 @@ const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/;
  *   Which summary fields friends may see.
  * @property {boolean} hideRank     When true the user sees lists without positions ("cheer-only mode").
  * @property {import('./notify-prefs.js').NotifyPrefs} notify  Which events may send a push notification, all off by default.
+ * @property {string[]} showBadges  Earned badges friends may see; none by default.
+ * @property {Array<{id: string, date: string}>} earned  Badges earned so far. Written by the server only.
+ * @property {number} [cheersSent]  Server-side counter behind the Cheerleader badge; never sent to clients.
+ * @property {string} [coopCompletedOn]  ISO date of the first co-op challenge finished together; server-side.
  */
 
 /**
@@ -47,8 +52,22 @@ export function defaultSocial() {
     displayName: '',
     share: { sessions: true, streak: true, consistency: true, prs: false },
     hideRank: false,
-    notify: defaultNotify()
+    notify: defaultNotify(),
+    showBadges: [],
+    earned: [],
+    cheersSent: 0
   };
+}
+
+/**
+ * What a user may be told about their own settings: everything except server-side counters.
+ *
+ * @param {SocialSettings} social
+ * @returns {Omit<SocialSettings, 'cheersSent' | 'coopCompletedOn'>}
+ */
+export function publicSocial(social) {
+  const { cheersSent, coopCompletedOn, ...rest } = social;
+  return rest;
 }
 
 /**
@@ -135,6 +154,11 @@ export function validateSocialUpdate(input, current, { isHandleTaken }) {
       next.share[key] = value;
     }
   }
+  if ('showBadges' in input) {
+    const checked = validateShowBadges(input.showBadges);
+    if (!checked.ok) return bad(checked.error);
+    next.showBadges = checked.value;
+  }
   if ('notify' in input) {
     const checked = validateNotify(input.notify, current.notify);
     if (!checked.ok) return bad(checked.error);
@@ -188,7 +212,7 @@ export function createSocialRoutes({ db, saveDb, readSession, json, readBody, on
     'GET /api/social/me': async (req, res) => {
       const user = readSession(req);
       if (!user) return json(res, 401, { error: 'not signed in' });
-      json(res, 200, { social: settingsOf(user) });
+      json(res, 200, { social: publicSocial(settingsOf(user)) });
     },
 
     'PUT /api/social/me': async (req, res) => {
@@ -203,7 +227,7 @@ export function createSocialRoutes({ db, saveDb, readSession, json, readBody, on
       user.social = result.value;
       saveDb();
       onChange(user, wasSharing);
-      json(res, 200, { social: user.social });
+      json(res, 200, { social: publicSocial(user.social) });
     }
   };
 }

@@ -73,6 +73,7 @@ export function createSharingService({ db, saveDb, readSession, json, now = Date
           handle: person.social.handle,
           displayName: person.social.displayName,
           hideRank: !!person.social.hideRank,
+          badges: (person.social.earned || []).filter(b => (person.social.showBadges || []).includes(b.id)),
           summary: stored ? filterSummary(stored.data, person.social.share) : null,
           updatedAt: stored?.updatedAt ?? null,
           stale: stored ? t - stored.updatedAt > STALE_AFTER_MS : false

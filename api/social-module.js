@@ -11,6 +11,7 @@ import { createSharingService } from './sharing.js';
 import { createChallengeService } from './challenge-service.js';
 import { createFeedService } from './feed-service.js';
 import { createNotifier } from './notifier.js';
+import { createBadgeService } from './badge-service.js';
 
 /**
  * @param {object} ctx
@@ -36,7 +37,8 @@ export function createSocialModule({ db, saveDb, readSession, json, readBody, re
   })) db[key] ||= empty;
 
   const notifier = createNotifier({ db, saveDb, sendPush, readState, now });
-  const base = { db, saveDb, readSession, json, readBody, readState, notify: notifier.notify, now };
+  const badges = createBadgeService({ db, saveDb, now });
+  const base = { db, saveDb, readSession, json, readBody, readState, notify: notifier.notify, onNewCheer: badges.onCheerSent, now };
   const sharing = createSharingService(base);
   const challenges = createChallengeService(base);
   const feed = createFeedService(base);
@@ -45,6 +47,7 @@ export function createSocialModule({ db, saveDb, readSession, json, readBody, re
   const afterStateSaved = (user, state) => {
     sharing.refresh(user, state);
     challenges.recordProgress(user, state);
+    badges.refresh(user, state);
     const created = feed.recordEvents(user, state);
     if (created.length) {
       for (const friend of relationsOf(db.friendships, user.id).friends) {
@@ -57,7 +60,7 @@ export function createSocialModule({ db, saveDb, readSession, json, readBody, re
   const onChange = (user, wasSharing) => {
     if (user.social?.enabled) {
       const saved = wasSharing ? null : readState(user.id);   // nothing to summarise before the first sync
-      if (saved) sharing.refresh(user, saved);
+      if (saved) { sharing.refresh(user, saved); badges.refresh(user, saved); }
     } else sharing.forget(user.id);
     challenges.onSharingChange(user, wasSharing);
   };
@@ -72,6 +75,7 @@ export function createSocialModule({ db, saveDb, readSession, json, readBody, re
   const maintain = async () => {
     for (const ended of challenges.collectEnded()) {
       for (const uid of ended.uids) await notifier.notify(uid, 'challengeEnded', { title: ended.title });
+      if (ended.coopDone) badges.onCoopCompleted(ended.uids, ended.endDate);
     }
     await notifier.flush();
   };

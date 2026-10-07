@@ -24,10 +24,11 @@ const MINE_COUNT = 5;
  * @param {(res: import('node:http').ServerResponse, code: number, body: object) => void} ctx.json
  * @param {(req: import('node:http').IncomingMessage) => Promise<any>} ctx.readBody
  * @param {(uid: string, kind: string, data: object) => Promise<boolean>} [ctx.notify]  Push notifier; the default does nothing.
+ * @param {(sender: object) => void} [ctx.onNewCheer]  Called when someone sends a cheer for the first time on an event.
  * @param {() => number} [ctx.now]
  * @returns {{recordEvents: (user: object, state: object) => object[], onSever: (a: string, b: string) => void, routes: Record<string, Function>}}
  */
-export function createFeedService({ db, saveDb, readSession, json, readBody, notify = async () => false, now = Date.now }) {
+export function createFeedService({ db, saveDb, readSession, json, readBody, notify = async () => false, onNewCheer = () => {}, now = Date.now }) {
   const userById = id => db.users.find(u => u.id === id);
   const friendIds = uid => new Set(relationsOf(db.friendships, uid).friends.map(f => f.uid));
   /** An owner whose sessions friends may see. */
@@ -116,6 +117,7 @@ export function createFeedService({ db, saveDb, readSession, json, readBody, not
       if (existing) existing.emoji = emoji;
       else {
         db.socialCheers.push({ eventId, from: user.id, emoji, createdAt: now() });
+        onNewCheer(user);
         if (!isMuted(event.uid, user.id)) notify(event.uid, 'cheerReceived', { name: user.social.displayName, emoji });
       }
       saveDb();

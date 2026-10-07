@@ -10,7 +10,10 @@ import { fileURLToPath } from 'node:url';
  * so a future change that reads one of them fails here, in review, not in production.
  */
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SOCIAL_FILES = ['summary.js', 'sharing.js', 'challenges.js', 'challenge-service.js', 'friends.js', 'social.js'];
+const SOCIAL_FILES = [
+  'summary.js', 'sharing.js', 'challenges.js', 'challenge-service.js', 'friends.js', 'social.js',
+  'feed.js', 'feed-service.js', 'notifier.js', 'notify-prefs.js', 'badges.js', 'badge-service.js', 'social-module.js'
+];
 
 // Fields of the synced state that belong to the user alone.
 const PRIVATE_FIELDS = [

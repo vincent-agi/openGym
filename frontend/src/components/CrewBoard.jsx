@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { t } from '../lib/i18n.js'
 import { PERIODS, metricsFor, rankCrew, trendDisplay } from '../lib/crew.js'
+import { badgeInfo } from '../lib/badges.js'
 import { Segmented, Button } from './ui.jsx'
 
 const PERIOD_LABEL = { week: 'Week', month: 'Month' }
@@ -45,6 +46,7 @@ export default function CrewBoard({ data, hideRank, onRefresh, onAdd }) {
   const metrics = metricsFor(period)
   const active = metrics.includes(metric) ? metric : 'sessions'
   const rows = rankCrew(data.me, data.friends, { metric: active, period, viewerHidesRank: hideRank })
+  const badgesOf = handle => (handle === data.me.handle ? data.me : data.friends.find(f => f.handle === handle))?.badges || []
 
   return (
     <div className="card">
@@ -72,6 +74,7 @@ export default function CrewBoard({ data, hideRank, onRefresh, onAdd }) {
             <span className="lrow-m" style={{ minWidth: 0 }}>
               <span className="lrow-t">{r.displayName}{r.isMe ? ' · ' + t('you') : ''}</span>
               {STATUS_TEXT[r.status] && <span className="lrow-s">{t(STATUS_TEXT[r.status](period))}</span>}
+              {badgesOf(r.handle).length > 0 && <span className="lrow-s">{badgesOf(r.handle).map(b => t(badgeInfo(b.id).name)).join(' · ')}</span>}
               {(trend => trend && <span className="lrow-s">{t('{0}{1} sessions a week vs usual', trend.sign, trend.amount)}</span>)(trendDisplay(r.trend, r.isMe))}
             </span>
           </span>

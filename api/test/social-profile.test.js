@@ -40,7 +40,8 @@ test('PUT /api/social/me stores validated settings and GET reads them back', asy
   assert.deepEqual(get.body.social, {
     enabled: true, handle: 'lea_fit', displayName: 'Léa',
     share: { sessions: true, streak: true, consistency: true, prs: true }, hideRank: true,
-    notify: { friendSession: false, cheerReceived: false, challengeInvite: false, challengeMilestone: false, challengeEnded: false, quiet: { from: '21:00', to: '08:00' } }
+    notify: { friendSession: false, cheerReceived: false, challengeInvite: false, challengeMilestone: false, challengeEnded: false, quiet: { from: '21:00', to: '08:00' } },
+    showBadges: [], earned: []
   });
 });
 

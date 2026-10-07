@@ -6,6 +6,8 @@ const taken = new Set(['marc']);
 const opts = { isHandleTaken: h => taken.has(h) };
 
 test('defaultSocial is fully private', () => {
+  assert.deepEqual(defaultSocial().showBadges, []);
+  assert.deepEqual(defaultSocial().earned, []);
   const d = defaultSocial();
   assert.equal(d.enabled, false);
   assert.equal(d.handle, '');

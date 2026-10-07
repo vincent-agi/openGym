@@ -3,6 +3,7 @@ import { api } from './api.js'
 import { useStore } from '../store/useStore.js'
 import { DEMO } from './demo.js'
 import { MOBILE } from './mobile.js'
+import { newBadges, badgeInfo } from './badges.js'
 
 /**
  * Whether the friends module is usable here, and the signed-in user's sharing settings.
@@ -74,4 +75,40 @@ export function useFeed(enabled) {
     return () => window.removeEventListener('focus', reload)
   }, [enabled, reload])
   return { data, reload }
+}
+
+/**
+ * The caller's challenges, for places that only need a glance (the weekly recap).
+ *
+ * @param {boolean} enabled
+ * @returns {object[] | null}  Challenge views, null until loaded.
+ */
+export function useChallenges(enabled) {
+  const [list, setList] = useState(null)
+  useEffect(() => {
+    if (!enabled) return
+    api('/api/social/challenges').then(r => setList(r.challenges)).catch(() => {})
+  }, [enabled])
+  return list
+}
+
+const SEEN_KEY = 'gymme_seen_badges'
+
+/**
+ * Celebrates badges earned since the last visit with a toast. The first visit only records what
+ * is already earned, so nobody is greeted by a pile of old news.
+ *
+ * @param {Array<{id: string, date: string}> | undefined} earned  From the user's social settings.
+ * @param {(message: string) => void} toast
+ * @param {(key: string, ...args: any[]) => string} translate  `t` from the i18n module.
+ */
+export function useBadgeToasts(earned, toast, translate) {
+  useEffect(() => {
+    if (!earned) return
+    let seen = null
+    try { seen = JSON.parse(localStorage.getItem(SEEN_KEY)) } catch { /* private mode: treat as first visit */ }
+    const fresh = seen === null ? [] : newBadges(earned, seen)
+    fresh.forEach(b => toast(translate('New badge: {0}', translate(badgeInfo(b.id).name))))
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify(earned.map(b => b.id))) } catch { /* ignore */ }
+  }, [earned, toast, translate])
 }

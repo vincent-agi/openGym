@@ -19,8 +19,8 @@ import {
  *   Updates the stored progress of every live challenge the user is in, from their saved state.
  * @property {(user: object, wasSharing: boolean) => void} onSharingChange
  *   Pauses or resumes the user's participations when they turn sharing off or back on.
- * @property {() => Array<{title: string, uids: string[]}>} collectEnded
- *   Challenges that finished since the last call, once each, with the people to tell.
+ * @property {() => Array<{title: string, uids: string[], coopDone: boolean, endDate: string}>} collectEnded
+ *   Challenges that finished since the last call, once each: whom to tell, and whether a co-op target was reached.
  * @property {Record<string, Function>} routes
  */
 
@@ -226,7 +226,11 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
     const finished = db.challenges.filter(ch => ch.status !== 'cancelled' && !ch.endedNotified && statusOf(ch, today) === 'ended');
     finished.forEach(ch => { ch.endedNotified = true; });
     if (finished.length) saveDb();
-    return finished.map(ch => ({ title: ch.title, uids: ch.participants.filter(p => p.status === 'joined').map(p => p.uid) }));
+    return finished.map(ch => {
+      const uids = ch.participants.filter(p => p.status === 'joined').map(p => p.uid);
+      const total = uids.reduce((n, uid) => n + progressOf(ch.type, db.challengeProgress[ch.id]?.[uid]), 0);
+      return { title: ch.title, uids, coopDone: ch.mode === 'coop' && total >= ch.target, endDate: ch.endDate };
+    });
   };
 
   return { recordProgress, onSharingChange, collectEnded, routes };
