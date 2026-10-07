@@ -118,6 +118,8 @@ Rules of thumb:
 
 Keep decision logic here, not in components, and give it a `*.test.js` beside it.
 
+Friends module: `lib/social.js` (sharing settings rules), `lib/friends.js` (codes and links), `lib/crew.js` (leaderboard ranking: ties share a position, ordered only by name; people without a number are shown neutrally and never last; Consistency is a weekly metric only).
+
 | Module | Responsibility |
 |---|---|
 | `history.js` | Reading a logged session: modes (`reps`/`time`/`cardio`), bodyweight and per-side flags, set labels, effective routine for a date, PRs, streaks, volume, superset units. |

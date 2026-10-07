@@ -4,11 +4,12 @@ import { api } from '../lib/api.js'
 import { t } from '../lib/i18n.js'
 import { fmtDate, isoOf } from '../lib/format.js'
 import { takePendingCode, addRequestBodies } from '../lib/friends.js'
-import { useSocial } from '../lib/useSocial.js'
+import { useSocial, useCrewSummary } from '../lib/useSocial.js'
 import { useUI } from '../store/useUI.js'
 import { confirmSheet } from '../sheets.jsx'
 import { addFriendSheet, sendFriendRequest } from '../components/FriendSheets.jsx'
 import { Button } from '../components/ui.jsx'
+import CrewBoard from '../components/CrewBoard.jsx'
 
 const post = (path, body) => api('/api/social/friends/' + path, { method: 'POST', body: JSON.stringify(body) })
 
@@ -35,6 +36,7 @@ export default function Crew() {
   const toast = useUI(s => s.toast)
   const { status, social } = useSocial()
   const [data, setData] = useState(null)
+  const board = useCrewSummary(status === 'ready' && !!social?.enabled)
 
   const load = useCallback(() => api('/api/social/friends').then(setData).catch(e => toast(e.message)), [toast])
 
@@ -70,6 +72,8 @@ export default function Crew() {
   )
   else if (!data) body = <div className="muted">{t('Loading…')}</div>
   else body = <>
+    {board.data && <CrewBoard data={board.data} hideRank={!!social.hideRank} onRefresh={board.reload} onAdd={() => addFriendSheet(() => { load(); board.reload() })} />}
+
     {data.incoming.length > 0 && (
       <div className="card">
         <h2 style={{ marginTop: 0 }}>{t('Requests')}</h2>

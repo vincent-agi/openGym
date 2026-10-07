@@ -134,3 +134,22 @@ test('a failing summary never breaks saving the state', async () => {
   const res = await save(a, { workouts: 'not-an-array', routines: 7, week: null });
   assert.equal(res.status, 200);
 });
+
+test('the response also carries the caller own row, built the same way as a friend row', async () => {
+  const a = await sharingUser('me_a', { sessions: true, streak: false, consistency: false, prs: false });
+  await save(a, { workouts: [session(today())] });
+  const { body } = await feed(a);
+  assert.equal(body.me.handle, a.handle);
+  assert.equal(body.me.summary.weekSessions, 1);
+  assert.ok(!('streakWeeks' in body.me.summary));
+  assert.equal(body.me.hideRank, false);
+});
+
+test('each row says whether that person opted out of rankings', async () => {
+  const a = await sharingUser('hr_a');
+  const b = await sharingUser('hr_b');
+  await befriend(a, b);
+  await app.request('/api/social/me', { method: 'PUT', as: b, body: { hideRank: true } });
+  const row = (await feed(a)).body.friends[0];
+  assert.equal(row.hideRank, true);
+});

@@ -32,3 +32,27 @@ export function useSocial() {
 
   return { ...state, reload }
 }
+
+/**
+ * Loads the friends' shared summaries (the Crew leaderboard data) and keeps them fresh.
+ * Reloads when the tab regains focus. A failure keeps the last good data and reports `error`.
+ *
+ * @param {boolean} enabled  Only fetch when the user is allowed to (sharing on).
+ * @returns {{data: {me: object, friends: object[]} | null, error: string, reload: () => void}}
+ */
+export function useCrewSummary(enabled) {
+  const [data, setData] = useState(null)
+  const [error, setError] = useState('')
+  const reload = useCallback(() => {
+    api('/api/social/friends/summary').then(d => { setData(d); setError('') }).catch(e => setError(e.message))
+  }, [])
+
+  useEffect(() => {
+    if (!enabled) return undefined
+    reload()
+    window.addEventListener('focus', reload)
+    return () => window.removeEventListener('focus', reload)
+  }, [enabled, reload])
+
+  return { data, error, reload }
+}

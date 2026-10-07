@@ -10,7 +10,8 @@ import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
-import { useSocial } from '../lib/useSocial.js'
+import { useSocial, useCrewSummary } from '../lib/useSocial.js'
+import { rankCrew, crewHighlights } from '../lib/crew.js'
 
 // Home = what to do now + a quick glance. Deep charts & history live in Stats.
 export default function Home() {
@@ -46,6 +47,8 @@ export default function Home() {
   const nutritionTargets = S.nutrition?.targets?.kcal ? S.nutrition.targets : null
   const nutritionToday = nutritionTargets ? dayTotals(S, todayISO()) : null
   const social = useSocial()
+  const crew = useCrewSummary(social.status === 'ready' && social.social.enabled)
+  const crewTop = crew.data ? crewHighlights(rankCrew(crew.data.me, crew.data.friends, { metric: 'consistency', period: 'week', viewerHidesRank: !!social.social.hideRank })) : null
 
   // today's session shown right under the week strip
   const onToday = () => { if (S.active) nav('/workout'); else if (routine) startFlow(routine.id); else dayOverrideSheet(todayISO()) }
@@ -138,9 +141,18 @@ export default function Home() {
     {social.status === 'ready' && social.social.enabled && (
       <div className="card tappable" style={{ cursor: 'pointer' }} onClick={() => nav('/crew')}>
         <div className="row between">
-          <div className="row" style={{ gap: 7, fontSize: 22, fontWeight: 600, letterSpacing: '-.021em' }}>
-            <Icon name="heart" style={{ color: 'var(--pink)' }} />
-            {t('Crew')}
+          <div>
+            <div className="row" style={{ gap: 7, fontSize: 22, fontWeight: 600, letterSpacing: '-.021em' }}>
+              <Icon name="heart" style={{ color: 'var(--pink)' }} />
+              {t('Crew')}
+            </div>
+            <div className="muted small" style={{ marginTop: 2 }}>
+              {!crewTop ? '' : crew.data.friends.length === 0
+                ? t('Invite a friend')
+                : crewTop.mine?.position
+                  ? t('You are #{0} this week · {1}', crewTop.mine.position, crewTop.top.map(r => r.displayName).join(', '))
+                  : crew.data.friends.map(f => f.displayName).join(', ')}
+            </div>
           </div>
           <Icon name="chevronRight" className="chev" style={{ fontSize: 20 }} />
         </div>

@@ -122,7 +122,7 @@ people, and revoked when its owner creates a new one.
 
 | Method & path | Description |
 |---|---|
-| `GET /api/social/friends/summary` | Needs a session and sharing. `{friends:[{handle, displayName, summary, updatedAt, stale}]}` for **accepted** friends who are sharing. `summary` holds only the keys that friend chose to share, or `null` if they have not synced since enabling sharing. `stale` is true when `updatedAt` is older than 14 days. |
+| `GET /api/social/friends/summary` | Needs a session and sharing. `{me, friends:[{handle, displayName, hideRank, summary, updatedAt, stale}]}`: `friends` are the **accepted** friends who are sharing, and `me` is the caller's own row, built the same way. `hideRank` is true for people who opted out of rankings. `summary` holds only the keys that friend chose to share, or `null` if they have not synced since enabling sharing. `stale` is true when `updatedAt` is older than 14 days. |
 
 The summary is computed by the server (`api/summary.js`) from the state saved with `PUT /api/data`; clients cannot submit one.
 Its keys are a fixed whitelist (a test fails if one is added unreviewed):

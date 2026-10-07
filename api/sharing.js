@@ -67,20 +67,22 @@ export function createSharingService({ db, saveDb, readSession, json, now = Date
       const user = requireSharing(readSession, json, req, res);
       if (!user) return;
       const t = now();
+      const row = person => {
+        const stored = db.socialSummaries[person.id];
+        return {
+          handle: person.social.handle,
+          displayName: person.social.displayName,
+          hideRank: !!person.social.hideRank,
+          summary: stored ? filterSummary(stored.data, person.social.share) : null,
+          updatedAt: stored?.updatedAt ?? null,
+          stale: stored ? t - stored.updatedAt > STALE_AFTER_MS : false
+        };
+      };
       const friends = relationsOf(db.friendships, user.id).friends
         .map(r => db.users.find(u => u.id === r.uid))
         .filter(isSharing)
-        .map(friend => {
-          const stored = db.socialSummaries[friend.id];
-          return {
-            handle: friend.social.handle,
-            displayName: friend.social.displayName,
-            summary: stored ? filterSummary(stored.data, friend.social.share) : null,
-            updatedAt: stored?.updatedAt ?? null,
-            stale: stored ? t - stored.updatedAt > STALE_AFTER_MS : false
-          };
-        });
-      json(res, 200, { friends });
+        .map(row);
+      json(res, 200, { me: row(user), friends });
     }
   };
 
