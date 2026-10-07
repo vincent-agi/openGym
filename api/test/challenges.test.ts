@@ -3,23 +3,42 @@ import assert from 'node:assert/strict';
 import {
   LIMITS, validateChallengeInput, collectProgress, progressOf, statusOf, challengeView, activeCountFor, removeParticipant, isStale
 } from '../challenges.ts';
+import type { ChallengeMode } from '../../shared/constants.ts';
+import type { ChallengeView, CoopChallenge } from '../../shared/social.ts';
+import type { Challenge } from '../types.ts';
 
 const TODAY = '2026-10-07';   // Wednesday
-const ok = input => validateChallengeInput(input, { today: TODAY });
+const ok = (input: unknown) => validateChallengeInput(input, { today: TODAY });
+/** The normalised value of an input the validator is expected to accept. */
+const accepted = (input: unknown) => {
+  const r = ok(input);
+  if (!r.ok) assert.fail(r.error);
+  return r.value;
+};
+/** The co-op view of a challenge; fails when the view is not a co-op one. */
+const coop = (v: ChallengeView): CoopChallenge => {
+  assert.equal(v.mode, 'coop');
+  return v as CoopChallenge;
+};
+/** A participant of a view, by handle. */
+const person = (v: ChallengeView, handle: string) => {
+  const p = v.participants.find(x => x.handle === handle);
+  assert.ok(p, handle);
+  return p;
+};
 const valid = { title: ' 4 weeks ', type: 'sessions', mode: 'versus', target: 12, startDate: '2026-10-07', endDate: '2026-11-03', invite: ['Marc', '@lea'] };
 
-const session = d => ({ id: 'w' + d, d, entries: [{ id: 'x', sets: [{ done: true }] }] });
-const state = (days, planned = []) => ({ routines: [{ id: 'r' }], week: Object.fromEntries(planned.map(d => [d, 'r'])), dayPlan: {}, workouts: days.map(session) });
+const session = (d: string) => ({ id: 'w' + d, d, entries: [{ id: 'x', sets: [{ done: true }] }] });
+const state = (days: string[], planned: number[] = []) => ({ routines: [{ id: 'r' }], week: Object.fromEntries(planned.map(d => [d, 'r'])), dayPlan: {}, workouts: days.map(session) });
 
 test('a valid challenge is normalised', () => {
-  const r = ok(valid);
-  assert.equal(r.ok, true);
-  assert.equal(r.value.title, '4 weeks');
-  assert.deepEqual(r.value.invite, ['marc', 'lea']);
+  const value = accepted(valid);
+  assert.equal(value.title, '4 weeks');
+  assert.deepEqual(value.invite, ['marc', 'lea']);
 });
 
 test('invalid challenges are rejected with a message', () => {
-  const bad = patch => ok({ ...valid, ...patch });
+  const bad = (patch: Record<string, unknown>) => ok({ ...valid, ...patch });
   for (const [label, patch] of Object.entries({
     'empty title': { title: '  ' }, 'long title': { title: 'x'.repeat(LIMITS.titleMax + 1) },
     'unknown type': { type: 'weight' }, 'unknown mode': { mode: 'solo' },
@@ -42,7 +61,7 @@ test('duration limits are inclusive: 7 and 90 days are fine', () => {
 });
 
 test('duplicate and own invitees are collapsed, unknown fields are rejected', () => {
-  assert.deepEqual(ok({ ...valid, invite: ['marc', 'MARC', '@marc'] }).value.invite, ['marc']);
+  assert.deepEqual(accepted({ ...valid, invite: ['marc', 'MARC', '@marc'] }).invite, ['marc']);
   assert.equal(ok({ ...valid, secret: 1 }).ok, false);
 });
 
@@ -94,7 +113,7 @@ test('statusOf follows the dates, the end date being inclusive, and cancellation
 });
 
 test('activeCountFor counts only live challenges the user is in', () => {
-  const mk = (uid, pstatus, start, end, status = 'open') => ({ startDate: start, endDate: end, status, participants: [{ uid, status: pstatus }] });
+  const mk = (uid: string, pstatus: string, start: string, end: string, status = 'open') => ({ startDate: start, endDate: end, status, participants: [{ uid, status: pstatus }] });
   const list = [
     mk('u', 'joined', '2026-10-01', '2026-10-30'), mk('u', 'joined', '2026-11-01', '2026-11-30'),
     mk('u', 'left', '2026-10-01', '2026-10-30'), mk('u', 'invited', '2026-10-01', '2026-10-30'),
@@ -104,8 +123,8 @@ test('activeCountFor counts only live challenges the user is in', () => {
 });
 
 const people = { a: { handle: 'ana', displayName: 'Ana' }, b: { handle: 'bob', displayName: 'Bob' }, c: { handle: 'cy', displayName: 'Cy' } };
-const base = (mode, extra = {}) => ({
-  id: 'c1', title: 'T', type: 'sessions', mode, target: 10, startDate: '2026-10-01', endDate: '2026-10-31', status: 'open', ownerId: 'a',
+const base = (mode: ChallengeMode, extra: Partial<Challenge> = {}): Challenge => ({
+  id: 'c1', title: 'T', type: 'sessions', mode, target: 10, startDate: '2026-10-01', endDate: '2026-10-31', status: 'open', ownerId: 'a', createdAt: 0,
   participants: [{ uid: 'a', status: 'joined' }, { uid: 'b', status: 'joined' }, { uid: 'c', status: 'invited' }], ...extra
 });
 const progress = { a: { sessions: 6, days: [], weeks: [] }, b: { sessions: 3, days: [], weeks: [] } };
@@ -116,7 +135,7 @@ test('versus view ranks joined participants by progress and shows invitees witho
   assert.deepEqual(v.participants.map(p => [p.handle, p.current, p.position]), [['ana', 6, 1], ['bob', 3, 2], ['cy', null, null]]);
   assert.equal(v.participants[0].pct, 0.6);
   assert.equal(v.participants[2].state, 'invited');
-  assert.equal(v.total, undefined);
+  assert.equal('total' in v, false);
 });
 
 test('versus ties share a position', () => {
@@ -126,25 +145,25 @@ test('versus ties share a position', () => {
 
 test('co-op view adds everyone together toward one shared target, with no individual ranking', () => {
   const v = challengeView(base('coop', { target: 12 }), { progress, people, isSharing: () => true, today: TODAY });
-  assert.equal(v.total, 9);
-  assert.equal(v.pct, 0.75);
-  assert.equal(v.done, false);
+  assert.equal(coop(v).total, 9);
+  assert.equal(coop(v).pct, 0.75);
+  assert.equal(coop(v).done, false);
   assert.ok(v.participants.every(p => p.position === null));
-  const done = challengeView(base('coop', { target: 9 }), { progress, people, isSharing: () => true, today: TODAY });
+  const done = coop(challengeView(base('coop', { target: 9 }), { progress, people, isSharing: () => true, today: TODAY }));
   assert.equal(done.done, true);
   assert.equal(done.pct, 1);
 });
 
 test('someone who is not sharing is paused and does not count', () => {
   const v = challengeView(base('coop'), { progress, people, isSharing: uid => uid !== 'b', today: TODAY });
-  assert.equal(v.total, 6);
-  assert.equal(v.participants.find(p => p.handle === 'bob').state, 'paused');
+  assert.equal(coop(v).total, 6);
+  assert.equal(person(v, 'bob').state, 'paused');
 });
 
 test('people who left stay visible as left, uncounted and unranked', () => {
   const ch = base('versus'); ch.participants[1].status = 'left';
   const v = challengeView(ch, { progress, people, isSharing: () => true, today: TODAY });
-  const bob = v.participants.find(p => p.handle === 'bob');
+  const bob = person(v, 'bob');
   assert.deepEqual([bob.state, bob.current, bob.position], ['left', null, null]);
   assert.deepEqual(v.participants.map(p => p.handle).slice(0, 1), ['ana']);
 });
@@ -162,8 +181,10 @@ test('collectProgress honours planned breaks when counting planned sessions per 
   assert.equal(progressOf('consistency', d), 0);      // a break week gives no credit, and no penalty
 });
 
+type RoomOf = Pick<Challenge, 'ownerId' | 'status' | 'participants'>;
+
 test('removeParticipant deletes the person and hands the challenge to someone still in', () => {
-  const ch = { ownerId: 'a', status: 'open', participants: [{ uid: 'a', status: 'joined' }, { uid: 'b', status: 'invited' }, { uid: 'c', status: 'joined' }] };
+  const ch: RoomOf = { ownerId: 'a', status: 'open', participants: [{ uid: 'a', status: 'joined' }, { uid: 'b', status: 'invited' }, { uid: 'c', status: 'joined' }] };
   removeParticipant(ch, 'a');
   assert.deepEqual(ch.participants.map(p => p.uid), ['b', 'c']);
   assert.equal(ch.ownerId, 'c');
@@ -171,13 +192,13 @@ test('removeParticipant deletes the person and hands the challenge to someone st
 });
 
 test('removeParticipant cancels the challenge when nobody is left to own it', () => {
-  const ch = { ownerId: 'a', status: 'open', participants: [{ uid: 'a', status: 'joined' }, { uid: 'b', status: 'invited' }] };
+  const ch: RoomOf = { ownerId: 'a', status: 'open', participants: [{ uid: 'a', status: 'joined' }, { uid: 'b', status: 'invited' }] };
   removeParticipant(ch, 'a');
   assert.equal(ch.status, 'cancelled');
 });
 
 test('removeParticipant leaves the owner alone when someone else goes', () => {
-  const ch = { ownerId: 'a', status: 'open', participants: [{ uid: 'a', status: 'joined' }, { uid: 'b', status: 'joined' }] };
+  const ch: RoomOf = { ownerId: 'a', status: 'open', participants: [{ uid: 'a', status: 'joined' }, { uid: 'b', status: 'joined' }] };
   removeParticipant(ch, 'b');
   assert.equal(ch.ownerId, 'a');
   assert.deepEqual(ch.participants.map(p => p.uid), ['a']);

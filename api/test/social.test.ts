@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { defaultSocial, normalizeHandle, validateSocialUpdate, isSharing } from '../social.ts';
 
 const taken = new Set(['marc']);
-const opts = { isHandleTaken: h => taken.has(h) };
+const opts = { isHandleTaken: (h: string) => taken.has(h) };
 
 test('defaultSocial is fully private', () => {
   assert.deepEqual(defaultSocial().showBadges, []);
@@ -86,6 +86,7 @@ test('sharing can always be switched off, even from an incomplete record', () =>
 
 test('share flags merge key by key and must be booleans', () => {
   const ok = validateSocialUpdate({ share: { prs: true } }, defaultSocial(), opts);
+  assert.ok(ok.ok);
   assert.deepEqual(ok.value.share, { sessions: true, streak: true, consistency: true, prs: true });
   assert.equal(validateSocialUpdate({ share: { prs: 'yes' } }, defaultSocial(), opts).ok, false);
 });
@@ -106,9 +107,9 @@ test('validation does not mutate the current settings', () => {
 });
 
 test('isSharing is true only for a user who explicitly enabled sharing', () => {
-  assert.equal(isSharing({ id: 'a' }), false);
-  assert.equal(isSharing({ id: 'a', social: defaultSocial() }), false);
-  assert.equal(isSharing({ id: 'a', social: { ...defaultSocial(), enabled: true } }), true);
+  assert.equal(isSharing({}), false);
+  assert.equal(isSharing({ social: defaultSocial() }), false);
+  assert.equal(isSharing({ social: { ...defaultSocial(), enabled: true } }), true);
   assert.equal(isSharing(null), false);
 });
 

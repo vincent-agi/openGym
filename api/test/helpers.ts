@@ -10,49 +10,77 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import type { AddressInfo } from 'node:net';
+import type { Server } from 'node:http';
+import type { Db, User } from '../types.ts';
 
-/**
- * @typedef {object} TestUser
- * @property {string} id      Identity-store id of the user.
- * @property {string} name    Display name stored on the user record.
- * @property {string} cookie  Ready-to-send `Cookie` header value for this user.
- */
+/** A user created by {@link TestServer.createUser}. */
+export interface TestUser {
+  /** Identity-store id of the user. */
+  id: string
+  /** Display name stored on the user record. */
+  name: string
+  /** Ready-to-send `Cookie` header value for this user. */
+  cookie: string
+}
 
-/**
- * @typedef {object} TestServer
- * @property {string} baseUrl  Origin of the running server, e.g. `http://127.0.0.1:41233`.
- * @property {string} dataDir  Temporary data directory used by this instance.
- * @property {(name?: string, extra?: object) => TestUser} createUser  Adds a user and returns its session cookie.
- * @property {(pathname: string, opts?: RequestOptions) => Promise<{status: number, body: any, headers: Headers}>} request  JSON request helper.
- * @property {() => Promise<void>} close  Stops the server and deletes the data directory.
- */
+export interface RequestOptions {
+  /** HTTP verb, defaults to `GET`. */
+  method?: string
+  /** JSON body, serialised for you. */
+  body?: unknown
+  /** User to authenticate as; anonymous when omitted. */
+  as?: TestUser
+  /** Client address, sent as `X-Real-IP` the way the bundled nginx does. */
+  ip?: string
+}
 
-/**
- * @typedef {object} RequestOptions
- * @property {string} [method]   HTTP verb, defaults to `GET`.
- * @property {object} [body]     JSON body, serialised for you.
- * @property {TestUser} [as]     User to authenticate as; anonymous when omitted.
- * @property {string} [ip]       Client address, sent as `X-Real-IP` the way the bundled nginx does.
- */
+/** A response of {@link TestServer.request}; `body` is the parsed JSON, or null when there is none. */
+export interface TestResponse {
+  status: number
+  // any: tests read arbitrary fields of whatever the route answered, and assert on them right after
+  body: any
+  headers: Headers
+}
+
+export interface TestServer {
+  /** Origin of the running server, e.g. `http://127.0.0.1:41233`. */
+  baseUrl: string
+  /** Temporary data directory used by this instance. */
+  dataDir: string
+  /** Adds a user and returns its session cookie. */
+  createUser: (name?: string, extra?: Partial<User>) => TestUser
+  /** JSON request helper. */
+  request: (pathname: string, opts?: RequestOptions) => Promise<TestResponse>
+  /** Stops the server and deletes the data directory. */
+  close: () => Promise<void>
+}
+
+/** The parts of `server.js` the helpers use; replaced by the real types when the server is converted. */
+interface ServerModule {
+  server: Server
+  db: Db
+  saveDb: () => void
+  sessionCookie: (user: User) => string
+}
 
 /**
  * Boots the API on an ephemeral port with an isolated data directory.
  *
- * @param {Record<string, string>} [env]  Extra environment variables applied before the server is imported
+ * @param env  Extra environment variables applied before the server is imported
  *   (for example `{ SOCIAL_ENABLED: '0' }`).
- * @returns {Promise<TestServer>}
  */
-export async function startTestServer(env = {}) {
+export async function startTestServer(env: Record<string, string> = {}): Promise<TestServer> {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gymme-api-test-'));
   Object.assign(process.env, { DATA_DIR: dataDir, ORIGIN: 'http://localhost:8080', RP_ID: 'localhost' }, env);
 
-  const mod = await import('../server.js');
-  await new Promise(resolve => mod.server.listen(0, '127.0.0.1', resolve));
-  const baseUrl = `http://127.0.0.1:${mod.server.address().port}`;
+  const mod = (await import('../server.js')) as unknown as ServerModule;
+  await new Promise<void>(resolve => mod.server.listen(0, '127.0.0.1', resolve));
+  const baseUrl = `http://127.0.0.1:${(mod.server.address() as AddressInfo).port}`;
 
   let counter = 0;
-  const createUser = (name = `user${++counter}`, extra = {}) => {
-    const user = { id: `test${String(++counter).padStart(4, '0')}`, name, created: new Date().toISOString(), ...extra };
+  const createUser = (name = `user${++counter}`, extra: Partial<User> = {}): TestUser => {
+    const user: User = { id: `test${String(++counter).padStart(4, '0')}`, name, created: new Date().toISOString(), ...extra };
     mod.db.users.push(user);
     mod.saveDb();
     return { id: user.id, name, cookie: mod.sessionCookie(user).split(';')[0] };
@@ -60,13 +88,13 @@ export async function startTestServer(env = {}) {
 
   // Each test user gets an address of their own unless a test says otherwise, so the per-address
   // rate limits of the social routes never make unrelated tests interfere with each other.
-  const addresses = new Map();
-  const addressOf = user => {
+  const addresses = new Map<string, string>();
+  const addressOf = (user: TestUser): string => {
     if (!addresses.has(user.id)) { const n = addresses.size + 1; addresses.set(user.id, `10.${(n >> 16) & 255}.${(n >> 8) & 255}.${n & 255}`); }
-    return addresses.get(user.id);
+    return addresses.get(user.id)!;
   };
 
-  const request = async (pathname, { method = 'GET', body, as, ip } = {}) => {
+  const request = async (pathname: string, { method = 'GET', body, as, ip }: RequestOptions = {}): Promise<TestResponse> => {
     ip ??= as ? addressOf(as) : undefined;
     const res = await fetch(baseUrl + pathname, {
       method,
@@ -89,9 +117,8 @@ export async function startTestServer(env = {}) {
  * test both walk this list, and a test fails when it differs from the routes the server registers,
  * so a new route cannot ship without being covered.
  *
- * @type {Array<[string, string]>}
  */
-export const SOCIAL_ROUTES = [
+export const SOCIAL_ROUTES: Array<[string, string]> = [
   ['GET', '/api/social/me'], ['PUT', '/api/social/me'], ['POST', '/api/social/leave'],
   ['POST', '/api/social/friends/code'], ['GET', '/api/social/friends'], ['POST', '/api/social/friends/request'],
   ['POST', '/api/social/friends/respond'], ['POST', '/api/social/friends/remove'], ['POST', '/api/social/friends/block'],

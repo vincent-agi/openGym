@@ -6,11 +6,11 @@ import { SUMMARY_KEYS, computeSummary, filterSummary, isoInZone, mondayOf, addDa
 const NOW = Date.parse('2026-10-07T10:00:00Z');
 
 /** A finished workout on `d`; `done` controls whether any set was actually completed. */
-const workout = (d, { done = true, prs } = {}) => ({
+const workout = (d: string, { done = true, prs }: { done?: boolean; prs?: unknown[] } = {}) => ({
   id: 'w' + d, d, entries: [{ id: '0025', sets: [{ w: 50, r: 5, done }, { w: 50, r: 5, done: false }] }], ...(prs ? { prs } : {})
 });
 /** State with routine ids planned on the given weekdays (0 = Sunday). */
-const state = ({ workouts = [], planned = [], dayPlan = {} } = {}) => ({
+const state = ({ workouts = [], planned = [], dayPlan = {} }: { workouts?: unknown[]; planned?: number[]; dayPlan?: Record<string, string> } = {}) => ({
   routines: [{ id: 'r1', name: 'Push' }, { id: 'r2', name: 'Pull' }],
   week: Object.fromEntries(planned.map(d => [d, 'r1'])),
   dayPlan, workouts
@@ -120,7 +120,7 @@ test('"today" follows the owner time zone, so week boundaries do not shift', () 
 });
 
 test('nothing but the state fields it understands is read, and the state is not modified', () => {
-  const st = state({ workouts: [workout('2026-10-06')], planned: [1] });
+  const st: Record<string, unknown> = state({ workouts: [workout('2026-10-06')], planned: [1] });
   st.bodyweight = [{ d: '2026-10-06', w: 99 }]; st.nutrition = { log: { x: 1 } }; st.mobilityLevel = 'wheelchair';
   const before = JSON.stringify(st);
   const s = computeSummary(st, NOW, 'UTC');
@@ -156,15 +156,15 @@ test('active days and last active date travel with the sessions choice', () => {
 /* ---- fair scoring (v1.7): personal trend, planned breaks, and what must never matter ---- */
 
 /** Sessions placed on given dates, for every Monday-based week offset (0 = this week). */
-const weekly = (counts) => counts.flatMap(([weeksAgo, n]) =>
+const weekly = (counts: Array<[number, number]>) => counts.flatMap(([weeksAgo, n]) =>
   Array.from({ length: n }, (_, i) => workout(addDays(mondayOf('2026-10-07'), -7 * weeksAgo + i)))
 );
 
 test('weeklyTrend compares the last four completed weeks with the four before, per person', () => {
-  const beginner = [...[1, 2, 3, 4].map(w => [w, 3]), ...[5, 6, 7, 8].map(w => [w, 1])];
+  const beginner: Array<[number, number]> = [...[1, 2, 3, 4].map((w): [number, number] => [w, 3]), ...[5, 6, 7, 8].map((w): [number, number] => [w, 1])];
   const s = computeSummary(state({ workouts: weekly(beginner) }), NOW, 'UTC');
   assert.equal(s.weeklyTrend, 2);
-  const slowing = [...[1, 2, 3, 4].map(w => [w, 1]), ...[5, 6, 7, 8].map(w => [w, 3])];
+  const slowing: Array<[number, number]> = [...[1, 2, 3, 4].map((w): [number, number] => [w, 1]), ...[5, 6, 7, 8].map((w): [number, number] => [w, 3])];
   assert.equal(computeSummary(state({ workouts: weekly(slowing) }), NOW, 'UTC').weeklyTrend, -2);
 });
 

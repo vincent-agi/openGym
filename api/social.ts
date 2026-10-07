@@ -9,9 +9,23 @@
  *   {@link createSocialRoutes} touches the request/response and the identity store.
  */
 
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { HANDLE_RE, DISPLAY_NAME_MAX, SHARE_KEYS } from '../shared/constants.ts';
+import type { ShareKey } from '../shared/constants.ts';
+import type { SocialSettings } from '../shared/social.ts';
 import { defaultNotify, validateNotify } from './notify-prefs.ts';
 import { validateShowBadges } from './badges.ts';
+import type { Db, JsonResponder, Routes, Services, SocialHooks, StoredSocial, User } from './types.ts';
+
+export type { SocialSettings };
+
+/** Outcome of {@link validateSocialUpdate}. */
+export type SocialValidation =
+  | { ok: true; value: StoredSocial }
+  /** `status` is the HTTP status the route should answer with; `error` is safe to show to the user. */
+  | { ok: false; status: 400 | 409; error: string };
+
+const isShareKey = (key: string): key is ShareKey => (SHARE_KEYS as readonly string[]).includes(key);
 
 // Handle format, display name length and the share switches live in shared/constants.ts, where the
 // Settings screen reads them too.
@@ -22,26 +36,11 @@ const TOP_LEVEL_KEYS = Object.freeze(['enabled', 'handle', 'displayName', 'share
 const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/;
 
 /**
- * @typedef {object} SocialSettings
- * @property {boolean} enabled      Master switch. Off means invisible to everyone.
- * @property {string}  handle       Unique, lowercase identifier used to find and add the user.
- * @property {string}  displayName  Name shown to friends.
- * @property {{sessions: boolean, streak: boolean, consistency: boolean, prs: boolean}} share
- *   Which summary fields friends may see.
- * @property {boolean} hideRank     When true the user sees lists without positions ("cheer-only mode").
- * @property {import('./notify-prefs.ts').NotifyPrefs} notify  Which events may send a push notification, all off by default.
- * @property {string[]} showBadges  Earned badges friends may see; none by default.
- * @property {Array<{id: string, date: string}>} earned  Badges earned so far. Written by the server only.
- * @property {number} [cheersSent]  Server-side counter behind the Cheerleader badge; never sent to clients.
- * @property {string} [coopCompletedOn]  ISO date of the first co-op challenge finished together; server-side.
- */
-
-/**
  * Settings of a user who never opened the module: everything private.
  *
- * @returns {SocialSettings} A fresh object, safe to mutate.
+ * @returns A fresh object, safe to mutate.
  */
-export function defaultSocial() {
+export function defaultSocial(): StoredSocial {
   return {
     enabled: false,
     handle: '',
@@ -58,10 +57,9 @@ export function defaultSocial() {
 /**
  * What a user may be told about their own settings: everything except server-side counters.
  *
- * @param {SocialSettings} social
- * @returns {Omit<SocialSettings, 'cheersSent' | 'coopCompletedOn'>}
+ * @param social
  */
-export function publicSocial(social) {
+export function publicSocial(social: StoredSocial): SocialSettings {
   const { cheersSent, coopCompletedOn, ...rest } = social;
   return rest;
 }
@@ -70,10 +68,9 @@ export function publicSocial(social) {
  * Canonical form of a handle: trimmed, lowercase, without a leading `@`.
  * Non-strings normalise to an empty string, which never passes {@link HANDLE_RE}.
  *
- * @param {unknown} raw
- * @returns {string}
+ * @param raw
  */
-export function normalizeHandle(raw) {
+export function normalizeHandle(raw: unknown): string {
   if (typeof raw !== 'string') return '';
   return raw.trim().replace(/^@/, '').toLowerCase();
 }
@@ -83,43 +80,30 @@ export function normalizeHandle(raw) {
  * endpoint must use, so disabling sharing (or an admin disabling the account) takes effect on
  * the next request.
  *
- * @param {{social?: SocialSettings, disabled?: boolean} | null | undefined} user
- * @returns {boolean}
+ * @param user
  */
-export function isSharing(user) {
+export function isSharing(user: Pick<User, 'social' | 'disabled'> | null | undefined): boolean {
   return !!user?.social?.enabled && !user.disabled;
 }
-
-/**
- * @typedef {object} ValidationOk
- * @property {true} ok
- * @property {SocialSettings} value  The merged settings, a new object.
- */
-/**
- * @typedef {object} ValidationError
- * @property {false} ok
- * @property {400 | 409} status  HTTP status the route should answer with.
- * @property {string} error      Message safe to show to the user.
- */
 
 /**
  * Validates a partial settings update and merges it onto the current settings.
  * Never mutates `current`.
  *
- * @param {unknown} input  Parsed JSON body of `PUT /api/social/me`.
- * @param {SocialSettings} current  Settings stored today.
- * @param {{isHandleTaken: (handle: string) => boolean}} deps
- *   Reports whether another user already owns a handle.
- * @returns {ValidationOk | ValidationError}
+ * @param body  Parsed JSON body of `PUT /api/social/me`.
+ * @param current  Settings stored today.
+ * @param deps  `isHandleTaken` reports whether another user already owns a handle.
+ * @returns The merged settings (a new object), or the error to answer with.
  */
-export function validateSocialUpdate(input, current, { isHandleTaken }) {
-  const bad = (error, status = 400) => ({ ok: false, status, error });
-  if (!input || typeof input !== 'object' || Array.isArray(input)) return bad('settings object required');
+export function validateSocialUpdate(body: unknown, current: StoredSocial, { isHandleTaken }: { isHandleTaken: (handle: string) => boolean }): SocialValidation {
+  const bad = (error: string, status: 400 | 409 = 400): SocialValidation => ({ ok: false, status, error });
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return bad('settings object required');
+  const input = body as Record<string, unknown>;
 
   const unknown = Object.keys(input).find(k => !TOP_LEVEL_KEYS.includes(k));
   if (unknown) return bad(`unknown field: ${unknown}`);
 
-  const next = { ...current, share: { ...current.share }, notify: { ...current.notify, quiet: { ...current.notify.quiet } } };
+  const next: StoredSocial = { ...current, share: { ...current.share }, notify: { ...current.notify, quiet: { ...current.notify.quiet } } };
 
   if ('enabled' in input) {
     if (typeof input.enabled !== 'boolean') return bad('enabled must be true or false');
@@ -146,7 +130,7 @@ export function validateSocialUpdate(input, current, { isHandleTaken }) {
     const share = input.share;
     if (!share || typeof share !== 'object' || Array.isArray(share)) return bad('share must be an object');
     for (const [key, value] of Object.entries(share)) {
-      if (!SHARE_KEYS.includes(key)) return bad(`unknown share option: ${key}`);
+      if (!isShareKey(key)) return bad(`unknown share option: ${key}`);
       if (typeof value !== 'boolean') return bad(`share.${key} must be true or false`);
       next.share[key] = value;
     }
@@ -171,17 +155,23 @@ export function validateSocialUpdate(input, current, { isHandleTaken }) {
 /**
  * Resolves the caller of a friend-facing route: signed in, and sharing. Answers 401 / 403 itself.
  *
- * @param {(req: import('node:http').IncomingMessage) => (object | null)} readSession
- * @param {(res: import('node:http').ServerResponse, code: number, body: object) => void} json
- * @param {import('node:http').IncomingMessage} req
- * @param {import('node:http').ServerResponse} res
- * @returns {object | null} The user, or null when a response was already sent.
+ * @param readSession
+ * @param json
+ * @param req
+ * @param res
+ * @returns The user, or null when a response was already sent.
  */
-export function requireSharing(readSession, json, req, res) {
+export function requireSharing(readSession: Services['readSession'], json: JsonResponder, req: IncomingMessage, res: ServerResponse): User | null {
   const user = readSession(req);
   if (!user) { json(res, 401, { error: 'not signed in' }); return null; }
   if (!isSharing(user)) { json(res, 403, { error: 'turn on sharing first' }); return null; }
   return user;
+}
+
+/** What {@link createSocialRoutes} needs from the server. */
+export interface SocialRouteDeps extends Pick<Services, 'saveDb' | 'readSession' | 'json' | 'readBody'> {
+  db: Pick<Db, 'users'>
+  onChange?: SocialHooks['onChange']
 }
 
 /**
@@ -190,20 +180,13 @@ export function requireSharing(readSession, json, req, res) {
  * Routes are only registered when the instance enabled the module, so a disabled instance
  * answers 404 exactly as if the feature did not exist.
  *
- * @param {object} ctx  Server services, injected to keep this module free of globals.
- * @param {{users: Array<{id: string, social?: SocialSettings}>}} ctx.db  Identity store (mutated in place).
- * @param {() => void} ctx.saveDb  Persists the identity store atomically.
- * @param {(req: import('node:http').IncomingMessage) => ({id: string, social?: SocialSettings} | null)} ctx.readSession
- *   Resolves the signed-in user, or null.
- * @param {(res: import('node:http').ServerResponse, code: number, body: object) => void} ctx.json  JSON responder.
- * @param {(req: import('node:http').IncomingMessage) => Promise<any>} ctx.readBody  JSON body reader.
- * @param {(user: object, wasSharing: boolean) => void} [ctx.onChange]  Called after settings were saved,
- *   with whether the user was sharing *before* the change.
- * @returns {Record<string, (req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => Promise<void>>}
+ * @param ctx  Server services, injected to keep this module free of globals. `db` is the identity
+ *   store (mutated in place), `saveDb` persists it atomically, `readSession` resolves the signed-in
+ *   user (or null), and `onChange` is called after settings were saved, with whether the user was
+ *   sharing *before* the change.
  */
-export function createSocialRoutes({ db, saveDb, readSession, json, readBody, onChange = () => {} }) {
-  /** @param {{social?: SocialSettings}} user */
-  const settingsOf = user => ({ ...defaultSocial(), ...(user.social || {}) });
+export function createSocialRoutes({ db, saveDb, readSession, json, readBody, onChange = () => {} }: SocialRouteDeps): Routes {
+  const settingsOf = (user: Pick<User, 'social'>): StoredSocial => ({ ...defaultSocial(), ...(user.social || {}) });
 
   return {
     'GET /api/social/me': async (req, res) => {

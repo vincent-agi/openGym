@@ -4,9 +4,10 @@ import {
   FRIEND_CODE_ALPHABET, FRIEND_CODE_LENGTH, generateFriendCode, isCodeUsable,
   sendRequest, respondToRequest, removeFriend, blockUser, unblockUser, relationsOf, pruneFriendCodes
 } from '../friends.ts';
+import type { Friendship } from '../friends.ts';
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');
-const make = () => [];
+const make = (): Friendship[] => [];
 
 test('friend codes use an unambiguous alphabet and a fixed length', () => {
   for (const ch of '0O1IL') assert.ok(!FRIEND_CODE_ALPHABET.includes(ch), `${ch} must not be in the alphabet`);
@@ -21,7 +22,7 @@ test('friend codes are not repeated', () => {
 });
 
 test('isCodeUsable rejects expired and revoked codes', () => {
-  const live = { code: 'ABC', uid: 'u', expiresAt: NOW + 1000 };
+  const live = { code: 'ABC', uid: 'u', createdAt: NOW, expiresAt: NOW + 1000 };
   assert.equal(isCodeUsable(live, NOW), true);
   assert.equal(isCodeUsable({ ...live, expiresAt: NOW - 1 }, NOW), false);
   assert.equal(isCodeUsable({ ...live, revoked: true }, NOW), false);
@@ -158,9 +159,9 @@ test('relationsOf never reveals that someone blocked you', () => {
 test('pruneFriendCodes forgets codes that expired more than a day ago, and keeps the rest', () => {
   const day = 86400000;
   const codes = [
-    { code: 'OLD', uid: 'a', expiresAt: NOW - 2 * day },
-    { code: 'JUSTEXPIRED', uid: 'a', expiresAt: NOW - 1000 },
-    { code: 'LIVE', uid: 'a', expiresAt: NOW + day }
+    { code: 'OLD', uid: 'a', createdAt: 0, expiresAt: NOW - 2 * day },
+    { code: 'JUSTEXPIRED', uid: 'a', createdAt: 0, expiresAt: NOW - 1000 },
+    { code: 'LIVE', uid: 'a', createdAt: 0, expiresAt: NOW + day }
   ];
   assert.deepEqual(pruneFriendCodes(codes, NOW).map(c => c.code), ['JUSTEXPIRED', 'LIVE']);
   assert.equal(codes.length, 3);                         // the input is untouched

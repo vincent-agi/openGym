@@ -1,7 +1,7 @@
 // Friends & challenges — client-side rules shared by the Settings screen and later by the Crew screen.
 //
 // Everything here is pure (no store, no network) so it can be unit tested. The server
-// (api/social.js) re-validates every value; these helpers only exist to give feedback before
+// (api/social.ts) re-validates every value; these helpers only exist to give feedback before
 // a request is made and to describe, honestly, what a friend would be able to see.
 
 import { HANDLE_RE, DISPLAY_NAME_MAX } from '../../../shared/constants.ts'

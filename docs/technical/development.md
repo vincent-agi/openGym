@@ -118,7 +118,7 @@ npm ci
 npm test                # node --test test/  (Node built-ins only, no extra dependency)
 ```
 
-Tests live in `api/test/*.test.js` and run each file in its own process. `test/helpers.js` exposes
+Tests live in `api/test/*.test.js` and run each file in its own process. `test/helpers.ts` exposes
 `startTestServer()`: it boots the real `server.js` on an ephemeral port with a throw-away `DATA_DIR`, and
 `createUser()` writes a user straight into the identity store and returns a session cookie signed by the production
 code (no WebAuthn ceremony). Use `request(path, { method, body, as })` to call routes as a given user.

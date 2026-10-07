@@ -37,7 +37,7 @@ export const DEF = {
   // leaves those days out of the planned week, so a break never costs you consistency. See lib/breaks.js.
   breaks: [],
   // IANA time zone of this device, stamped while friends sharing is on, so the server counts weeks and
-  // days in your zone (see api/summary.js ownerTz). null until then.
+  // days in your zone (see api/summary.ts ownerTz). null until then.
   tz: null,
   // Mobility/accessibility profile (issue #21) — all null/empty by default so an existing user
   // sees no change in which exercises are offered until they opt in from Settings. mobilityLevel

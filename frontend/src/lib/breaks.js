@@ -1,7 +1,7 @@
 // Planned breaks — time off (illness, travel, injury) that must not count against anyone's consistency.
 //
 // A break is just a date range kept in the user's own synced state (`S.breaks`). The reason is
-// never recorded, and the server cuts every break to 14 days (api/summary.js), so the app does
+// never recorded, and the server cuts every break to 14 days (api/summary.ts), so the app does
 // the same here to keep both sides in agreement.
 
 import { MAX_BREAK_DAYS } from '../../../shared/constants.ts'

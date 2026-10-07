@@ -28,7 +28,7 @@ const PRIVATE_FIELDS = [
   'largeTouchTargets', 'pressureRelief', 'targetW', 'goals', 'exWeights', 'customEx', 'effort', 'rpe', 'rir'
 ];
 
-const stripComments = src => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+const stripComments = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 for (const file of SOCIAL_FILES) {
   test(`${file} never reads private parts of a user's state`, () => {

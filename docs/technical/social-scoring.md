@@ -1,7 +1,7 @@
 # Friends module: what counts, and why it is fair
 
 Gymme's friends module (v1.7) compares people only on **showing up**. This page is the exact rulebook behind every
-number friends see, in challenges and on the Crew leaderboard. The code is `api/summary.js` and `api/challenges.js`;
+number friends see, in challenges and on the Crew leaderboard. The code is `api/summary.ts` and `api/challenges.ts`;
 the tests in `api/test/summary.test.js`, `challenges.test.js` and `privacy-boundaries.test.js` enforce it.
 
 ## What is a session?

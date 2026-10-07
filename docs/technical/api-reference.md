@@ -97,7 +97,7 @@ The daily "workout planned" reminder has no endpoint: it is produced by the 10-s
 ### Friends & sharing
 
 Registered only when `SOCIAL_ENABLED` is not off; otherwise every path below answers `404 {"error":"not found"}`.
-Implemented in `api/social.js`. Unknown JSON fields are rejected with `400`.
+Implemented in `api/social.ts`. Unknown JSON fields are rejected with `400`.
 
 | Method & path | Auth | Description |
 |---|---|---|
@@ -107,7 +107,7 @@ Implemented in `api/social.js`. Unknown JSON fields are rejected with `400`.
 #### Friends
 
 All routes below need a session **and** `social.enabled` (otherwise `403 turn on sharing first`). Implemented in
-`api/friends.js`. A friend code is 10 characters from an alphabet without `0 O 1 I L`, valid 14 days, usable by several
+`api/friends.ts`. A friend code is 10 characters from an alphabet without `0 O 1 I L`, valid 14 days, usable by several
 people, and revoked when its owner creates a new one.
 
 | Method & path | Description |
@@ -126,7 +126,7 @@ people, and revoked when its owner creates a new one.
 |---|---|
 | `GET /api/social/friends/summary` | Needs a session and sharing. `{me, friends:[{handle, displayName, hideRank, badges, summary, updatedAt, stale}]}`: `friends` are the **accepted** friends who are sharing, and `me` is the caller's own row, built the same way. `hideRank` is true for people who opted out of rankings. `summary` holds only the keys that friend chose to share, or `null` if they have not synced since enabling sharing. `stale` is true when `updatedAt` is older than 14 days. |
 
-The summary is computed by the server (`api/summary.js`) from the state saved with `PUT /api/data`; clients cannot submit one.
+The summary is computed by the server (`api/summary.ts`) from the state saved with `PUT /api/data`; clients cannot submit one.
 Its keys are a fixed whitelist (a test fails if one is added unreviewed):
 
 | Key | Shared with the choice | Meaning |
@@ -143,7 +143,7 @@ Body weight, measurements, nutrition, effort ratings, the mobility profile, exer
 
 #### Challenges
 
-Friendly goals over 7-90 days, for 2-12 people. Implemented in `api/challenges.js` (rules) and `api/challenge-service.js`
+Friendly goals over 7-90 days, for 2-12 people. Implemented in `api/challenges.ts` (rules) and `api/challenge-service.js`
 (storage and routes). Every route needs a session and sharing. Only participants can see a challenge; everyone else, and
 every other failure, gets `404 not found`.
 

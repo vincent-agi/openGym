@@ -6,15 +6,15 @@
  * the rest, and resets the user's settings to the private defaults.
  */
 import { defaultSocial } from './social.ts';
+import type { Db } from './types.ts';
 
 /**
  * Deletes every social record that mentions a user.
  *
- * @param {object} db   Identity store, mutated in place.
- * @param {string} uid
- * @returns {void}
+ * @param db   Identity store, mutated in place.
+ * @param uid
  */
-export function eraseSocialFootprint(db, uid) {
+export function eraseSocialFootprint(db: Db, uid: string): void {
   const ownEvents = new Set(db.socialEvents.filter(e => e.uid === uid).map(e => e.id));
 
   db.friendships = db.friendships.filter(f => f.a !== uid && f.b !== uid);

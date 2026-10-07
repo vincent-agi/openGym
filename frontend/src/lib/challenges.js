@@ -1,5 +1,5 @@
 // Friendly challenges — client-side helpers: ready-made templates and display rules.
-// The server validates and owns everything that matters (see api/challenges.js).
+// The server validates and owns everything that matters (see api/challenges.ts).
 
 import { T } from './i18n.js'
 
