@@ -1,4 +1,4 @@
-// Badges — names and descriptions for the rewards the server awards (see api/badges.js).
+// Badges — names and descriptions for the rewards the server awards (see api/badges.ts).
 //
 // The server decides who earned what; this file only says what each badge is called and why it
 // exists. There is deliberately nothing here about strength, size or coming first.

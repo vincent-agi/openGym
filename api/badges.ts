@@ -10,6 +10,11 @@
  * (cheers sent, co-op challenges completed), then stored: once earned, never taken back.
  */
 import { BADGES } from '../shared/constants.ts';
+import type { BadgeId } from '../shared/constants.ts';
+import type { Earned } from '../shared/social.ts';
+import type { StateDoc } from './types.ts';
+
+export type { Earned };
 import { addDays, mondayOf, isoInZone, isSession, breaksOf, sessionLimit } from './summary.js';
 
 // Every badge that exists lives in shared/constants.ts; names and descriptions are in the frontend.
@@ -18,50 +23,53 @@ export { BADGES };
 /** Cheers a user must have sent for the Cheerleader badge. */
 export const CHEERLEADER_AT = 10;
 
-/**
- * @typedef {object} Earned
- * @property {string} id    One of {@link BADGES}.
- * @property {string} date  ISO date it was first earned.
- */
+/** Social facts the state cannot tell, gathered by the badge service. */
+export interface BadgeFacts { cheersSent?: number; coopCompletedOn?: string | null }
+
+/** Outcome of {@link validateShowBadges}. */
+export type ShowBadgesValidation = { ok: true; value: BadgeId[] } | { ok: false; error: string };
+
+const isBadgeId = (id: unknown): id is BadgeId => (BADGES as readonly unknown[]).includes(id);
 
 /**
  * Works out which badges a user qualifies for, and the day each was first deserved.
  *
- * @param {object} state  The user's synced state; read for workouts and planned breaks only.
- * @param {number} now    Epoch ms.
- * @param {string} tz     The owner's IANA time zone.
- * @param {{cheersSent?: number, coopCompletedOn?: string | null}} [facts]  Social facts the state cannot tell.
- * @returns {Earned[]}
+ * @param state  The user's synced state; read for workouts and planned breaks only.
+ * @param now    Epoch ms.
+ * @param tz     The owner's IANA time zone.
+ * @param facts  Social facts the state cannot tell.
  */
-export function evaluateBadges(state, now, tz, facts = {}) {
+export function evaluateBadges(state: StateDoc | null | undefined, now: number, tz: string | null | undefined, facts: BadgeFacts = {}): Earned[] {
   if (!state || typeof state !== 'object') return [];
   const today = isoInZone(now, tz || 'UTC');
   const limit = sessionLimit(today, tz);
   const sessions = (Array.isArray(state.workouts) ? state.workouts : [])
     .filter(w => isSession(w, limit)).map(w => w.d).sort();
-  const out = [];
-  const award = (id, date) => out.push({ id, date });
+  const out: Earned[] = [];
+  const award = (id: BadgeId, date: string) => out.push({ id, date });
 
   if (sessions.length) {
     award('first-week', sessions[0]);
 
-    const byWeek = new Map();
+    const byWeek = new Map<string, string[]>();
     for (const d of sessions) { const wk = mondayOf(d); byWeek.set(wk, [...(byWeek.get(wk) || []), d]); }
     const weeks = [...byWeek.keys()].sort();
+    /** The sessions of a week that has at least one (the weeks are the keys of the map). */
+    const daysOf = (wk: string): string[] => byWeek.get(wk)!;
 
-    const full = weeks.find(wk => byWeek.get(wk).length >= 3);
-    if (full) award('hat-trick', byWeek.get(full)[2]);
+    const full = weeks.find(wk => daysOf(wk).length >= 3);
+    if (full) award('hat-trick', daysOf(full)[2]);
 
-    let run = 0, prev = null, fourth = null;
+    let run = 0, prev: string | null = null, fourth: string | null = null;
     for (const wk of weeks) {
       run = prev && addDays(prev, 7) === wk ? run + 1 : 1;
       prev = wk;
-      if (run === 4 && !fourth) fourth = byWeek.get(wk)[0];
+      if (run === 4 && !fourth) fourth = daysOf(wk)[0];
     }
     if (fourth) award('four-in-a-row', fourth);
 
-    const returns = [];
-    for (let i = 1; i < weeks.length; i++) if (addDays(weeks[i - 1], 7) !== weeks[i]) returns.push(byWeek.get(weeks[i])[0]);
+    const returns: string[] = [];
+    for (let i = 1; i < weeks.length; i++) if (addDays(weeks[i - 1], 7) !== weeks[i]) returns.push(daysOf(weeks[i])[0]);
     for (const b of breaksOf(state)) {
       const back = sessions.find(d => d > b.to && d <= addDays(b.to, 7));
       if (back) returns.push(back);
@@ -77,11 +85,11 @@ export function evaluateBadges(state, now, tz, facts = {}) {
 /**
  * Adds newly earned badges to the stored list. Nothing is ever removed or re-dated.
  *
- * @param {Earned[]} have  Already earned; not modified.
- * @param {Earned[]} found  From {@link evaluateBadges}.
- * @returns {{list: Earned[], added: string[]}}  The merged list and the ids that are new.
+ * @param have   Already earned; not modified.
+ * @param found  From {@link evaluateBadges}.
+ * @returns The merged list and the ids that are new.
  */
-export function mergeEarned(have, found) {
+export function mergeEarned(have: Earned[], found: Earned[]): { list: Earned[]; added: BadgeId[] } {
   const known = new Set(have.map(b => b.id));
   const fresh = found.filter(b => !known.has(b.id));
   return { list: [...have, ...fresh], added: fresh.map(b => b.id) };
@@ -90,10 +98,9 @@ export function mergeEarned(have, found) {
 /**
  * Validates the list of badges a user lets friends see.
  *
- * @param {unknown} input
- * @returns {{ok: true, value: string[]} | {ok: false, error: string}}
+ * @param input
  */
-export function validateShowBadges(input) {
-  if (!Array.isArray(input) || input.some(id => !BADGES.includes(id))) return { ok: false, error: 'showBadges must be a list of badge ids' };
+export function validateShowBadges(input: unknown): ShowBadgesValidation {
+  if (!Array.isArray(input) || input.some(id => !isBadgeId(id))) return { ok: false, error: 'showBadges must be a list of badge ids' };
   return { ok: true, value: [...new Set(input)] };
 }

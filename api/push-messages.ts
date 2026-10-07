@@ -11,8 +11,22 @@
  * wording that depends on the recipient's gender.
  */
 
+/** A notification as shown by the device. */
+export interface PushText { title: string; body: string }
+
+/** Every message a language must define. */
+export type MessageKey =
+  | 'friendSessionOne' | 'friendSessionMany' | 'cheerReceived' | 'challengeInvite'
+  | 'milestoneHalf' | 'milestoneTarget' | 'challengeEnded';
+
+/** A language the notifications are written in; add it to {@link CATALOG} and it is picked up. */
+export type PushLang = 'en' | 'fr' | 'es';
+
+/** Values for the placeholders of a message. */
+export type PushVars = Record<string, string | number>;
+
 /** Placeholders: `{name}` a friend, `{n}` a number of friends, `{emoji}` a cheer, `{title}` a challenge. */
-const CATALOG = {
+const CATALOG: Record<PushLang, Record<MessageKey, PushText>> = {
   en: {
     friendSessionOne: { title: '{name} finished a session', body: 'Send a cheer 👏' },
     friendSessionMany: { title: '{n} friends trained today', body: 'Your crew is on a roll. Send a cheer 👏' },
@@ -43,35 +57,34 @@ const CATALOG = {
 };
 
 /** Languages the notifications are written in. */
-export const PUSH_LANGS = Object.freeze(Object.keys(CATALOG));
+export const PUSH_LANGS: readonly PushLang[] = Object.freeze(Object.keys(CATALOG) as PushLang[]);
 
 /** Every message every language defines. */
-export const MESSAGE_KEYS = Object.freeze(Object.keys(CATALOG.en));
+export const MESSAGE_KEYS: readonly MessageKey[] = Object.freeze(Object.keys(CATALOG.en) as MessageKey[]);
 
 /**
  * The supported language for whatever the app says: `fr-FR`, `FR_ca` and `fr` all give `fr`;
  * anything else, including a language not translated yet, gives English.
  *
- * @param {unknown} raw  The `lang` of the user's state.
- * @returns {string} One of {@link PUSH_LANGS}.
+ * @param raw  The `lang` of the user's state.
+ * @returns One of {@link PUSH_LANGS}.
  */
-export function normalizeLang(raw) {
+export function normalizeLang(raw: unknown): PushLang {
   const code = typeof raw === 'string' ? raw.slice(0, 2).toLowerCase() : '';
-  return PUSH_LANGS.includes(code) ? code : 'en';
+  return (PUSH_LANGS as readonly string[]).includes(code) ? (code as PushLang) : 'en';
 }
 
 /**
  * A message in a language, with its placeholders filled in.
  *
- * @param {unknown} lang  Language of the recipient; see {@link normalizeLang}.
- * @param {string} key    One of {@link MESSAGE_KEYS}.
- * @param {Record<string, string | number>} vars
- * @returns {{title: string, body: string}}
+ * @param lang  Language of the recipient; see {@link normalizeLang}.
+ * @param key   One of {@link MESSAGE_KEYS}; checked at run time too, as callers may pass anything.
+ * @param vars
  * @throws {Error} For a key no language defines.
  */
-export function pushText(lang, key, vars) {
-  const entry = CATALOG[normalizeLang(lang)][key] || CATALOG.en[key];
+export function pushText(lang: unknown, key: MessageKey, vars: PushVars): PushText {
+  const entry: PushText | undefined = CATALOG[normalizeLang(lang)][key] || CATALOG.en[key];
   if (!entry) throw new Error(`unknown push message: ${key}`);
-  const fill = text => text.replace(/\{(\w+)\}/g, (whole, name) => (name in vars ? String(vars[name]) : whole));
+  const fill = (text: string) => text.replace(/\{(\w+)\}/g, (whole, name: string) => (name in vars ? String(vars[name]) : whole));
   return { title: fill(entry.title), body: fill(entry.body) };
 }

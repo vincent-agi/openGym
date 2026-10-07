@@ -166,7 +166,7 @@ nothing a client sends can change it.
 
 #### Activity feed and cheers
 
-Implemented in `api/feed.js` and `api/feed-service.js`. Every route needs a session and sharing.
+Implemented in `api/feed.ts` and `api/feed-service.js`. Every route needs a session and sharing.
 
 | Method & path | Description |
 |---|---|
@@ -198,13 +198,13 @@ Delivery rules, all enforced and tested:
 - Co-op challenges announce half-way and the target to everyone, once each; in a versus challenge each person is told
   when they reach the target. Finished challenges are announced once.
 - Wording is encouraging: no ranks, comparisons or "behind".
-- **Language:** the text follows the recipient's app language (`lang` in their synced state, read when the push is sent, so a change before delivery is honoured). English, French and Spanish are written (`api/push-messages.js`); any other language receives English until its catalogue is added. To add one, add a catalogue there (it is picked up automatically); a test checks that every language defines every message, fills every placeholder and stays encouraging.
+- **Language:** the text follows the recipient's app language (`lang` in their synced state, read when the push is sent, so a change before delivery is honoured). English, French and Spanish are written (`api/push-messages.ts`); any other language receives English until its catalogue is added. To add one, add a catalogue there (it is picked up automatically); a test checks that every language defines every message, fills every placeholder and stays encouraging.
 
 Pending pushes live in `db.socialOutbox` so a restart does not lose a held one; a 30-second background job delivers them.
 
 #### Badges
 
-Implemented in `api/badges.js` (rules) and `api/badge-service.js`. Badges reward habits and kindness, never strength, size or
+Implemented in `api/badges.ts` (rules) and `api/badge-service.js`. Badges reward habits and kindness, never strength, size or
 rank. The server evaluates them when a sharing user saves their state, sends a cheer, or finishes a co-op challenge, and
 stores them in `social.earned` (`[{id, date}]`). Once earned, a badge is never removed or re-dated. `GET /api/social/me`
 returns `earned` and `showBadges`; clients cannot write `earned` (it is rejected as an unknown field).

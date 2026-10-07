@@ -1,8 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import type { IncomingMessage } from 'node:http';
 import { createLimiter, clientIp, RULES } from '../rate-limit.ts';
+import type { Verdict } from '../rate-limit.ts';
 
-const clock = () => { const c = { t: 1_000_000 }; c.now = () => c.t; return c; };
+const clock = () => { const c = { t: 1_000_000, now: () => c.t }; return c; };
+
+/** The wait of a refused attempt; fails the test when the attempt was in fact allowed. */
+const waitOf = (verdict: Verdict): number => {
+  assert.equal(verdict.ok, false);
+  return verdict.ok ? 0 : verdict.retryAfterSec;
+};
 
 test('allows up to the limit inside the window, then answers how long to wait', () => {
   const c = clock(); const lim = createLimiter({ now: c.now });
@@ -44,7 +52,7 @@ test('with backoff, every further attempt while blocked doubles the wait, up to 
   const rule = { limit: 1, windowMs: 3_600_000, backoff: true };
   lim.check('k', rule);
   const waits = [];
-  for (let i = 0; i < 8; i++) { waits.push(lim.check('k', rule).retryAfterSec); }
+  for (let i = 0; i < 8; i++) { waits.push(waitOf(lim.check('k', rule))); }
   assert.deepEqual(waits.slice(0, 4), [60, 120, 240, 480]);
   assert.equal(Math.max(...waits), 3600);
 });
@@ -53,7 +61,7 @@ test('with backoff, waiting out the lock lets the person try again', () => {
   const c = clock(); const lim = createLimiter({ now: c.now });
   const rule = { limit: 1, windowMs: 3_600_000, backoff: true };
   lim.check('k', rule);
-  const { retryAfterSec } = lim.check('k', rule);
+  const retryAfterSec = waitOf(lim.check('k', rule));
   c.t += retryAfterSec * 1000 + 3_600_000;
   assert.equal(lim.check('k', rule).ok, true);
 });
@@ -82,8 +90,11 @@ test('the rules match what the milestone promises', () => {
   assert.deepEqual(RULES.challengeCreate, { limit: 10, windowMs: 86_400_000 });
 });
 
+/** Just the parts of a request `clientIp` reads. */
+const request = (parts: { headers: Record<string, string>; socket: { remoteAddress?: string } }) => parts as unknown as IncomingMessage;
+
 test('clientIp trusts the address nginx sets, not the client-supplied forwarding chain', () => {
-  assert.equal(clientIp({ headers: { 'x-real-ip': '203.0.113.7', 'x-forwarded-for': '1.2.3.4, 203.0.113.7' }, socket: { remoteAddress: '10.0.0.2' } }), '203.0.113.7');
-  assert.equal(clientIp({ headers: { 'x-forwarded-for': '1.2.3.4' }, socket: { remoteAddress: '10.0.0.2' } }), '10.0.0.2');
-  assert.equal(clientIp({ headers: {}, socket: {} }), 'unknown');
+  assert.equal(clientIp(request({ headers: { 'x-real-ip': '203.0.113.7', 'x-forwarded-for': '1.2.3.4, 203.0.113.7' }, socket: { remoteAddress: '10.0.0.2' } })), '203.0.113.7');
+  assert.equal(clientIp(request({ headers: { 'x-forwarded-for': '1.2.3.4' }, socket: { remoteAddress: '10.0.0.2' } })), '10.0.0.2');
+  assert.equal(clientIp(request({ headers: {}, socket: {} })), 'unknown');
 });

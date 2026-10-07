@@ -10,10 +10,17 @@ import { fileURLToPath } from 'node:url';
  * so a future change that reads one of them fails here, in review, not in production.
  */
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SOCIAL_FILES = [
-  'summary.js', 'sharing.js', 'challenges.js', 'challenge-service.js', 'friends.js', 'social.js',
-  'feed.js', 'feed-service.js', 'notifier.js', 'notify-prefs.js', 'badges.js', 'badge-service.js', 'social-module.js', 'push-messages.js'
+// The modules that build what friends see. The extension is not part of the name, so the list survives
+// the move from JavaScript to TypeScript.
+const SOCIAL_MODULES = [
+  'summary', 'sharing', 'challenges', 'challenge-service', 'friends', 'social',
+  'feed', 'feed-service', 'notifier', 'notify-prefs', 'badges', 'badge-service', 'social-module', 'push-messages'
 ];
+const SOCIAL_FILES = SOCIAL_MODULES.map(name => {
+  const file = ['.ts', '.js'].map(ext => name + ext).find(f => fs.existsSync(path.join(dir, f)));
+  assert.ok(file, `module ${name} not found`);
+  return file;
+});
 
 // Fields of the synced state that belong to the user alone.
 const PRIVATE_FIELDS = [

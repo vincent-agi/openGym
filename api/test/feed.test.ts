@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { CHEER_EMOJI, EVENT_TTL_DAYS, validateCheer, newEventsFromState, pruneFeed, countCheers } from '../feed.ts';
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');
-const session = (d, id = 'w' + d) => ({ id, d, entries: [{ id: 'x', sets: [{ done: true }] }] });
+const session = (d: string, id = 'w' + d) => ({ id, d, entries: [{ id: 'x', sets: [{ done: true }] }] });
 
 test('the cheer emoji set is small and fixed', () => {
   assert.deepEqual(CHEER_EMOJI, ['👏', '🔥', '💪', '🎉', '❤️']);

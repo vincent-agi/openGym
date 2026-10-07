@@ -7,6 +7,29 @@
  * and each request is counted against the signed-in user and against the client address.
  */
 
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { Guard, GuardRule, JsonResponder } from './types.ts';
+
+/** What a limited action allows: `limit` attempts per `windowMs`, optionally with a growing wait. */
+export interface Rule { limit: number; windowMs: number; backoff?: boolean }
+
+/** Whether an attempt may go ahead, or how many seconds the person has to wait. */
+export type Verdict = { ok: true } | { ok: false; retryAfterSec: number };
+
+/** What a limiter remembers about one key. */
+interface Entry { times: number[]; lockUntil: number; strikes: number; windowMs: number }
+
+/** A {@link Verdict} together with the (not yet recorded) entry it was computed from. */
+type Evaluation = Verdict & { entry: Entry };
+
+/** The limiter returned by {@link createLimiter}. */
+export interface Limiter {
+  check: (key: string, rule: Rule) => Verdict;
+  checkAll: (keys: string[], rule: Rule) => Verdict;
+  prune: () => void;
+  size: () => number;
+}
+
 /** Wait imposed by the first lock of a rule with backoff, in seconds; it doubles on every further attempt. */
 const BACKOFF_BASE_SEC = 60;
 
@@ -24,41 +47,29 @@ export const RULES = Object.freeze({
  * The address of the client. Behind the bundled nginx, `X-Real-IP` is overwritten with the real
  * peer address, so it cannot be forged; `X-Forwarded-For` can (clients may prepend to it), so it is ignored.
  *
- * @param {import('node:http').IncomingMessage} req
- * @returns {string}
+ * @param req
  */
-export function clientIp(req) {
-  return req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
+export function clientIp(req: IncomingMessage): string {
+  const real = req.headers['x-real-ip'];
+  return (Array.isArray(real) ? real[0] : real) || req.socket?.remoteAddress || 'unknown';
 }
-
-/**
- * @typedef {{limit: number, windowMs: number, backoff?: boolean}} Rule
- * @typedef {{ok: true} | {ok: false, retryAfterSec: number}} Verdict
- */
 
 /**
  * Creates a limiter with its own memory.
  *
- * @param {{now?: () => number}} [options]
- * @returns {{
- *   check: (key: string, rule: Rule) => Verdict,
- *   checkAll: (keys: string[], rule: Rule) => Verdict,
- *   prune: () => void,
- *   size: () => number
- * }}
+ * @param options  `now` replaces the clock, for tests.
  */
-export function createLimiter({ now = Date.now } = {}) {
-  /** @type {Map<string, {times: number[], lockUntil: number, strikes: number, windowMs: number}>} */
-  const entries = new Map();
+export function createLimiter({ now = Date.now }: { now?: () => number } = {}): Limiter {
+  const entries = new Map<string, Entry>();
 
   /** Decides without recording the hit. Escalates a lock when an attempt arrives while blocked. */
-  const evaluate = (key, rule, t) => {
-    const e = entries.get(key) || { times: [], lockUntil: 0, strikes: 0, windowMs: rule.windowMs };
+  const evaluate = (key: string, rule: Rule, t: number): Evaluation => {
+    const e: Entry = entries.get(key) || { times: [], lockUntil: 0, strikes: 0, windowMs: rule.windowMs };
     e.windowMs = rule.windowMs;
     e.times = e.times.filter(x => x > t - rule.windowMs);
     if (!e.times.length && e.lockUntil <= t) e.strikes = 0;
 
-    const escalate = () => {
+    const escalate = (): Verdict => {
       e.strikes++;
       const wait = Math.min(BACKOFF_BASE_SEC * 2 ** (e.strikes - 1), rule.windowMs / 1000);
       e.lockUntil = t + wait * 1000;
@@ -74,37 +85,35 @@ export function createLimiter({ now = Date.now } = {}) {
     return { ok: true, entry: e };
   };
 
-  const record = (key, e, t) => { e.times.push(t); entries.set(key, e); };
+  const record = (key: string, e: Entry, t: number) => { e.times.push(t); entries.set(key, e); };
 
   /**
    * Counts one attempt against a key.
    *
-   * @param {string} key
-   * @param {Rule} rule
-   * @returns {Verdict}
+   * @param key
+   * @param rule
    */
-  const check = (key, rule) => checkAll([key], rule);
+  const check = (key: string, rule: Rule): Verdict => checkAll([key], rule);
 
   /**
    * Counts one attempt against several keys at once (for example the user and their address).
    * The attempt is refused if any key is over its limit, and then counted on none of them.
    *
-   * @param {string[]} keys
-   * @param {Rule} rule
-   * @returns {Verdict}
+   * @param keys
+   * @param rule
    */
-  const checkAll = (keys, rule) => {
+  const checkAll = (keys: string[], rule: Rule): Verdict => {
     const t = now();
     if (entries.size > 5000) prune();
     const results = keys.map(key => ({ key, ...evaluate(key, rule, t) }));
     const refused = results.filter(r => !r.ok);
-    if (refused.length) return { ok: false, retryAfterSec: Math.max(...refused.map(r => r.retryAfterSec)) };
+    if (refused.length) return { ok: false, retryAfterSec: Math.max(...refused.map(r => (r.ok ? 0 : r.retryAfterSec))) };
     results.forEach(r => record(r.key, r.entry, t));
     return { ok: true };
   };
 
   /** Forgets keys whose window and lock have both passed, so memory does not grow. */
-  const prune = () => {
+  const prune = (): void => {
     const t = now();
     for (const [key, e] of entries) {
       if (e.lockUntil <= t && e.times.every(x => x <= t - e.windowMs)) entries.delete(key);
@@ -117,14 +126,11 @@ export function createLimiter({ now = Date.now } = {}) {
 /**
  * Builds the guard routes call before doing limited work.
  *
- * @param {object} deps
- * @param {ReturnType<typeof createLimiter>} deps.limiter
- * @param {(res: import('node:http').ServerResponse, code: number, body: object, headers?: object) => void} deps.json
- * @returns {(rule: keyof typeof RULES, req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse, user: {id: string}) => boolean}
- *   Returns true when the action may go ahead; otherwise it has already answered `429` with a `Retry-After`.
+ * @param deps
+ * @returns A guard that returns true when the action may go ahead; otherwise it has already answered `429` with a `Retry-After`.
  */
-export function createGuard({ limiter, json }) {
-  return (rule, req, res, user) => {
+export function createGuard({ limiter, json }: { limiter: Limiter; json: JsonResponder }): Guard {
+  return (rule: GuardRule, req: IncomingMessage, res: ServerResponse, user: { id: string }) => {
     const verdict = limiter.checkAll([`${rule}:u:${user.id}`, `${rule}:ip:${clientIp(req)}`], RULES[rule]);
     if (verdict.ok) return true;
     json(res, 429, { error: 'too many attempts, please try again later' }, { 'Retry-After': String(verdict.retryAfterSec) });

@@ -156,7 +156,8 @@ test('no social route reads another user saved state', async () => {
   const fs = await import('node:fs');
   const path = await import('node:path');
   const dir = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
-  const files = fs.readdirSync(dir).filter(f => f.endsWith('.js') && f !== 'server.js');
+  const files = fs.readdirSync(dir).filter(f => /\.(js|ts)$/.test(f) && !['server.js', 'server.ts', 'types.ts'].includes(f));
+  assert.ok(files.length >= 14, `expected the social modules, found only ${files.join(', ')}`);   // a rename must never empty this scan
   for (const f of files) {
     const code = fs.readFileSync(path.join(dir, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
     for (const m of code.matchAll(/\breadState\(([^)]*)\)/g)) {

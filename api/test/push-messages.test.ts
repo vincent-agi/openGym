@@ -2,9 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PUSH_LANGS, normalizeLang, pushText, MESSAGE_KEYS } from '../push-messages.ts';
 import { wording } from '../notifier.js';
+import { NOTIFY_KINDS } from '../notify-prefs.ts';
+import type { MessageKey } from '../push-messages.ts';
 
 const SAMPLE = { names: ['Léa'], name: 'Léa', emoji: '🔥', title: 'Automne', stage: 'half' };
-const KINDS = ['friendSession', 'cheerReceived', 'challengeInvite', 'challengeMilestone', 'challengeEnded'];
+const KINDS = NOTIFY_KINDS;
 
 test('English, French and Spanish are available, English being the fallback', () => {
   assert.deepEqual(PUSH_LANGS, ['en', 'fr', 'es']);
@@ -40,7 +42,7 @@ test('placeholders are all filled, in every language', () => {
 
 test('a missing language or key falls back to English instead of breaking', () => {
   assert.equal(pushText('xx', 'cheerReceived', { name: 'Ana', emoji: '🔥' }).title, 'Ana cheered your session 🔥');
-  assert.throws(() => pushText('en', 'nope', {}));
+  assert.throws(() => pushText('en', 'nope' as MessageKey, {}));
 });
 
 test('wording follows the language and keeps the deep link and tag', () => {

@@ -1,11 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { BADGES, evaluateBadges, CHEERLEADER_AT, mergeEarned, validateShowBadges } from '../badges.ts';
+import type { BadgeFacts, Earned } from '../badges.ts';
+import type { StateDoc } from '../types.ts';
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');          // Wednesday; this week starts Monday 5 Oct
-const session = d => ({ id: 'w' + d, d, entries: [{ id: 'x', sets: [{ done: true }] }] });
-const st = (days, extra = {}) => ({ workouts: days.map(session), ...extra });
-const earned = (state, facts) => Object.fromEntries(evaluateBadges(state, NOW, 'UTC', facts).map(b => [b.id, b.date]));
+const session = (d: string) => ({ id: 'w' + d, d, entries: [{ id: 'x', sets: [{ done: true }] }] });
+const st = (days: string[], extra: Record<string, unknown> = {}): StateDoc => ({ workouts: days.map(session), ...extra });
+const earned = (state: StateDoc | null, facts?: BadgeFacts) => Object.fromEntries(evaluateBadges(state, NOW, 'UTC', facts).map(b => [b.id, b.date]));
 
 test('the catalogue is fixed and none of the badges is about strength, size or rank', () => {
   assert.deepEqual(BADGES, ['first-week', 'hat-trick', 'four-in-a-row', 'back-on-track', 'team-player', 'cheerleader']);
@@ -65,7 +67,7 @@ test('sessions dated in the future do not earn anything', () => {
 });
 
 test('mergeEarned only ever adds, keeping the date of the first time', () => {
-  const have = [{ id: 'first-week', date: '2026-09-01' }];
+  const have: Earned[] = [{ id: 'first-week', date: '2026-09-01' }];
   const merged = mergeEarned(have, [{ id: 'first-week', date: '2026-09-30' }, { id: 'hat-trick', date: '2026-10-01' }]);
   assert.deepEqual(merged.list, [{ id: 'first-week', date: '2026-09-01' }, { id: 'hat-trick', date: '2026-10-01' }]);
   assert.deepEqual(merged.added, ['hat-trick']);
