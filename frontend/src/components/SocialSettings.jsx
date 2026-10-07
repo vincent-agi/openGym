@@ -70,6 +70,8 @@ function BreakRow() {
 export default function SocialSettings() {
   const nav = useNavigate()
   const toast = useUI(s => s.toast)
+  const user = useStore(s => s.user)
+  const setUser = useStore(s => s.setUser)
   const [available, setAvailable] = useState(false)
   const [saved, setSaved] = useState(null)       // last settings stored on the server
   const [draft, setDraft] = useState(EMPTY_SOCIAL) // what the user is editing
@@ -77,14 +79,16 @@ export default function SocialSettings() {
 
   useEffect(() => {
     let live = true
-    api('/api/config')
-      .then(c => (c.social_enabled ? api('/api/social/me') : null))
-      .then(r => { if (live && r) { setAvailable(true); setSaved(r.social); setDraft(r.social) } })
+    api('/api/social/me')   // 404 when the instance switched the module off
+      .then(r => { if (live) { setAvailable(true); setSaved(r.social); setDraft(r.social) } })
       .catch(() => {})
     return () => { live = false }
   }, [])
 
   if (!available || !saved) return null
+
+  /** Keeps the account hint in step, so the rest of the app knows whether to ask the server about friends. */
+  const rememberSharing = enabled => { if (user && !!user.social !== enabled) setUser({ ...user, social: enabled }) }
 
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved)
   const handleMsg = draft.handle ? handleError(draft.handle) : null
@@ -96,6 +100,7 @@ export default function SocialSettings() {
     try {
       const r = await api('/api/social/me', { method: 'PUT', body: JSON.stringify(patch) })
       setSaved(r.social); setDraft(r.social)
+      rememberSharing(r.social.enabled)
       return true
     } catch (e) {
       toast(e.message || t('Could not save'))
@@ -126,6 +131,7 @@ export default function SocialSettings() {
         await api('/api/social/leave', { method: 'POST', body: JSON.stringify({ confirm: true }) })
         const r = await api('/api/social/me')
         setSaved(r.social); setDraft(r.social)
+        rememberSharing(false)
         toast(t('Your friends data was erased'))
       } catch (e) { toast(e.message || t('Could not erase')) }
     }

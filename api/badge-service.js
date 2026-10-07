@@ -3,6 +3,7 @@
  * decides when to run them and stores the result in the user's social record.
  */
 import { isSharing } from './social.js';
+import { ownerTz } from './summary.js';
 import { evaluateBadges, mergeEarned } from './badges.js';
 
 /**
@@ -28,7 +29,7 @@ export function createBadgeService({ db, saveDb, now = Date.now }) {
     if (!isSharing(user)) return [];
     try {
       const social = user.social;
-      const found = evaluateBadges(state || {}, now(), state?.reminder?.tz || 'UTC', {
+      const found = evaluateBadges(state || {}, now(), ownerTz(state), {
         cheersSent: social.cheersSent || 0, coopCompletedOn: social.coopCompletedOn || null
       });
       const { list, added } = mergeEarned(social.earned || [], found);

@@ -216,3 +216,17 @@ export function removeParticipant(ch, uid) {
   if (heir) ch.ownerId = heir.uid;
   else { ch.status = 'cancelled'; ch.ownerId = null; }   // nobody is left to own it, and no id must linger
 }
+
+/** How long a finished or cancelled challenge is kept, in days. */
+export const RETENTION_DAYS = 90;
+
+/**
+ * Whether a challenge has been over for longer than the retention period and can be forgotten.
+ *
+ * @param {{endDate: string, status?: string}} ch
+ * @param {string} today  ISO date.
+ * @returns {boolean}
+ */
+export function isStale(ch, today) {
+  return addDays(ch.endDate, RETENTION_DAYS) <= today;
+}

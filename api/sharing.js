@@ -5,7 +5,7 @@
  * friend sees always come from {@link computeSummary} and never from client input. Only users
  * who opted in are ever summarised; turning sharing off deletes the stored summary.
  */
-import { computeSummary, filterSummary } from './summary.js';
+import { computeSummary, filterSummary, ownerTz } from './summary.js';
 import { isSharing, requireSharing } from './social.js';
 import { relationsOf } from './friends.js';
 
@@ -46,7 +46,7 @@ export function createSharingService({ db, saveDb, readSession, json, now = Date
     if (!isSharing(user)) return;
     try {
       const t = now();
-      const data = computeSummary(state, t, state?.reminder?.tz || 'UTC');
+      const data = computeSummary(state, t, ownerTz(state));
       const prev = db.socialSummaries[user.id];
       const unchanged = prev && JSON.stringify(prev.data) === JSON.stringify(data) && t - prev.updatedAt < REFRESH_EVERY_MS;
       if (unchanged) return;

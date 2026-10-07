@@ -69,15 +69,21 @@ export function rememberPendingCode(code, storage = globalThis.localStorage) {
 }
 
 /**
- * Returns the remembered code, if any, and forgets it.
+ * The code remembered from a friend link, if any. Reading does not forget it: the person has not
+ * agreed to anything yet.
  *
- * @param {Pick<Storage, 'getItem' | 'removeItem'>} [storage]
+ * @param {Pick<Storage, 'getItem'>} [storage]
  * @returns {string | null}
  */
-export function takePendingCode(storage = globalThis.localStorage) {
-  try {
-    const code = storage.getItem(PENDING_KEY)
-    storage.removeItem(PENDING_KEY)
-    return extractFriendCode(code)
-  } catch { return null }
+export function peekPendingCode(storage = globalThis.localStorage) {
+  try { return extractFriendCode(storage.getItem(PENDING_KEY)) } catch { return null }
+}
+
+/**
+ * Forgets the remembered code, once it was used or turned down.
+ *
+ * @param {Pick<Storage, 'removeItem'>} [storage]
+ */
+export function clearPendingCode(storage = globalThis.localStorage) {
+  try { storage.removeItem(PENDING_KEY) } catch { /* ignore */ }
 }

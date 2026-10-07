@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from './api.js'
 import { useStore } from '../store/useStore.js'
+import { localTZ } from './format.js'
+import { shouldAskServer } from './social.js'
 import { DEMO } from './demo.js'
 import { MOBILE } from './mobile.js'
 import { newBadges, badgeInfo } from './badges.js'
@@ -8,15 +10,23 @@ import { newBadges, badgeInfo } from './badges.js'
 /**
  * Whether the friends module is usable here, and the signed-in user's sharing settings.
  *
- * Asks the server once on mount. `status` is `'loading'` until it answers, then one of:
- * - `'unavailable'`: guest, demo/mobile build, or the instance switched the module off;
- * - `'ready'`: the module is on and `social` holds the user's settings (`social.enabled` says whether they opted in).
+ * Asks the server only when it must (see {@link shouldAskServer}), and with a single request:
+ * `GET /api/social/me` answers 404 when the instance switched the module off. `status` is
+ * `'loading'` until it answers, then one of:
+ * - `'unavailable'`: guest, standalone app, a user who never shared, or the module is off;
+ * - `'ready'`: `social` holds the user's settings (`social.enabled` says whether they opted in).
  *
+ * While sharing is on, it also stamps the device's time zone on the user's state, so the server
+ * computes weeks in the right zone.
+ *
+ * @param {{probe?: boolean}} [options]  `probe`: the screen exists to turn the module on (Crew), so ask even if unsure.
  * @returns {{status: 'loading'|'unavailable'|'ready', social: import('./social.js').SocialSettings | null, reload: () => void}}
  */
-export function useSocial() {
+export function useSocial({ probe = false } = {}) {
   const user = useStore(s => s.user)
-  const usable = (!!user || DEMO) && !MOBILE   // the demo is answered with made-up data (lib/demoSocial.js)
+  const stamp = useStore(s => s.S.tz)
+  const update = useStore(s => s.update)
+  const usable = shouldAskServer({ user, demo: DEMO, mobile: MOBILE, probe })
   const [state, setState] = useState({ status: usable ? 'loading' : 'unavailable', social: null })
   const [tick, setTick] = useState(0)
   const reload = useCallback(() => setTick(n => n + 1), [])
@@ -24,12 +34,16 @@ export function useSocial() {
   useEffect(() => {
     if (!usable) { setState({ status: 'unavailable', social: null }); return undefined }
     let live = true
-    api('/api/config')
-      .then(c => (c.social_enabled ? api('/api/social/me') : null))
-      .then(r => { if (live) setState(r ? { status: 'ready', social: r.social } : { status: 'unavailable', social: null }) })
+    api('/api/social/me')
+      .then(r => { if (live) setState({ status: 'ready', social: r.social }) })
       .catch(() => { if (live) setState({ status: 'unavailable', social: null }) })
     return () => { live = false }
   }, [usable, tick])
+
+  const zone = localTZ()
+  useEffect(() => {
+    if (!DEMO && state.social?.enabled && stamp !== zone) update(s => { s.tz = zone })
+  }, [state.social?.enabled, stamp, zone, update])
 
   return { ...state, reload }
 }

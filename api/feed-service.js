@@ -5,8 +5,8 @@
  * post one for somebody else; friends only ever receive a date, a name and emoji.
  */
 import crypto from 'node:crypto';
-import { isoInZone } from './summary.js';
 import { isSharing, requireSharing } from './social.js';
+import { ownerTz } from './summary.js';
 import { relationsOf } from './friends.js';
 import { validateCheer, newEventsFromState, pruneFeed, countCheers } from './feed.js';
 
@@ -48,7 +48,7 @@ export function createFeedService({ db, saveDb, readSession, json, readBody, not
     try {
       const t = now();
       const seen = new Set(db.socialEvents.filter(e => e.uid === user.id).map(e => e.ref));
-      const fresh = newEventsFromState(state, t, state?.reminder?.tz || 'UTC', seen);
+      const fresh = newEventsFromState(state, t, ownerTz(state), seen);
       if (!fresh.length) return [];
       const created = fresh.map(f => ({ id: crypto.randomBytes(8).toString('base64url'), uid: user.id, ref: f.ref, date: f.date, kind: 'session', createdAt: t }));
       db.socialEvents.push(...created);
@@ -101,7 +101,8 @@ export function createFeedService({ db, saveDb, readSession, json, readBody, not
             from: heard.map(c => ({ emoji: c.emoji, displayName: userById(c.from)?.social?.displayName || '' }))
           };
         });
-      json(res, 200, { events, mine });
+      const muted = db.cheerMutes.filter(m => m.uid === user.id && friends.has(m.mutedUid)).map(m => userById(m.mutedUid)?.social?.handle).filter(Boolean);
+      json(res, 200, { events, mine, muted });
     },
 
     'POST /api/social/cheer': async (req, res) => {

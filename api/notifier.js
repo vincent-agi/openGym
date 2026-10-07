@@ -13,7 +13,7 @@
  * Pushes go through a small persistent outbox (`db.socialOutbox`) so deferrals survive a restart.
  */
 import crypto from 'node:crypto';
-import { isoInZone } from './summary.js';
+import { isoInZone, ownerTz } from './summary.js';
 import { isSharing } from './social.js';
 import { inQuietHours, minutesUntilQuietEnds } from './notify-prefs.js';
 
@@ -94,7 +94,7 @@ export function wording(kind, data) {
  */
 export function createNotifier({ db, saveDb, sendPush, readState, now = Date.now }) {
   const userById = id => db.users.find(u => u.id === id);
-  const tzOf = uid => readState(uid)?.reminder?.tz || 'UTC';
+  const tzOf = uid => ownerTz(readState(uid)) || 'UTC';
   const eligible = (user, kind) => !!user && isSharing(user) && !!user.social.notify?.[kind] && db.subs.some(s => s.userId === user.id);
 
   /** Moves a delivery time out of quiet hours. */
@@ -106,6 +106,16 @@ export function createNotifier({ db, saveDb, sendPush, readState, now = Date.now
   };
 
   const notify = async (uid, kind, data) => {
+    try {
+      return queue(uid, kind, data);
+    } catch (e) {
+      console.error('social notify failed', e);   // a notification must never take anything else down
+      return false;
+    }
+  };
+
+  /** Puts a notification in the outbox, or declines. */
+  const queue = (uid, kind, data) => {
     const user = userById(uid);
     if (!eligible(user, kind)) return false;
     const t = now(), tz = tzOf(uid);

@@ -137,3 +137,25 @@ describe('backups and friends data', () => {
     expect(SOCIAL_BACKUP_KEY in file).toBe(true)
   })
 })
+
+import { shouldAskServer } from './social.js'
+
+describe('shouldAskServer — nobody who never opted in pays for the friends module', () => {
+  const user = { id: 'u', social: false }
+  it('stays silent for a signed-in user who does not share, wherever they are', () => {
+    expect(shouldAskServer({ user, demo: false, mobile: false, probe: false })).toBe(false)
+  })
+  it('asks when the account says the user shares', () => {
+    expect(shouldAskServer({ user: { ...user, social: true }, demo: false, mobile: false, probe: false })).toBe(true)
+  })
+  it('asks when the person deliberately opened a friends screen', () => {
+    expect(shouldAskServer({ user, demo: false, mobile: false, probe: true })).toBe(true)
+  })
+  it('never asks for guests or the standalone mobile app, which have no server', () => {
+    expect(shouldAskServer({ user: null, demo: false, mobile: false, probe: true })).toBe(false)
+    expect(shouldAskServer({ user: { ...user, social: true }, demo: false, mobile: true, probe: true })).toBe(false)
+  })
+  it('always answers in the demo, from made-up data', () => {
+    expect(shouldAskServer({ user: null, demo: true, mobile: false, probe: false })).toBe(true)
+  })
+})

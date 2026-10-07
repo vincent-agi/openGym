@@ -37,7 +37,7 @@ function crew(now) {
   })
 
   return {
-    me: person(DEMO_ME_HANDLE, 'You', { week: 2, month: 7, planned: 3, trend: 0.8, streak: 4, earlier: [addDaysIso(monday, -3)] }),
+    me: person(DEMO_ME_HANDLE, 'Alex', { week: 2, month: 7, planned: 3, trend: 0.8, streak: 4, earlier: [addDaysIso(monday, -3)] }),
     friends: [
       person('lea_fit', 'Léa', { week: 3, month: 11, planned: 3, trend: 1.2, streak: 6, badges: [{ id: 'four-in-a-row', date: addDaysIso(today, -20) }] }),
       person('marc_92', 'Marc', { week: 2, month: 8, planned: 3, trend: 0.5, streak: 3 }),
@@ -68,7 +68,7 @@ export function demoSocialApi(path, opts, now = Date.now()) {
     case '/api/social/me':
       return {
         social: {
-          enabled: true, handle: DEMO_ME_HANDLE, displayName: 'You', hideRank: false,
+          enabled: true, handle: DEMO_ME_HANDLE, displayName: 'Alex', hideRank: false,
           share: { sessions: true, streak: true, consistency: true, prs: false },
           notify: { friendSession: false, cheerReceived: false, challengeInvite: false, challengeMilestone: false, challengeEnded: false, quiet: { from: '21:00', to: '08:00' } },
           showBadges: ['hat-trick'],
@@ -105,7 +105,7 @@ export function demoSocialApi(path, opts, now = Date.now()) {
         startDate: addDaysIso(monday, -14), endDate: addDaysIso(monday, 13), status: 'active', total: 18, pct: 0.6, done: false,
         participants: [
           { handle: 'lea_fit', displayName: 'Léa', state: 'joined', current: 7, pct: 7 / 30, position: null },
-          { handle: DEMO_ME_HANDLE, displayName: 'You', state: 'joined', current: 6, pct: 0.2, position: null },
+          { handle: DEMO_ME_HANDLE, displayName: 'Alex', state: 'joined', current: 6, pct: 0.2, position: null },
           { handle: 'marc_92', displayName: 'Marc', state: 'joined', current: 5, pct: 5 / 30, position: null },
           { handle: 'zoe_runs', displayName: 'Zoe', state: 'invited', current: null, pct: null, position: null }
         ]

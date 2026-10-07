@@ -6,7 +6,7 @@
  * a summary, a challenge update, a feed event and a push notification is {@link createSocialModule}.
  */
 import { createSocialRoutes } from './social.js';
-import { createFriendRoutes, relationsOf } from './friends.js';
+import { createFriendRoutes, relationsOf, pruneFriendCodes } from './friends.js';
 import { createSharingService } from './sharing.js';
 import { createChallengeService } from './challenge-service.js';
 import { createFeedService } from './feed-service.js';
@@ -93,6 +93,9 @@ export function createSocialModule({ db, saveDb, readSession, json, readBody, re
 
   /** Periodic work: announce finished challenges, then deliver whatever is due. */
   const maintain = async () => {
+    challenges.prune();
+    const codes = pruneFriendCodes(db.friendCodes, now());
+    if (codes.length !== db.friendCodes.length) { db.friendCodes = codes; saveDb(); }
     for (const ended of challenges.collectEnded()) {
       for (const uid of ended.uids) await notifier.notify(uid, 'challengeEnded', { title: ended.title });
       if (ended.coopDone) badges.onCoopCompleted(ended.uids, ended.endDate);

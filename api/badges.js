@@ -9,7 +9,7 @@
  * Badges are computed on the server from the user's own saved state and from social facts
  * (cheers sent, co-op challenges completed), then stored: once earned, never taken back.
  */
-import { addDays, mondayOf, isoInZone, isSession, breaksOf } from './summary.js';
+import { addDays, mondayOf, isoInZone, isSession, breaksOf, sessionLimit } from './summary.js';
 
 /** Every badge that exists. Mirrored by name and description in `frontend/src/lib/badges.js`. */
 export const BADGES = Object.freeze(['first-week', 'hat-trick', 'four-in-a-row', 'back-on-track', 'team-player', 'cheerleader']);
@@ -34,9 +34,10 @@ export const CHEERLEADER_AT = 10;
  */
 export function evaluateBadges(state, now, tz, facts = {}) {
   if (!state || typeof state !== 'object') return [];
-  const today = isoInZone(now, tz);
+  const today = isoInZone(now, tz || 'UTC');
+  const limit = sessionLimit(today, tz);
   const sessions = (Array.isArray(state.workouts) ? state.workouts : [])
-    .filter(w => isSession(w, today)).map(w => w.d).sort();
+    .filter(w => isSession(w, limit)).map(w => w.d).sort();
   const out = [];
   const award = (id, date) => out.push({ id, date });
 

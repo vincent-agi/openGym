@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api.js'
 import { t } from '../lib/i18n.js'
 import { fmtDate, isoOf } from '../lib/format.js'
-import { takePendingCode, addRequestBodies } from '../lib/friends.js'
+import { peekPendingCode, clearPendingCode, addRequestBodies } from '../lib/friends.js'
 import { useSocial, useCrewSummary, useFeed, useBadgeToasts } from '../lib/useSocial.js'
 import { useUI } from '../store/useUI.js'
 import { confirmSheet } from '../sheets.jsx'
@@ -24,7 +24,7 @@ function PersonRow({ person, subtitle, children }) {
         <span className="lrow-t">{person.displayName || '@' + person.handle}</span>
         <span className="lrow-s">{subtitle || '@' + person.handle}</span>
       </span>
-      <span className="row" style={{ gap: 6 }}>{children}</span>
+      <span className="row" style={{ gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>{children}</span>
     </div>
   )
 }
@@ -37,7 +37,8 @@ function PersonRow({ person, subtitle, children }) {
 export default function Crew() {
   const nav = useNavigate()
   const toast = useUI(s => s.toast)
-  const { status, social, reload: reloadSocial } = useSocial()
+  const { status, social, reload: reloadSocial } = useSocial({ probe: true })
+  const [invite, setInvite] = useState(() => peekPendingCode())   // a friend link opened before sharing was on
   useBadgeToasts(social?.enabled ? social.earned : undefined, toast, t)
   const [data, setData] = useState(null)
   const board = useCrewSummary(status === 'ready' && !!social?.enabled)
@@ -46,20 +47,29 @@ export default function Crew() {
   const load = useCallback(() => api('/api/social/friends').then(setData).catch(e => toast(e.message)), [toast])
 
   useEffect(() => {
-    if (status !== 'ready' || !social.enabled) return
-    load()
-    // A friend link opened before sharing was on: redeem it now that it is.
-    const pending = takePendingCode()
-    if (pending) sendFriendRequest(addRequestBodies(pending)).then(r => { toast(t('Request sent to {0}', r.friend.displayName)); load() }).catch(e => toast(e.message))
-  }, [status, social?.enabled, load, toast])
+    if (status === 'ready' && social.enabled) load()
+  }, [status, social?.enabled, load])
+
+  useEffect(() => { if (board.error) toast(board.error) }, [board.error, toast])
+
+  const answerInvite = send => {
+    const code = invite
+    clearPendingCode(); setInvite(null)
+    if (send) sendFriendRequest(addRequestBodies(code)).then(r => { toast(t('Request sent to {0}', r.friend.displayName)); load() }).catch(e => toast(e.message))
+  }
 
   const act = (path, body, message) => post(path, body).then(() => { if (message) toast(message); load() }).catch(e => toast(e.message))
 
-  const friendMenu = f => confirmSheet({
-    title: f.displayName, message: t('Remove this friend, or block them so they can never find you again?'),
+  const removeFriend = f => confirmSheet({
+    title: t('Remove friend'), message: t('Remove {0} from your friends? You can add them again later.', f.displayName),
     confirmText: t('Remove friend'), cancelText: t('Keep'),
     onConfirm: () => act('remove', { handle: f.handle }, t('Friend removed'))
   })
+  /** Hides (or shows again) the cheers a friend sends you. They are not told. */
+  const toggleMute = f => {
+    const muted = !(feed.data?.muted || []).includes(f.handle)
+    api('/api/social/cheer/mute', { method: 'POST', body: JSON.stringify({ handle: f.handle, muted }) }).then(() => { toast(muted ? t('Cheers muted') : t('Cheers shown again')); feed.reload() }).catch(e => toast(e.message))
+  }
   const blockMenu = f => confirmSheet({
     title: t('Block {0}?', f.displayName), danger: true, confirmText: t('Block'),
     message: t('They will not be told. They can no longer find you or send requests.'),
@@ -77,13 +87,21 @@ export default function Crew() {
   )
   else if (!data) body = <div className="muted">{t('Loading…')}</div>
   else body = <>
+    {invite && (
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>{t('Friend invitation')}</h2>
+        <div style={{ marginBottom: 10 }}>{t('Send a friend request using this invitation?')}</div>
+        <div className="row" style={{ gap: 8 }}>
+          <Button variant="primary" size="sm" onClick={() => answerInvite(true)}>{t('Send request')}</Button>
+          <Button size="sm" onClick={() => answerInvite(false)}>{t('Not now')}</Button>
+        </div>
+      </div>
+    )}
     {board.data && <CrewBoard data={board.data} hideRank={!!social.hideRank} onRefresh={board.reload} onAdd={() => addFriendSheet(() => { load(); board.reload() })} />}
 
     {feed.data && <FeedCard data={feed.data} onChanged={feed.reload} />}
 
     {board.data && <ChallengesCard myHandle={social.handle} friends={data.friends} />}
-
-    <BadgesCard earned={social.earned || []} shown={social.showBadges || []} onSaved={reloadSocial} />
 
     {data.incoming.length > 0 && (
       <div className="card">
@@ -104,11 +122,14 @@ export default function Crew() {
       </div>
       {data.friends.length ? data.friends.map(f => (
         <PersonRow key={f.handle} person={f} subtitle={t('Friends since {0}', fmtDate(isoOf(new Date(f.since)), true))}>
-          <Button size="sm" onClick={() => friendMenu(f)}>{t('Manage')}</Button>
+          <Button size="sm" onClick={() => toggleMute(f)}>{(feed.data?.muted || []).includes(f.handle) ? t('Unmute cheers') : t('Mute cheers')}</Button>
+          <Button size="sm" onClick={() => removeFriend(f)}>{t('Remove')}</Button>
           <Button size="sm" onClick={() => blockMenu(f)}>{t('Block')}</Button>
         </PersonRow>
       )) : <div className="muted small">{t('No friends yet. Share your code or enter a friend’s.')}</div>}
     </div>
+
+    <BadgesCard earned={social.earned || []} shown={social.showBadges || []} onSaved={reloadSocial} />
 
     {data.outgoing.length > 0 && (
       <div className="card">

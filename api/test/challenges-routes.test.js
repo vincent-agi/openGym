@@ -233,3 +233,29 @@ test('when the one who ends a friendship owns the challenge, it passes to someon
   assert.notEqual(ch.ownerId, owner.id);
   assert.ok([f1.id, f2.id].includes(ch.ownerId));
 });
+
+test('maintenance freezes a finished challenge even if nobody opens it', async () => {
+  const [owner, friend] = await crew(2);
+  const { challenge } = (await create(owner, [friend])).body;
+  await post('challenges/join', friend, { id: challenge.id });
+  await save(owner, [iso(0)]);
+  const ch = db.challenges.find(c => c.id === challenge.id);
+  ch.startDate = iso(-10); ch.endDate = iso(-1);
+  assert.equal(ch.final, undefined);
+  await (await import('../server.js')).runSocialMaintenance();
+  assert.ok(ch.final);
+  assert.equal(ch.final.status, 'ended');
+});
+
+test('maintenance forgets challenges, their progress and expired friend codes after the retention period', async () => {
+  const [owner, friend] = await crew(2);
+  const { challenge } = (await create(owner, [friend])).body;
+  const ch = db.challenges.find(c => c.id === challenge.id);
+  ch.startDate = iso(-200); ch.endDate = iso(-120);
+  db.challengeProgress[ch.id] = { [owner.id]: { sessions: 1, days: [], weeks: [] } };
+  db.friendCodes.push({ code: 'STALECODE1', uid: owner.id, createdAt: 1, expiresAt: Date.now() - 3 * 86400000 });
+  await (await import('../server.js')).runSocialMaintenance();
+  assert.ok(!db.challenges.some(c => c.id === challenge.id));
+  assert.equal(db.challengeProgress[challenge.id], undefined);
+  assert.ok(!db.friendCodes.some(c => c.code === 'STALECODE1'));
+});

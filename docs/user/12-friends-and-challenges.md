@@ -96,7 +96,7 @@ sharing. You can be in up to **5** challenges at once.
 
 **Activity** shows when friends finished a session, with no detail about what they did. Tap the cheer button to
 send one of five emoji (👏 🔥 💪 🎉 ❤️). You can send one per session, change it, or take it back. There is no
-free text anywhere. On your own last session you see the cheers you received.
+free text anywhere. On your own last session you see the cheers you received. In **Crew → Friends**, **Mute cheers** hides one friend's cheers from you, without telling them.
 
 ## Notifications
 

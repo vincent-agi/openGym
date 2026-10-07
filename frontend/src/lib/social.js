@@ -150,3 +150,20 @@ export function stripSocialFromImport(data) {
   for (const key of [SOCIAL_BACKUP_KEY, ...FRIENDS_FIELDS]) delete clean[key]
   return clean
 }
+
+/**
+ * Whether the app should talk to the server about friends at all. The point: a person who never
+ * turned the module on costs no request, anywhere, except on the screens made for turning it on.
+ *
+ * @param {object} where
+ * @param {{social?: boolean} | null} where.user  The signed-in user, as `/api/me` described them.
+ * @param {boolean} where.demo    The GitHub Pages demo, answered with made-up data.
+ * @param {boolean} where.mobile  The standalone app, which has no server.
+ * @param {boolean} where.probe   A friends screen the person opened on purpose (Crew, a friend link).
+ * @returns {boolean}
+ */
+export function shouldAskServer({ user, demo, mobile, probe }) {
+  if (mobile) return false
+  if (demo) return true
+  return !!user && (probe || !!user.social)
+}

@@ -227,7 +227,7 @@ export function createSocialRoutes({ db, saveDb, readSession, json, readBody, on
       const wasSharing = isSharing(user);
       user.social = result.value;
       saveDb();
-      onChange(user, wasSharing);
+      try { onChange(user, wasSharing); } catch (e) { console.error('social follow-up failed after a settings change', e); }
       json(res, 200, { social: publicSocial(user.social) });
     }
   };

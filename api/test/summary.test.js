@@ -235,3 +235,39 @@ test('the numbers do not move with weight lifted, reps, effort, duration, body d
   const b = computeSummary({ ...state({ workouts: [heavy], planned: [1, 3] }), ...profile }, NOW, 'UTC');
   assert.deepEqual(a, b);
 });
+
+/* ---- time zones: a person east of Greenwich is already "tomorrow" in UTC ---- */
+import { ownerTz } from '../summary.js';
+import { newEventsFromState } from '../feed.js';
+
+test('ownerTz reads the zone the app stamped on the state, or the reminder one, or nothing', () => {
+  assert.equal(ownerTz({ tz: 'Asia/Tokyo' }), 'Asia/Tokyo');
+  assert.equal(ownerTz({ reminder: { tz: 'Europe/Paris' }, tz: 'Asia/Tokyo' }), 'Europe/Paris');
+  assert.equal(ownerTz({}), null);
+  assert.equal(ownerTz(null), null);
+});
+
+test('with no zone known, a session dated one day ahead of UTC still counts (the person is just east of Greenwich)', () => {
+  const evening = Date.parse('2026-10-07T20:00:00Z');                // already Thursday 8 Oct in Tokyo or Sydney
+  const s = computeSummary(state({ workouts: [workout('2026-10-08')] }), evening, null);
+  assert.equal(s.weekSessions, 1);
+});
+
+test('but a session two days ahead is still treated as forged', () => {
+  const evening = Date.parse('2026-10-07T20:00:00Z');
+  assert.equal(computeSummary(state({ workouts: [workout('2026-10-09')] }), evening, null).weekSessions, 0);
+});
+
+test('with the zone known there is no tolerance: tomorrow is tomorrow', () => {
+  const evening = Date.parse('2026-10-07T20:00:00Z');                // Wednesday in UTC, Thursday 05:00 in Tokyo
+  assert.equal(computeSummary(state({ workouts: [workout('2026-10-08')] }), evening, 'Asia/Tokyo').weekSessions, 1);
+  assert.equal(computeSummary(state({ workouts: [workout('2026-10-08')] }), evening, 'UTC').weekSessions, 0);
+  assert.equal(computeSummary(state({ workouts: [workout('2026-10-09')] }), evening, 'Asia/Tokyo').weekSessions, 0);
+});
+
+test('feed events and badges apply the same tolerance', () => {
+  const evening = Date.parse('2026-10-07T20:00:00Z');
+  const st = { workouts: [workout('2026-10-08')] };
+  assert.equal(newEventsFromState(st, evening, null, new Set()).length, 1);
+  assert.equal(newEventsFromState(st, evening, 'UTC', new Set()).length, 0);
+});

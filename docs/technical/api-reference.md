@@ -59,7 +59,7 @@ Request body ≤ **5 MB**. No other limits: no rate limiting, no pagination, no 
 
 | Method & path | Auth | Description |
 |---|---|---|
-| `GET /api/me` | session | `{"user":{"id","name","admin"}}`. |
+| `GET /api/me` | session | `{"user":{"id","name","admin","social"}}`. `social` is true when the user turned sharing on; the app uses it to skip every friends request for people who never opted in. |
 | `POST /api/register/options` | public | Body `{name, code?}`. `name` trimmed, ≤ 40 chars, required. If invite-only, `code` (case-insensitive) must match an unused, unrevoked invite, else 403 — **this endpoint therefore acts as an invite-code oracle**. Returns `{cid, options}` where `options` are WebAuthn creation options and `cid` is a one-shot challenge handle valid 5 minutes. |
 | `POST /api/register/verify` | public | Body `{cid, credential}`. Verifies attestation against `ORIGIN`/`RP_ID`, re-checks and burns the invite, creates the user and credential, saves `db.json`, sets the session cookie. Returns `{user}`. |
 | `POST /api/login/options` | public | Body `{}`. Returns `{cid, options}` for a discoverable-credential assertion. |
@@ -136,7 +136,7 @@ Its keys are a fixed whitelist (a test fails if one is added unreviewed):
 | `prCount` | Personal records | Records in the last 28 days. |
 | `weeklyTrend` | Consistency | Sessions per week over the last 4 completed weeks minus the 4 before: a comparison with oneself. See [scoring](social-scoring.md). |
 
-"Today" is computed in the owner's `reminder.tz` (UTC when unset), so a week boundary does not move for people abroad.
+"Today" is computed in the owner's time zone, so a week boundary does not move for people abroad. The app stamps its zone on the state (`tz`) while sharing is on; before that, UTC is assumed and sessions dated one day ahead of UTC are still believed (the person is just east of Greenwich), while anything further ahead is ignored.
 Body weight, measurements, nutrition, effort ratings, the mobility profile, exercise names, weights and reps are never read.
 
 #### Challenges
@@ -168,7 +168,7 @@ Implemented in `api/feed.js` and `api/feed-service.js`. Every route needs a sess
 
 | Method & path | Description |
 |---|---|
-| `GET /api/social/feed?before=<ms>` | `{events, mine}`. `events`: the 30 newest sessions of accepted friends who share sessions, newest first, each `{id, handle, displayName, date, createdAt, cheers:[{emoji,count}], myCheer}`; pass the last `createdAt` as `before` for the next page. `mine`: your 5 latest sessions, each `{id, date, createdAt, cheers, from:[{emoji, displayName}]}` (cheers from friends you muted are left out). |
+| `GET /api/social/feed?before=<ms>` | `{events, mine}`. `events`: the 30 newest sessions of accepted friends who share sessions, newest first, each `{id, handle, displayName, date, createdAt, cheers:[{emoji,count}], myCheer}`; pass the last `createdAt` as `before` for the next page. `mine`: your 5 latest sessions, each `{id, date, createdAt, cheers, from:[{emoji, displayName}]}` (cheers from friends you muted are left out). `muted`: handles of the friends whose cheers you muted (only you can see this). |
 | `POST /api/social/cheer` | Body exactly `{eventId, emoji}` with `emoji` one of `👏 🔥 💪 🎉 ❤️`. Anything else, including extra fields or free text, is `400`. You can cheer a friend's event, once: cheering again replaces your emoji. Yourself, strangers and unknown events are `404`. |
 | `POST /api/social/cheer/retract` | Body `{eventId}`. Removes your cheer. |
 | `POST /api/social/cheer/mute` | Body `{handle, muted:boolean}` for a friend. Hides their cheers from you; they are not told. |

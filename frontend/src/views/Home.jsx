@@ -52,9 +52,10 @@ export default function Home() {
   const social = useSocial()
   const crew = useCrewSummary(social.status === 'ready' && social.social.enabled)
   const sharing = social.status === 'ready' && social.social.enabled
-  const challenges = useChallenges(sharing)
   const dismissed = (() => { try { return localStorage.getItem(RECAP_DISMISS_KEY) } catch { return null } })()
-  const recap = recapVisible(todayISO(), dismissed)
+  const recapOn = recapVisible(todayISO(), dismissed)
+  const challenges = useChallenges(sharing && recapOn)   // only the recap needs them
+  const recap = recapOn
     ? buildRecap(S, sharing && crew.data ? {
       crewSessions: crew.data.friends.reduce((n, f) => n + (f.summary?.weekSessions ?? 0), 0),
       challenge: (() => { const c = (challenges || []).find(x => x.status === 'active'); const mine = c?.participants.find(p => p.handle === social.social.handle); return c ? { title: c.title, pct: c.mode === 'coop' ? c.pct : Math.min(1, (mine?.current ?? 0) / c.target) } : null })()
@@ -163,7 +164,7 @@ export default function Home() {
               {t('Crew')}
             </div>
             <div className="muted small" style={{ marginTop: 2 }}>
-              {lastCheers ? lastCheers + ' ' : ''}
+              {lastCheers && <div>{t('Your last session')}: {lastCheers}</div>}
               {!crewTop ? '' : crew.data.friends.length === 0
                 ? t('Invite a friend')
                 : crewTop.mine?.position

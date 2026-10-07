@@ -124,6 +124,16 @@ test('muting a friend hides their cheers from you only', async () => {
   assert.equal((await feed(a)).body.mine[0].cheers.length, 1);
 });
 
+test('the feed lists the friends you muted, so the app can offer to undo it', async () => {
+  const [a, b] = await friends();
+  assert.deepEqual((await feed(a)).body.muted, []);
+  await post('cheer/mute', a, { handle: b.handle, muted: true });
+  assert.deepEqual((await feed(a)).body.muted, [b.handle]);
+  assert.deepEqual((await feed(b)).body.muted, []);                 // nobody learns they were muted
+  await post('cheer/mute', a, { handle: b.handle, muted: false });
+  assert.deepEqual((await feed(a)).body.muted, []);
+});
+
 test('removing or blocking a friend empties your feed of them and wipes cheers both ways', async () => {
   const [a, b] = await friends();
   await save(a, [session()]); await save(b, [session()]);

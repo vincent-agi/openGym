@@ -29,7 +29,9 @@ Sessions dated in the future are ignored, so a hand-edited state cannot inflate 
 | `streakWeeks` | Consecutive weeks with a session. A week with none *yet* does not break it. |
 | `weeklyTrend` | Average sessions per week over the last 4 **completed** weeks minus the 4 before, to one decimal. It is a comparison with oneself ("vs usual"): a beginner going from 1 to 3 sessions a week shows `+2.0`. It is never used to rank, and a negative figure is shown only to its owner. |
 
-"Today" is computed in the owner's time zone (`reminder.tz`, UTC when unset), so weeks do not shift for people abroad.
+"Today" is computed in the owner's time zone (stamped on the state as `tz` while sharing is on, or `reminder.tz`), so weeks do not shift for people abroad. With no zone known yet, UTC is assumed and sessions dated one day ahead are still accepted; two days ahead is treated as forged.
+
+**A week in progress.** `weekConsistency` compares sessions so far with the *whole* planned week, so it climbs through the week (someone who did 2 of 3 planned sessions by Wednesday shows 67 %). Everyone is measured the same way, and people with no session yet are never shown as last.
 
 ## Planned breaks
 

@@ -6,11 +6,11 @@
  * ({@link ChallengeService.recordProgress}); a client can never submit it.
  */
 import crypto from 'node:crypto';
-import { addDays, isoInZone } from './summary.js';
+import { addDays, isoInZone, ownerTz, sessionLimit } from './summary.js';
 import { isSharing, requireSharing } from './social.js';
 import { relationsOf } from './friends.js';
 import {
-  LIMITS, validateChallengeInput, collectProgress, progressOf, statusOf, activeCountFor, challengeView, removeParticipant
+  LIMITS, validateChallengeInput, collectProgress, progressOf, statusOf, activeCountFor, challengeView, removeParticipant, isStale
 } from './challenges.js';
 
 /**
@@ -23,6 +23,8 @@ import {
  *   A friendship ended: whoever ended it leaves the challenges the two share.
  * @property {(uid: string, handle: string) => void} eraseUser
  *   Removes a user from every challenge and from every stored result.
+ * @property {() => void} prune
+ *   Forgets challenges that ended long ago, with their progress.
  * @property {() => Array<{title: string, uids: string[], coopDone: boolean, endDate: string}>} collectEnded
  *   Challenges that finished since the last call, once each: whom to tell, and whether a co-op target was reached.
  * @property {Record<string, Function>} routes
@@ -99,12 +101,14 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
   const recordProgress = (user, state) => {
     if (!isSharing(user)) return;
     try {
-      const today = isoInZone(now(), state?.reminder?.tz || 'UTC');
+      const tz = ownerTz(state);
+      const today = isoInZone(now(), tz || 'UTC');
+      const limit = sessionLimit(today, tz);   // one day of slack when the zone is unknown
       let changed = false;
       for (const ch of db.challenges) {
         const p = participantOf(ch, user.id);
         if (p?.status === 'joined' && statusOf(ch, today) === 'active') {
-          changed = record(ch, p, state, today) || changed;
+          changed = record(ch, p, state, limit) || changed;
           changed = checkMilestones(ch) || changed;
         }
       }
@@ -229,7 +233,7 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
   const collectEnded = () => {
     const today = utcToday();
     const finished = db.challenges.filter(ch => ch.status !== 'cancelled' && !ch.endedNotified && statusOf(ch, today) === 'ended');
-    finished.forEach(ch => { ch.endedNotified = true; });
+    finished.forEach(ch => { ch.endedNotified = true; viewOf(ch); });   // reading it once freezes the results
     if (finished.length) saveDb();
     return finished.map(ch => {
       const uids = ch.participants.filter(p => p.status === 'joined').map(p => p.uid);
@@ -258,5 +262,14 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
     saveDb();
   };
 
-  return { recordProgress, onSharingChange, collectEnded, onSever, eraseUser, routes };
+  const prune = () => {
+    const today = utcToday();
+    const keep = db.challenges.filter(ch => !isStale(ch, today));
+    if (keep.length === db.challenges.length) return;
+    for (const ch of db.challenges) if (!keep.includes(ch)) delete db.challengeProgress[ch.id];
+    db.challenges = keep;
+    saveDb();
+  };
+
+  return { recordProgress, onSharingChange, collectEnded, prune, onSever, eraseUser, routes };
 }

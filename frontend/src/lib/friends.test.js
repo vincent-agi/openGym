@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { friendLink, extractFriendCode, addRequestBodies, rememberPendingCode, takePendingCode } from './friends.js'
+import { friendLink, extractFriendCode, addRequestBodies, rememberPendingCode, peekPendingCode, clearPendingCode } from './friends.js'
 
 describe('friendLink', () => {
   it('builds a hash-router link to the friend route', () => {
@@ -48,20 +48,23 @@ describe('addRequestBodies', () => {
 describe('pending friend code', () => {
   const memory = () => { const m = {}; return { getItem: k => m[k] ?? null, setItem: (k, v) => { m[k] = v }, removeItem: k => { delete m[k] } } }
 
-  it('is remembered once and consumed on read', () => {
+  it('is remembered, readable any number of times, and forgotten only when cleared', () => {
     const s = memory()
     rememberPendingCode('ABCDEFGHJK', s)
-    expect(takePendingCode(s)).toBe('ABCDEFGHJK')
-    expect(takePendingCode(s)).toBeNull()
+    expect(peekPendingCode(s)).toBe('ABCDEFGHJK')
+    expect(peekPendingCode(s)).toBe('ABCDEFGHJK')
+    clearPendingCode(s)
+    expect(peekPendingCode(s)).toBeNull()
   })
   it('ignores values that are not codes', () => {
     const s = memory()
     rememberPendingCode('nope', s)
-    expect(takePendingCode(s)).toBeNull()
+    expect(peekPendingCode(s)).toBeNull()
   })
   it('survives storage that throws', () => {
     const broken = { getItem() { throw new Error('denied') }, setItem() { throw new Error('denied') }, removeItem() { throw new Error('denied') } }
     expect(() => rememberPendingCode('ABCDEFGHJK', broken)).not.toThrow()
-    expect(takePendingCode(broken)).toBeNull()
+    expect(peekPendingCode(broken)).toBeNull()
+    expect(() => clearPendingCode(broken)).not.toThrow()
   })
 })

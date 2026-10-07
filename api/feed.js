@@ -9,7 +9,7 @@
  * Events are derived on the server from the state it already receives, so a client cannot forge
  * one for somebody else.
  */
-import { addDays, isoInZone, isSession } from './summary.js';
+import { addDays, isoInZone, isSession, sessionLimit } from './summary.js';
 
 /** The only cheers that exist. Mirrored in `frontend/src/lib/cheers.js`; a test keeps both equal. */
 export const CHEER_EMOJI = Object.freeze(['👏', '🔥', '💪', '🎉', '❤️']);
@@ -40,17 +40,18 @@ export function validateCheer(input) {
  *
  * @param {object} state  The user's synced state; never modified.
  * @param {number} now    Epoch ms.
- * @param {string} tz     The owner's IANA time zone.
+ * @param {string | null | undefined} tz  The owner's IANA time zone if known.
  * @param {Set<string>} seen  References of events already recorded for this user.
  * @returns {Array<{ref: string, date: string}>}  `ref` is internal and never sent to friends.
  */
 export function newEventsFromState(state, now, tz, seen) {
-  const today = isoInZone(now, tz);
+  const today = isoInZone(now, tz || 'UTC');
+  const limit = sessionLimit(today, tz);
   const since = addDays(today, -(FRESH_DAYS - 1));
   const out = [];
   const taken = new Set(seen);
   for (const w of Array.isArray(state?.workouts) ? state.workouts : []) {
-    if (!isSession(w, today) || w.d < since) continue;
+    if (!isSession(w, limit) || w.d < since) continue;
     const ref = w.id != null ? String(w.id) : `day:${w.d}`;
     if (taken.has(ref)) continue;
     taken.add(ref);

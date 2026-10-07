@@ -55,6 +55,30 @@ export function mondayOf(iso) {
 }
 
 /**
+ * The time zone a user's app stamped on their state (so a week boundary does not move for people
+ * abroad), or null when it never did, for instance before they first opened the friends screens.
+ *
+ * @param {object | null | undefined} state
+ * @returns {string | null}
+ */
+export function ownerTz(state) {
+  return state?.reminder?.tz || state?.tz || null;
+}
+
+/**
+ * The latest date a session may carry and still be believed. With the zone known, that is today
+ * there. With none, UTC is a guess: anyone east of Greenwich is already on the next date, so one
+ * day of slack is allowed (more would let a hand-edited state run ahead).
+ *
+ * @param {string} today  Today's ISO date in the zone used.
+ * @param {string | null | undefined} tz  The owner's zone, if known.
+ * @returns {string}
+ */
+export function sessionLimit(today, tz) {
+  return tz ? today : addDays(today, 1);
+}
+
+/**
  * The calendar date, as `YYYY-MM-DD`, at an instant in a time zone. An unknown zone falls
  * back to UTC rather than failing a save.
  *
@@ -139,13 +163,14 @@ export function isSession(w, today) {
  *
  * @param {object} state  The user's synced state; never modified, and tolerated when malformed.
  * @param {number} now    Instant to compute "today" from, in epoch milliseconds.
- * @param {string} tz     The owner's IANA time zone, so weeks do not shift for people abroad.
+ * @param {string | null | undefined} tz  The owner's IANA time zone if known ({@link ownerTz}); UTC is assumed otherwise.
  * @returns {Summary}
  */
 export function computeSummary(state, now, tz) {
   const st = state && typeof state === 'object' ? state : {};
-  const today = isoInZone(now, tz);
-  const sessions = (Array.isArray(st.workouts) ? st.workouts : []).filter(w => isSession(w, today));
+  const today = isoInZone(now, tz || 'UTC');
+  const limit = sessionLimit(today, tz);
+  const sessions = (Array.isArray(st.workouts) ? st.workouts : []).filter(w => isSession(w, limit));
 
   const weekStart = mondayOf(today);
   const weekSessions = sessions.filter(w => w.d >= weekStart).length;

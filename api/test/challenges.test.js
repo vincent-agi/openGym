@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  LIMITS, validateChallengeInput, collectProgress, progressOf, statusOf, challengeView, activeCountFor, removeParticipant
+  LIMITS, validateChallengeInput, collectProgress, progressOf, statusOf, challengeView, activeCountFor, removeParticipant, isStale
 } from '../challenges.js';
 
 const TODAY = '2026-10-07';   // Wednesday
@@ -181,4 +181,13 @@ test('removeParticipant leaves the owner alone when someone else goes', () => {
   removeParticipant(ch, 'b');
   assert.equal(ch.ownerId, 'a');
   assert.deepEqual(ch.participants.map(p => p.uid), ['a']);
+});
+
+test('isStale: a challenge is forgotten 90 days after its end date, never before', () => {
+  const ended = { startDate: '2026-01-01', endDate: '2026-02-01', status: 'open' };
+  assert.equal(isStale(ended, '2026-05-01'), false);       // 89 days after the end
+  assert.equal(isStale(ended, '2026-05-02'), true);        // 90 days after
+  assert.equal(isStale({ ...ended, status: 'cancelled' }, '2026-05-02'), true);
+  assert.equal(isStale({ startDate: '2026-09-01', endDate: '2026-12-01', status: 'open' }, '2027-06-01'), true);
+  assert.equal(isStale({ startDate: '2026-09-01', endDate: '2027-12-01', status: 'open' }, '2027-06-01'), false);
 });

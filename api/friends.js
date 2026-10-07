@@ -61,6 +61,18 @@ export function generateFriendCode() {
 }
 
 /**
+ * Drops friend codes that expired more than a day ago. Newly expired ones stay a little so a
+ * "that code expired" message is still possible.
+ *
+ * @param {FriendCode[]} codes  Not modified.
+ * @param {number} now
+ * @returns {FriendCode[]}
+ */
+export function pruneFriendCodes(codes, now) {
+  return codes.filter(c => c.expiresAt > now - 86400000);
+}
+
+/**
  * Whether a code can still be redeemed.
  *
  * @param {FriendCode | undefined} entry

@@ -157,7 +157,8 @@ from clients will overwrite manual edits.
 | `subs.userId → users.id` | Orphan subscriptions are harmless. Dead endpoints (HTTP 404/410 from the push service) are removed automatically on send. |
 | `friendships.a/b → users.id` | Orphans are harmless. A blocked record is never shown to the blocked user. |
 | `socialSummaries.<uid>` | Rewritten on every state save when the content changed (or after 6 h), and deleted the moment the user turns sharing off. |
-| `friendCodes.uid → users.id` | Expired and revoked codes are refused; creating a new code removes the owner's old ones. |
+| `friendCodes.uid → users.id` | Expired and revoked codes are refused; creating a new code removes the owner's old ones, and codes expired for more than a day are pruned by the background job. |
+| `challenges` | Kept for 90 days after their end date, then deleted with their `challengeProgress` by the background job. Ended challenges are frozen (`final`) as soon as they finish. |
 | `invites.usedBy → users.id` | Redeemed invites cannot be revoked via the API. |
 | `state-<uid>.json ↔ users.id` | **No foreign key.** Deleting a user from `db.json` leaves the state file orphaned; deleting the file leaves a user with an empty profile. |
 | `disabled` | Checked on every authenticated request and every login. Takes effect immediately, no restart. |

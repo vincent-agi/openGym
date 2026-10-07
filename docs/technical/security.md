@@ -93,6 +93,10 @@ in, or are cancelled; no user id remains anywhere in `db.json` outside the accou
 it). A block made *against* the leaving user is deleted with the rest. Their own training data is not touched. Backups
 include the user's own friends settings; importing a backup never restores friends, requests or challenges.
 
+**Failure isolation.** The module is an add-on: an error in any social hook after a save is logged and swallowed, so it can never stop someone saving their training or changing settings, and a failed notification never rejects (which would crash the process).
+
+**Retention.** Events and cheers 30 days, ended challenges 90 days, expired friend codes one day, push queue entries 12 hours.
+
 **Limits.** Rate limits are in memory per process and per client address (taken from `X-Real-IP`, which the bundled nginx
 overwrites; the client-controlled `X-Forwarded-For` is ignored). Running behind a different proxy requires it to set
 `X-Real-IP` to the true client address, or all clients will share one budget.

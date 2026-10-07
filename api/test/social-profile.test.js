@@ -80,3 +80,12 @@ test('a user who never opens the module keeps a state file free of social fields
   const { body } = await app.request('/api/data', { as: user });
   assert.deepEqual(body.state, { unit: 'kg' });
 });
+
+test('/api/me says whether the user shares, so the app need not ask anything else to know', async () => {
+  const user = app.createUser('mepeek');
+  assert.equal((await app.request('/api/me', { as: user })).body.user.social, false);
+  await app.request('/api/social/me', { method: 'PUT', as: user, body: { enabled: true, handle: 'me_peek', displayName: 'P' } });
+  assert.equal((await app.request('/api/me', { as: user })).body.user.social, true);
+  await app.request('/api/social/me', { method: 'PUT', as: user, body: { enabled: false } });
+  assert.equal((await app.request('/api/me', { as: user })).body.user.social, false);
+});

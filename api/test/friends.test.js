@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   FRIEND_CODE_ALPHABET, FRIEND_CODE_LENGTH, generateFriendCode, isCodeUsable,
-  sendRequest, respondToRequest, removeFriend, blockUser, unblockUser, relationsOf
+  sendRequest, respondToRequest, removeFriend, blockUser, unblockUser, relationsOf, pruneFriendCodes
 } from '../friends.js';
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');
@@ -153,4 +153,15 @@ test('relationsOf never reveals that someone blocked you', () => {
   blockUser(list, 'f5', 'me', NOW);
   const r = relationsOf(list, 'me');
   assert.deepEqual(r, { friends: [], incoming: [], outgoing: [], blocked: [] });
+});
+
+test('pruneFriendCodes forgets codes that expired more than a day ago, and keeps the rest', () => {
+  const day = 86400000;
+  const codes = [
+    { code: 'OLD', uid: 'a', expiresAt: NOW - 2 * day },
+    { code: 'JUSTEXPIRED', uid: 'a', expiresAt: NOW - 1000 },
+    { code: 'LIVE', uid: 'a', expiresAt: NOW + day }
+  ];
+  assert.deepEqual(pruneFriendCodes(codes, NOW).map(c => c.code), ['JUSTEXPIRED', 'LIVE']);
+  assert.equal(codes.length, 3);                         // the input is untouched
 });
