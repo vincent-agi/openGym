@@ -10,6 +10,8 @@ spellings, an API shape the frontend and the API each guessed). We will migrate 
 TypeScript, incrementally and leaf-first, with strict checking on every file the moment it becomes TypeScript. The API
 keeps running straight from its sources: **no build step**, Node strips the types.
 
+Tracking: milestone *v1.8 - TypeScript Migration* (issues #52 to #70).
+
 ## Decisions
 
 1. **Scope.** All of `api/`, `frontend/src`, the frontend config (`vite.config`) and the Node scripts. Two deliberate
