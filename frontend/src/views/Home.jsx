@@ -10,7 +10,8 @@ import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
-import { useSocial, useCrewSummary } from '../lib/useSocial.js'
+import { useSocial, useCrewSummary, useFeed } from '../lib/useSocial.js'
+import { cheerLine } from '../lib/cheers.js'
 import { rankCrew, crewHighlights } from '../lib/crew.js'
 
 // Home = what to do now + a quick glance. Deep charts & history live in Stats.
@@ -48,6 +49,8 @@ export default function Home() {
   const nutritionToday = nutritionTargets ? dayTotals(S, todayISO()) : null
   const social = useSocial()
   const crew = useCrewSummary(social.status === 'ready' && social.social.enabled)
+  const feed = useFeed(social.status === 'ready' && social.social.enabled)
+  const lastCheers = feed.data?.mine[0] ? cheerLine(feed.data.mine[0].cheers) : ''
   const crewTop = crew.data ? crewHighlights(rankCrew(crew.data.me, crew.data.friends, { metric: 'consistency', period: 'week', viewerHidesRank: !!social.social.hideRank })) : null
 
   // today's session shown right under the week strip
@@ -147,6 +150,7 @@ export default function Home() {
               {t('Crew')}
             </div>
             <div className="muted small" style={{ marginTop: 2 }}>
+              {lastCheers ? lastCheers + ' ' : ''}
               {!crewTop ? '' : crew.data.friends.length === 0
                 ? t('Invite a friend')
                 : crewTop.mine?.position

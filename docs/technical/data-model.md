@@ -116,6 +116,11 @@ from clients will overwrite manual edits.
   "challengeProgress": {                  // challenge id -> user id -> derived progress, never client-supplied
     "Hq3u8WnC1aE": { "piYdx5GveQarq8u9": { "sessions": 3, "days": ["2026-10-07"], "weeks": [] } }
   },
+  "socialEvents": [                       // friends module: "X finished a session", kept 30 days
+    { "id": "e8Kd2Lq9", "uid": "piYdx5GveQarq8u9", "ref": "w123", "date": "2026-10-07", "kind": "session", "createdAt": 1791371000000 }
+  ],                                      // `ref` is internal (dedupe) and never sent to friends
+  "socialCheers": [ { "eventId": "e8Kd2Lq9", "from": "v2Lm0ePqRt7YcNaB", "emoji": "🔥", "createdAt": 1791372000000 } ],
+  "cheerMutes": [ { "uid": "piYdx5GveQarq8u9", "mutedUid": "v2Lm0ePqRt7YcNaB" } ],
   "subs": [                               // Web Push subscriptions
     {
       "userId": "piYdx5GveQarq8u9",

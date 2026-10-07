@@ -162,6 +162,22 @@ Ties share a position; co-op has no individual positions. An ended challenge is 
 Progress is recomputed on the server from each person's own saved state (`PUT /api/data`), including their full history, so
 nothing a client sends can change it.
 
+#### Activity feed and cheers
+
+Implemented in `api/feed.js` and `api/feed-service.js`. Every route needs a session and sharing.
+
+| Method & path | Description |
+|---|---|
+| `GET /api/social/feed?before=<ms>` | `{events, mine}`. `events`: the 30 newest sessions of accepted friends who share sessions, newest first, each `{id, handle, displayName, date, createdAt, cheers:[{emoji,count}], myCheer}`; pass the last `createdAt` as `before` for the next page. `mine`: your 5 latest sessions, each `{id, date, createdAt, cheers, from:[{emoji, displayName}]}` (cheers from friends you muted are left out). |
+| `POST /api/social/cheer` | Body exactly `{eventId, emoji}` with `emoji` one of `👏 🔥 💪 🎉 ❤️`. Anything else, including extra fields or free text, is `400`. You can cheer a friend's event, once: cheering again replaces your emoji. Yourself, strangers and unknown events are `404`. |
+| `POST /api/social/cheer/retract` | Body `{eventId}`. Removes your cheer. |
+| `POST /api/social/cheer/mute` | Body `{handle, muted:boolean}` for a friend. Hides their cheers from you; they are not told. |
+
+An **event** records only that a session was finished on a date. It is created by the server when a sharing user (with
+"Sessions" shared) saves their state and has a new completed session from today or yesterday, never from the client, and
+carries no routine, exercise, weight or duration. Events and their cheers are deleted after 30 days. Removing or blocking
+a friend deletes the cheers between you in both directions.
+
 Adding by exact handle does reveal that a *sharing* user with that handle exists. Treat handles as findable by anyone
 who has an account on the instance; users who want to stay unlisted should not enable sharing or should add friends by code only.
 

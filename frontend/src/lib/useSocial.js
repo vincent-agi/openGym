@@ -56,3 +56,22 @@ export function useCrewSummary(enabled) {
 
   return { data, error, reload }
 }
+
+/**
+ * Loads the friends' activity feed and the caller's own recent sessions with the cheers they received.
+ * Reloads when the tab regains focus.
+ *
+ * @param {boolean} enabled
+ * @returns {{data: {events: object[], mine: object[]} | null, reload: () => void}}
+ */
+export function useFeed(enabled) {
+  const [data, setData] = useState(null)
+  const reload = useCallback(() => { api('/api/social/feed').then(setData).catch(() => {}) }, [])
+  useEffect(() => {
+    if (!enabled) return undefined
+    reload()
+    window.addEventListener('focus', reload)
+    return () => window.removeEventListener('focus', reload)
+  }, [enabled, reload])
+  return { data, reload }
+}

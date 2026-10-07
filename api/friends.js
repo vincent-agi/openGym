@@ -221,9 +221,11 @@ const NOBODY = 'nobody can be added with that code or handle';
  * @param {(res: import('node:http').ServerResponse, code: number, body: object) => void} ctx.json
  * @param {(req: import('node:http').IncomingMessage) => Promise<any>} ctx.readBody
  * @param {() => number} [ctx.now]  Clock, injectable for tests.
+ * @param {(a: string, b: string) => void} [ctx.onSever]  Called when a friendship ends (removed or blocked),
+ *   so anything shared between the two can be cleaned up.
  * @returns {Record<string, Function>}
  */
-export function createFriendRoutes({ db, saveDb, readSession, json, readBody, now = Date.now }) {
+export function createFriendRoutes({ db, saveDb, readSession, json, readBody, now = Date.now, onSever = () => {} }) {
   const byId = id => db.users.find(u => u.id === id);
   const byHandle = handle => db.users.find(u => u.social?.handle === String(handle || '').trim().replace(/^@/, '').toLowerCase());
   const card = (id, extra = {}) => { const u = byId(id); return { handle: u.social.handle, displayName: u.social.displayName, ...extra }; };
@@ -286,7 +288,11 @@ export function createFriendRoutes({ db, saveDb, readSession, json, readBody, no
     'POST /api/social/friends/respond': onHandle((user, other, body) =>
       respondToRequest(db.friendships, user.id, other.id, body.action, now())),
 
-    'POST /api/social/friends/remove': onHandle((user, other) => removeFriend(db.friendships, user.id, other.id)),
+    'POST /api/social/friends/remove': onHandle((user, other) => {
+      const result = removeFriend(db.friendships, user.id, other.id);
+      if (result.ok) onSever(user.id, other.id);
+      return result;
+    }),
 
     'POST /api/social/friends/unblock': onHandle((user, other) => unblockUser(db.friendships, user.id, other.id)),
 
@@ -295,7 +301,7 @@ export function createFriendRoutes({ db, saveDb, readSession, json, readBody, no
       const user = caller(req, res);
       if (!user) return;
       const other = byHandle((await readBody(req)).handle);
-      if (other) { blockUser(db.friendships, user.id, other.id, now()); saveDb(); }
+      if (other) { blockUser(db.friendships, user.id, other.id, now()); onSever(user.id, other.id); saveDb(); }
       json(res, 200, { ok: true });
     }
   };
