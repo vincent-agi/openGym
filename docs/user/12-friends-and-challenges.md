@@ -106,7 +106,7 @@ Nothing is sent during your quiet hours (21:00 to 08:00 unless you change them),
 notification arrives a day (friends who train together are grouped), and no more than three social notifications a day.
 Messages are always encouraging: no rankings, no "you are behind".
 
-> Notifications are written in your app's language when it is French or English; other languages receive English for now.
+> Notifications are written in your app's language when it is English, French or Spanish; other languages receive English for now.
 
 ## Badges and your weekly recap
 

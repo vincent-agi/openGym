@@ -6,8 +6,9 @@
  * says someone is behind. Each language must define every message (a test checks it); a language
  * that is not translated yet, or a missing entry, falls back to English rather than failing.
  *
- * To add a language: add its catalogue below and its code to {@link PUSH_LANGS}. Use the formal
- * "you" where the language has one, and avoid wording that depends on the recipient's gender.
+ * To add a language: add its catalogue below (it is picked up automatically). Follow the tone of the
+ * app's own translation for that language (formal "you" in French, informal in Spanish) and avoid
+ * wording that depends on the recipient's gender.
  */
 
 /** Placeholders: `{name}` a friend, `{n}` a number of friends, `{emoji}` a cheer, `{title}` a challenge. */
@@ -29,6 +30,15 @@ const CATALOG = {
     milestoneHalf: { title: 'À mi-parcours !', body: '« {title} » est à moitié fait. Continuez.' },
     milestoneTarget: { title: 'Objectif atteint 🎉', body: '« {title} » : bien joué !' },
     challengeEnded: { title: '« {title} » est terminé', body: 'Merci d’avoir participé. Découvrez les résultats.' }
+  },
+  es: {
+    friendSessionOne: { title: '{name} terminó una sesión', body: 'Envía un ánimo 👏' },
+    friendSessionMany: { title: '{n} amigos entrenaron hoy', body: 'Tu equipo va en racha. Envía un ánimo 👏' },
+    cheerReceived: { title: '{name} animó tu sesión {emoji}', body: 'Buen trabajo 💪' },
+    challengeInvite: { title: '{name} te invita a «{title}»', body: 'Únete cuando quieras.' },
+    milestoneHalf: { title: '¡A mitad de camino!', body: '«{title}» va por la mitad. ¡Sigue así!' },
+    milestoneTarget: { title: 'Objetivo alcanzado 🎉', body: '«{title}»: ¡bien jugado!' },
+    challengeEnded: { title: '«{title}» ha terminado', body: 'Gracias por participar. Mira los resultados.' }
   }
 };
 

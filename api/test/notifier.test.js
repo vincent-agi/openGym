@@ -190,3 +190,17 @@ test('the language is read when the push is sent, so a change before delivery is
   await n.flush();
   assert.equal(ctx.sent[0].title, 'Léa a terminé une séance');
 });
+
+test('Spanish is used for Spanish-speaking recipients, including regional codes', async () => {
+  for (const lang of ['es', 'es-MX']) {
+    const ctx = setup();
+    const n = createNotifier({
+      db: ctx.db, saveDb() {}, now: () => ctx.clock.t,
+      sendPush: async (uid, payload) => { ctx.sent.push(payload); },
+      readState: () => ({ reminder: { tz: 'UTC' }, lang })
+    });
+    await n.notify('r', 'cheerReceived', { name: 'Léa', emoji: '🔥' });
+    await n.flush();
+    assert.equal(ctx.sent[0].title, 'Léa animó tu sesión 🔥', lang);
+  }
+});

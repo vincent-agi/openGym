@@ -6,14 +6,16 @@ import { wording } from '../notifier.js';
 const SAMPLE = { names: ['Léa'], name: 'Léa', emoji: '🔥', title: 'Automne', stage: 'half' };
 const KINDS = ['friendSession', 'cheerReceived', 'challengeInvite', 'challengeMilestone', 'challengeEnded'];
 
-test('English and French are available, English being the fallback', () => {
-  assert.deepEqual(PUSH_LANGS, ['en', 'fr']);
+test('English, French and Spanish are available, English being the fallback', () => {
+  assert.deepEqual(PUSH_LANGS, ['en', 'fr', 'es']);
 });
 
 test('normalizeLang keeps the language part, in lower case, and falls back to English', () => {
   assert.equal(normalizeLang('fr'), 'fr');
   assert.equal(normalizeLang('fr-FR'), 'fr');
   assert.equal(normalizeLang('FR_ca'), 'fr');
+  assert.equal(normalizeLang('es-MX'), 'es');
+  assert.equal(normalizeLang('ES'), 'es');
   assert.equal(normalizeLang('de'), 'en');          // not translated yet
   for (const bad of [undefined, null, '', 42, '12', {}]) assert.equal(normalizeLang(bad), 'en');
 });
@@ -74,4 +76,32 @@ test('French messages are as encouraging as the English ones: no ranks, comparis
 
 test('the default language is English, as before', () => {
   assert.equal(wording('cheerReceived', SAMPLE).title, 'Léa cheered your session 🔥');
+});
+
+test('Spanish reads naturally: informal "tú", gender-neutral', () => {
+  assert.equal(wording('cheerReceived', SAMPLE, 'es').title, 'Léa animó tu sesión 🔥');
+  assert.equal(wording('friendSession', { names: ['Léa'] }, 'es').title, 'Léa terminó una sesión');
+  assert.equal(wording('friendSession', { names: ['Léa', 'Marc', 'Zoé'] }, 'es').title, '3 amigos entrenaron hoy');
+  assert.equal(wording('challengeInvite', SAMPLE, 'es').title, 'Léa te invita a «Automne»');
+  assert.equal(wording('challengeMilestone', SAMPLE, 'es').title, '¡A mitad de camino!');
+  assert.equal(wording('challengeMilestone', { ...SAMPLE, stage: 'target' }, 'es').title, 'Objetivo alcanzado 🎉');
+  assert.equal(wording('challengeEnded', SAMPLE, 'es').title, '«Automne» ha terminado');
+});
+
+test('Spanish messages are as encouraging as the others: no ranks, comparisons or reproach', () => {
+  const bad = ['atrás', 'perdiste', 'último', 'clasificación', 'ranking', 'vago', 'fallaste', 'peor', 'superó', 'venció', 'ganó'];
+  for (const kind of KINDS) {
+    for (const stage of ['half', 'target']) {
+      const m = wording(kind, { ...SAMPLE, stage, names: ['A', 'B'] }, 'es');
+      const text = `${m.title} ${m.body}`.toLowerCase();
+      for (const word of bad) assert.ok(!text.includes(word), `${word} in "${text}"`);
+    }
+  }
+});
+
+test('every language gives each kind its own text', () => {
+  for (const kind of KINDS) {
+    const titles = PUSH_LANGS.map(lang => wording(kind, SAMPLE, lang).title);
+    assert.equal(new Set(titles).size, PUSH_LANGS.length, kind);
+  }
 });
