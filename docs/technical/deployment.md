@@ -210,7 +210,7 @@ corrupted data.
   committed, the file is incomplete for a working instance.
 - **Kubernetes:** run **one replica** of `api` with a `ReadWriteOnce` volume and `strategy: Recreate`. Do not use
   more than one replica (see [hard limits](architecture.md#hard-limits)). Use an Ingress for TLS and rate limiting.
-- **Bare metal (no Docker):** run `node api/server.js` with `DATA_DIR`, `RP_ID`, `ORIGIN` set (Node ≥ 20; the
+- **Bare metal (no Docker):** run `node api/server.js` with `DATA_DIR`, `RP_ID`, `ORIGIN` set (Node ≥ 22.18, the first 22.x that can run TypeScript sources without a flag, which the API will use after the TypeScript migration; the
   image uses 22), and serve `frontend/dist` with a web server that proxies `/api/` to the API and `/img`, `/gif` to
   the media directories. Keep one origin.
 

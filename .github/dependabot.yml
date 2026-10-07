@@ -1,6 +1,8 @@
 # Weekly, grouped, labelled. Dependabot PRs run the normal CI + Security workflows
 # (ci.yml / security.yml trigger on every pull_request), so a bump that breaks the build
 # is caught before merge.
+# TypeScript and the @types/* packages are normal devDependencies: the weekly npm groups below
+# already cover them, so no extra entry is needed (decision in docs/adr/0001-migrate-to-typescript.md).
 version: 2
 updates:
   - package-ecosystem: npm

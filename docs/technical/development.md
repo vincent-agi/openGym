@@ -71,6 +71,19 @@ node scripts/check-locales.mjs    # locale key parity (runs in CI)
 node scripts/check-doc-links.mjs  # broken relative links in the docs (runs in CI)
 ```
 
+### Type checking
+
+```bash
+cd api && npm run typecheck        # tsc --noEmit
+cd frontend && npm run typecheck   # tsc --noEmit
+```
+
+Both packages have a `tsconfig.json` extending the shared `tsconfig.base.json` (`strict`, `erasableSyntaxOnly`,
+`verbatimModuleSyntax`). During the [TypeScript migration](../adr/0001-migrate-to-typescript.md) JavaScript files are
+accepted but not checked (`allowJs`, `checkJs: false`); every file renamed to `.ts`/`.tsx` is checked strictly. The API needs
+**Node ≥ 22.18** (the first 22.x that runs `.ts` files natively). Build-time variables of the frontend are declared in
+`frontend/src/vite-env.d.ts`.
+
 ### API tests
 
 ```bash

@@ -48,7 +48,7 @@ These files predate this folder and stay authoritative for their topic:
 
 | | |
 |---|---|
-| Runtime | Node 22 (Alpine) for the API; nginx 1.27 (Alpine) for the web tier |
+| Runtime | Node ≥ 22.18 (22 Alpine in the image) for the API; nginx 1.27 (Alpine) for the web tier |
 | Languages | JavaScript (ES modules), React 19, no TypeScript |
 | Database | **None.** JSON files on a local volume |
 | Auth | WebAuthn passkeys, HMAC-signed session cookie |

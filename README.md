@@ -175,7 +175,7 @@ Rough, community-driven — ideas and PRs welcome:
 
 ## Tech
 
-React 19 + Vite (React Router, Zustand) · Node (no framework) · nginx · Docker Compose ·
+React 19 + Vite (React Router, Zustand) · Node ≥ 22.18 (no framework) · TypeScript (migration in progress, see [ADR 0001](docs/adr/0001-migrate-to-typescript.md)) · nginx · Docker Compose ·
 WebAuthn · exercise data from [hasaneyldrm/exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset).
 No database server, no cloud dependencies — the frontend builds inside Docker, so self-hosting
 stays a one-command `docker compose up`.
