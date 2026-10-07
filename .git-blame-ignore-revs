@@ -7,3 +7,6 @@
 # chore(ts): rename api/summary.js api/challenges.js api/friends.js api/social.js api/social-erase.js api/test/summary.test.js api/test/challenges.test.js api/test/friends.test.js api/test/social.test.js api/test/privacy-boundaries.test.js api/test/helpers.js
 914e78be6439c18310b048aa27466c413adea8d0
 f99efc913f2fa5b10423aa73711a247ed7eaef28
+# chore(ts): rename api/badge-service.js api/challenge-service.js api/feed-service.js api/notifier.js api/server.js api/sharing.js api/social-module.js api/test/admin-social.test.js api/test/badges-routes.test.js api/test/challenges-routes.test.js api/test/feed-routes.test.js api/test/friends-routes.test.js api/test/notifications-routes.test.js api/test/notifier.test.js api/test/rate-limits-routes.test.js api/test/resilience.test.js api/test/server.test.js api/test/social-authz.test.js api/test/social-disabled.test.js api/test/social-leave.test.js api/test/social-profile.test.js api/test/summary-routes.test.js
+e2cf0224ccb606bca70c4f1e63333b343cab6700
+cf2a50ae70019dc7b8e34d3da80938a130a25346
