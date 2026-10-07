@@ -71,6 +71,24 @@ node scripts/check-locales.mjs    # locale key parity (runs in CI)
 node scripts/check-doc-links.mjs  # broken relative links in the docs (runs in CI)
 ```
 
+### Renaming files to TypeScript
+
+```bash
+scripts/ts-rename.sh --dry-run frontend/src/lib      # see what would move
+scripts/ts-rename.sh frontend/src/lib/borg.js frontend/src/lib/borg.test.js
+git config blame.ignoreRevsFile .git-blame-ignore-revs   # once per clone (GitHub does it for you)
+```
+
+The helper renames `.js`→`.ts`, `.jsx`→`.tsx` (tests keep their `.test` infix) and makes **three commits**: the pure rename (every
+file is a 100 % similar `R100` rename, checked, so `git log --follow` and rename detection keep working), the update of
+`'./x.js'` import specifiers in every importer, and the entry in `.git-blame-ignore-revs` for the first two. It refuses a dirty
+working tree or an existing target, never touches `node_modules`, `dist`, `android`, `ios` or `public/`, and *reports* (does not
+edit) glob patterns such as `import.meta.glob('../x/*.js')` and strings that still name an old file. The first commit alone does not
+build; the three belong to one pull request. Then type the files in a separate commit.
+
+**Rebasing a feature branch over a rename:** `git rebase main` follows renames on its own. If a file you edited was renamed
+on `main`, resolve with `git rebase -X find-renames=40% main`, or `git cherry-pick -X find-renames=40% <commit>`.
+
 ### Type checking
 
 ```bash

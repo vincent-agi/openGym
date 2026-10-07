@@ -6,3 +6,7 @@
 /web/                @vincent-agi
 /.github/workflows/  @vincent-agi
 /.github/dependabot.yml @vincent-agi
+/tsconfig*.json      @vincent-agi
+/shared/             @vincent-agi
+/docs/adr/           @vincent-agi
+/.git-blame-ignore-revs @vincent-agi

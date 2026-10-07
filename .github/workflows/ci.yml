@@ -35,6 +35,14 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run test
+      - name: Type check
+        run: npm run typecheck
+      - name: TypeScript ratchet and progress
+        # Repository-wide, so it runs from the root. The summary shows reviewers the migration trend.
+        working-directory: .
+        run: |
+          node scripts/ts-progress.mjs --check
+          { echo '### TypeScript migration'; echo; node scripts/ts-progress.mjs --markdown; } >> "$GITHUB_STEP_SUMMARY"
       - name: Locale key parity
         run: node scripts/check-locales.mjs
       - name: Documentation links
@@ -57,6 +65,8 @@ jobs:
       - run: npm ci
       - name: Syntax check
         run: for f in *.js; do node --check "$f"; done
+      - name: Type check
+        run: npm run typecheck
       - name: Unit & route tests
         run: npm test
       - name: Boot smoke
@@ -90,7 +100,7 @@ jobs:
             if [ "$RUNNER_OS" = macOS ]; then brew install "$t"; else sudo apt-get install -y "$t"; fi
           done
       - name: shellcheck
-        run: shellcheck -S warning scripts/gymme scripts/TEMPLATE.sh scripts/fetch-media.sh scripts/*/*.sh scripts/tests/mocks/*
+        run: shellcheck -S warning scripts/gymme scripts/TEMPLATE.sh scripts/fetch-media.sh scripts/ts-rename.sh scripts/*/*.sh scripts/tests/mocks/*
       - name: Unit tests (system bash)
         run: /bin/bash scripts/tests/run.sh
       - name: Command index (every command has a description, no duplicates)

@@ -105,6 +105,16 @@ issues are an origin mismatch.
 
 By contributing you agree your work is licensed under the project's [GNU AGPL v3.0](LICENSE).
 
+## TypeScript migration (v1.8)
+
+The codebase is moving to TypeScript ([ADR 0001](docs/adr/0001-migrate-to-typescript.md), milestone *v1.8*). While it lasts:
+
+- **Small pull requests, about ten files**, leaf modules first (pure logic before stateful code before views). Say in the milestone which batch you take.
+- **Rename with `scripts/ts-rename.sh`**, never by hand, and put the typing in a separate commit. A rename commit changes no content.
+- **No behaviour change in a conversion.** Tests are renamed first and must pass unchanged. A bug you meet gets an issue, not a drive-by fix.
+- **Strict, no `any`.** Use `unknown` and narrow it; erasable syntax only (no `enum`, `namespace`, constructor parameter properties); `import type` for types; real extensions in relative imports.
+- **Feature branches:** rebase often. If a file you edited was renamed, see *Rebasing a feature branch over a rename* in [`docs/technical/development.md`](docs/technical/development.md).
+
 ## Architecture decisions
 
 Decisions that are hard to reverse are recorded in [`docs/adr/`](docs/adr/README.md) (for example the move to TypeScript). Read them before proposing a change in the same area, and add one when your change qualifies.

@@ -26,9 +26,15 @@ Triggers: every `pull_request`, and `push` to `main`. Concurrency: cancels super
 
 | Job (required check name) | Steps |
 |---|---|
-| `Frontend (test + build)` | `npm ci` → `npm run test` (Vitest) → `npm run build` in `frontend/`. |
-| `API (syntax + boot smoke)` | `npm ci` → `node --check server.js` → `npm test` → start the server on port 3999 with a temp `DATA_DIR` and poll until it answers any HTTP status. |
+| `Frontend (test + build)` | `npm ci` → `npm run test` (Vitest) → `npm run typecheck` → TypeScript ratchet and progress summary (from the repository root) → locale parity → doc links → `npm run build` in `frontend/`. |
+| `API (syntax + boot smoke)` | `npm ci` → `node --check server.js` → `npm run typecheck` → `npm test` → start the server on port 3999 with a temp `DATA_DIR` and poll until it answers any HTTP status. |
 | `Scripts (shellcheck + tests) (ubuntu-latest / macos-latest)` | `shellcheck -S warning` on `scripts/`, then `scripts/tests/run.sh` under the system bash (3.2 on macOS) and `gymme help --check`. **Not required yet**: add it to branch protection once stable. |
+
+**TypeScript migration.** `npm run typecheck` runs `tsc --noEmit` in both packages (the JavaScript that has not been converted yet is
+parsed but not checked). `node scripts/ts-progress.mjs --check` is the *ratchet*: `ts-migrated.txt` lists the directories that are fully
+TypeScript, and the job fails if a `.js`/`.jsx`/`.mjs` file appears in one of them (or if a listed directory does not exist). The same
+script prints a JavaScript-vs-TypeScript table in the job summary. Both steps live **inside** the two required jobs, so the
+required check names (and branch protection) do not change. See [ADR 0001](../adr/0001-migrate-to-typescript.md).
 
 There is deliberately **no `paths:` filter**: a required check skipped by a path filter stays "pending" forever and blocks
 the merge.
