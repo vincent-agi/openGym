@@ -52,7 +52,7 @@ jobs:
           cache-dependency-path: api/package-lock.json
       - run: npm ci
       - name: Syntax check
-        run: node --check server.js && node --check social.js
+        run: for f in *.js; do node --check "$f"; done
       - name: Unit & route tests
         run: npm test
       - name: Boot smoke

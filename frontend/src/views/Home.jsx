@@ -10,6 +10,7 @@ import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
+import { useSocial } from '../lib/useSocial.js'
 
 // Home = what to do now + a quick glance. Deep charts & history live in Stats.
 export default function Home() {
@@ -44,6 +45,7 @@ export default function Home() {
   const bwPoints = S.bodyweight.slice(-30).map(b => ({ t: b.t || new Date(b.d).getTime(), y: b.w, d: b.d }))
   const nutritionTargets = S.nutrition?.targets?.kcal ? S.nutrition.targets : null
   const nutritionToday = nutritionTargets ? dayTotals(S, todayISO()) : null
+  const social = useSocial()
 
   // today's session shown right under the week strip
   const onToday = () => { if (S.active) nav('/workout'); else if (routine) startFlow(routine.id); else dayOverrideSheet(todayISO()) }
@@ -131,6 +133,19 @@ export default function Home() {
         <Icon name="calendar" className="chev" style={{ fontSize: 20 }} />
       </div>
     </div>
+
+    {/* Friends entry: only for people who opted in to sharing (v1.7) — nothing changes for everyone else. */}
+    {social.status === 'ready' && social.social.enabled && (
+      <div className="card tappable" style={{ cursor: 'pointer' }} onClick={() => nav('/crew')}>
+        <div className="row between">
+          <div className="row" style={{ gap: 7, fontSize: 22, fontWeight: 600, letterSpacing: '-.021em' }}>
+            <Icon name="heart" style={{ color: 'var(--pink)' }} />
+            {t('Crew')}
+          </div>
+          <Icon name="chevronRight" className="chev" style={{ fontSize: 20 }} />
+        </div>
+      </div>
+    )}
 
     {/* Hidden until a nutrition goal is set (issue #3) — no half-finished 0/0g card on a
         profile that never opened Nutrition. */}

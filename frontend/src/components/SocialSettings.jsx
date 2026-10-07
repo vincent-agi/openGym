@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api.js'
 import { t } from '../lib/i18n.js'
 import { useUI } from '../store/useUI.js'
@@ -25,6 +26,7 @@ const FIELD_LABEL = { sessions: 'Sessions this week', consistency: 'Consistency'
  * @returns {JSX.Element | null}
  */
 export default function SocialSettings() {
+  const nav = useNavigate()
   const toast = useUI(s => s.toast)
   const [available, setAvailable] = useState(false)
   const [saved, setSaved] = useState(null)       // last settings stored on the server
@@ -80,6 +82,8 @@ export default function SocialSettings() {
           subtitle={saved.enabled ? t('Friends you add can see your summary.') : t('Nobody can see anything about you.')}>
           <Switch checked={saved.enabled} disabled={busy} onChange={toggleEnabled} />
         </Row>
+        {saved.enabled && <Row icon="heart" iconTint="var(--pink)" title={t('Open Crew')} subtitle={t('Friends, requests and your friend code.')}
+          accessory="chevron" onClick={() => nav('/crew')} />}
         <div className="lrow" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8, paddingTop: 13, paddingBottom: 14 }}>
           <span className="lrow-t">{t('Handle')}</span>
           <TextField value={draft.handle} maxLength={20} autoCapitalize="none" autoCorrect="off" placeholder="lea_fit"

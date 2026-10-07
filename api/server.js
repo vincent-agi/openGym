@@ -11,6 +11,7 @@ import {
 } from '@simplewebauthn/server';
 import webpush from 'web-push';
 import { createSocialRoutes } from './social.js';
+import { createFriendRoutes } from './friends.js';
 
 const PORT = +(process.env.PORT || 3000);
 const DATA = process.env.DATA_DIR || '/data';
@@ -44,6 +45,8 @@ let db = { users: [], creds: [], subs: [], invites: [] };
 try { db = JSON.parse(fs.readFileSync(dbFile, 'utf8')); } catch {}
 db.subs = db.subs || [];
 db.invites = db.invites || [];
+db.friendships = db.friendships || [];
+db.friendCodes = db.friendCodes || [];
 const isAdmin = user => !!user && (user.admin === true || ADMIN_UIDS.includes(user.id));
 function saveDb() { atomicWrite(dbFile, JSON.stringify(db, null, 2)); }
 function atomicWrite(file, content) {
@@ -576,7 +579,10 @@ const routes = {
   }
 };
 
-if (SOCIAL_ENABLED) Object.assign(routes, createSocialRoutes({ db, saveDb, readSession, json, readBody }));
+if (SOCIAL_ENABLED) {
+  const services = { db, saveDb, readSession, json, readBody };
+  Object.assign(routes, createSocialRoutes(services), createFriendRoutes(services));
+}
 
 /** The HTTP server. Exported so tests can bind it to an ephemeral port; started below only when run directly. */
 export const server = http.createServer(async (req, res) => {

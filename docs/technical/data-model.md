@@ -79,6 +79,21 @@ from clients will overwrite manual edits.
       "transports": ["internal", "hybrid"]
     }
   ],
+  "friendships": [                        // friends module: one record per pair of users
+    {
+      "id": "Zx3k9Qw1",
+      "a": "piYdx5GveQarq8u9",            // the two user ids, in sorted order
+      "b": "v2Lm0ePqRt7YcNaB",
+      "status": "accepted",               // "pending" | "accepted" | "blocked"
+      "requestedBy": "piYdx5GveQarq8u9",
+      "createdAt": 1791370000000,
+      "since": 1791371000000,             // accepted only
+      "blockedBy": null                   // blocked only: who blocked
+    }
+  ],
+  "friendCodes": [                        // friends module: shareable codes, 14 days
+    { "code": "K7QH2MWD4X", "uid": "piYdx5GveQarq8u9", "createdAt": 1791370000000, "expiresAt": 1792580000000 }
+  ],
   "subs": [                               // Web Push subscriptions
     {
       "userId": "piYdx5GveQarq8u9",
@@ -107,6 +122,8 @@ from clients will overwrite manual edits.
 |---|---|
 | `creds.userId → users.id` | A credential without a user logs in with `500 user missing`. Registration always creates one credential per user; there is no API to add more. |
 | `subs.userId → users.id` | Orphan subscriptions are harmless. Dead endpoints (HTTP 404/410 from the push service) are removed automatically on send. |
+| `friendships.a/b → users.id` | Orphans are harmless. A blocked record is never shown to the blocked user. |
+| `friendCodes.uid → users.id` | Expired and revoked codes are refused; creating a new code removes the owner's old ones. |
 | `invites.usedBy → users.id` | Redeemed invites cannot be revoked via the API. |
 | `state-<uid>.json ↔ users.id` | **No foreign key.** Deleting a user from `db.json` leaves the state file orphaned; deleting the file leaves a user with an empty profile. |
 | `disabled` | Checked on every authenticated request and every login. Takes effect immediately, no restart. |

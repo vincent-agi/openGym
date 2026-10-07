@@ -102,6 +102,25 @@ Implemented in `api/social.js`. Unknown JSON fields are rejected with `400`.
 | `GET /api/social/me` | session | `{"social":{enabled, handle, displayName, share:{sessions, streak, consistency, prs}, hideRank}}`. A user who never opened the module gets the private defaults (`enabled:false`, empty handle). |
 | `PUT /api/social/me` | session | Partial update of the same object. `handle`: 3-20 chars `[a-z0-9_]`, stored lowercase, unique across the instance (`409` on clash). `displayName`: 1-30 chars, no control characters. `share.*`, `enabled` and `hideRank` must be booleans. `enabled:true` requires a handle and a display name (`400` otherwise); `enabled:false` always succeeds. Returns the stored settings. |
 
+#### Friends
+
+All routes below need a session **and** `social.enabled` (otherwise `403 turn on sharing first`). Implemented in
+`api/friends.js`. A friend code is 10 characters from an alphabet without `0 O 1 I L`, valid 14 days, usable by several
+people, and revoked when its owner creates a new one.
+
+| Method & path | Description |
+|---|---|
+| `POST /api/social/friends/code` | Creates (and rotates) the caller's friend code. Returns `{code, expiresAt}`. |
+| `GET /api/social/friends` | `{friends:[{handle,displayName,since}], incoming:[…], outgoing:[…], blocked:[{handle}]}`. People who turned sharing off are left out; blocks made *against* the caller are never listed. |
+| `POST /api/social/friends/request` | Body `{code}` or `{handle}`. Returns `{status:'pending'|'accepted', friend}`. If the other person had already asked, the two requests meet and the friendship is accepted. **Every refusal returns the same `404 {"error":"nobody can be added with that code or handle"}`**: unknown handle or code, user not sharing, blocked (either way), yourself, duplicate request, already friends. |
+| `POST /api/social/friends/respond` | Body `{handle, action:'accept'|'decline'}`. Only the recipient can answer; declining deletes the request. `404` otherwise. |
+| `POST /api/social/friends/remove` | Body `{handle}`. Ends an accepted friendship from either side. |
+| `POST /api/social/friends/block` | Body `{handle}`. Silent: the blocked user is not told, loses the friendship and can no longer send requests. Always `200`, even for an unknown handle, so it cannot be used to probe handles. |
+| `POST /api/social/friends/unblock` | Body `{handle}`. Only the blocker can. |
+
+Adding by exact handle does reveal that a *sharing* user with that handle exists. Treat handles as findable by anyone
+who has an account on the instance; users who want to stay unlisted should not enable sharing or should add friends by code only.
+
 ### Live presence
 
 | Method & path | Auth | Description |
