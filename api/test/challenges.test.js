@@ -154,3 +154,10 @@ test('pct is capped at 1 and an ended challenge is reported as ended', () => {
   assert.equal(v.status, 'ended');
   assert.equal(v.participants[0].pct, 1);
 });
+
+test('collectProgress honours planned breaks when counting planned sessions per week', () => {
+  const st = { ...state(['2026-10-06'], [1, 3]), breaks: [{ from: '2026-10-05', to: '2026-10-11' }] };
+  const d = collectProgress(st, { from: '2026-10-05', to: '2026-10-11', today: '2026-10-11', gaps: [] });
+  assert.equal(d.weeks[0].planned, 0);
+  assert.equal(progressOf('consistency', d), 0);      // a break week gives no credit, and no penalty
+});

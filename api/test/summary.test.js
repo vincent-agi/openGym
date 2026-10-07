@@ -31,7 +31,7 @@ test('an empty profile gives an empty summary', () => {
   const s = computeSummary(state(), NOW, 'UTC');
   assert.deepEqual(s, {
     weekSessions: 0, weekPlanned: 0, weekConsistency: null, monthSessions: 0,
-    streakWeeks: 0, activeDays: [], lastActiveDate: null, prCount: 0
+    streakWeeks: 0, activeDays: [], lastActiveDate: null, prCount: 0, weeklyTrend: null
   });
 });
 
@@ -149,4 +149,89 @@ test('active days and last active date travel with the sessions choice', () => {
   const s = computeSummary(state({ workouts: [workout('2026-10-06')] }), NOW, 'UTC');
   const f = filterSummary(s, { sessions: true, streak: false, consistency: false, prs: false });
   assert.deepEqual(Object.keys(f).sort(), ['activeDays', 'lastActiveDate', 'monthSessions', 'weekSessions']);
+  const c = filterSummary(s, { sessions: false, streak: false, consistency: true, prs: false });
+  assert.deepEqual(Object.keys(c).sort(), ['weekConsistency', 'weekPlanned', 'weeklyTrend']);
+});
+
+/* ---- fair scoring (v1.7): personal trend, planned breaks, and what must never matter ---- */
+
+/** Sessions placed on given dates, for every Monday-based week offset (0 = this week). */
+const weekly = (counts) => counts.flatMap(([weeksAgo, n]) =>
+  Array.from({ length: n }, (_, i) => workout(addDays(mondayOf('2026-10-07'), -7 * weeksAgo + i)))
+);
+
+test('weeklyTrend compares the last four completed weeks with the four before, per person', () => {
+  const beginner = [...[1, 2, 3, 4].map(w => [w, 3]), ...[5, 6, 7, 8].map(w => [w, 1])];
+  const s = computeSummary(state({ workouts: weekly(beginner) }), NOW, 'UTC');
+  assert.equal(s.weeklyTrend, 2);
+  const slowing = [...[1, 2, 3, 4].map(w => [w, 1]), ...[5, 6, 7, 8].map(w => [w, 3])];
+  assert.equal(computeSummary(state({ workouts: weekly(slowing) }), NOW, 'UTC').weeklyTrend, -2);
+});
+
+test('weeklyTrend ignores the week in progress and is null when there is nothing to compare', () => {
+  assert.equal(computeSummary(state({ workouts: weekly([[0, 5]]) }), NOW, 'UTC').weeklyTrend, null);
+  assert.equal(computeSummary(state(), NOW, 'UTC').weeklyTrend, null);
+});
+
+test('a newcomer with recent sessions and no history shows a positive trend, rounded to one decimal', () => {
+  const s = computeSummary(state({ workouts: weekly([[1, 2], [2, 1]]) }), NOW, 'UTC');
+  assert.equal(s.weeklyTrend, 0.8);     // (2 + 1) / 4 = 0.75 → 0.8
+});
+
+test('a planned break removes those days from the plan, so no consistency is held against you', () => {
+  const planned = [1, 3, 5];
+  const all = computeSummary(state({ planned }), NOW, 'UTC');
+  assert.equal(all.weekPlanned, 3);
+  const brk = { ...state({ planned }), breaks: [{ from: '2026-10-05', to: '2026-10-11' }] };
+  const s = computeSummary(brk, NOW, 'UTC');
+  assert.equal(s.weekPlanned, 0);
+  assert.equal(s.weekConsistency, null);
+  const part = { ...state({ planned }), breaks: [{ from: '2026-10-05', to: '2026-10-07' }] };
+  assert.equal(computeSummary(part, NOW, 'UTC').weekPlanned, 1);   // only Friday remains
+});
+
+test('sessions done during a break still count', () => {
+  const st = { ...state({ planned: [1], workouts: [workout('2026-10-06')] }), breaks: [{ from: '2026-10-05', to: '2026-10-11' }] };
+  assert.equal(computeSummary(st, NOW, 'UTC').weekSessions, 1);
+});
+
+test('a break is capped at 14 days and malformed breaks are ignored', () => {
+  const planned = [1];
+  const long = { ...state({ planned }), breaks: [{ from: '2026-09-01', to: '2026-12-31' }] };
+  assert.equal(computeSummary(long, NOW, 'UTC').weekPlanned, 1);   // 1 Sep + 13 days ends 14 Sep, long before this week
+  const ok = { ...state({ planned }), breaks: [{ from: '2026-09-25', to: '2026-10-08' }] };
+  assert.equal(computeSummary(ok, NOW, 'UTC').weekPlanned, 0);     // 14 days covering Monday 5 Oct
+  for (const bad of [null, 'x', [{ from: 'nope', to: '2026-10-08' }], [{ from: '2026-10-09', to: '2026-10-01' }], [{}], [null]]) {
+    assert.doesNotThrow(() => computeSummary({ ...state({ planned }), breaks: bad }, NOW, 'UTC'));
+    assert.equal(computeSummary({ ...state({ planned }), breaks: bad }, NOW, 'UTC').weekPlanned, 1);
+  }
+});
+
+test('the break reason, if the client stores one, never reaches the summary', () => {
+  const st = { ...state({ planned: [1] }), breaks: [{ from: '2026-10-05', to: '2026-10-11', reason: 'chemotherapy' }] };
+  assert.ok(!JSON.stringify(computeSummary(st, NOW, 'UTC')).includes('chemotherapy'));
+});
+
+test('a session counts whatever the exercise was: timed, cardio, bodyweight, one side only', () => {
+  const kinds = [
+    { id: '0630', mode: 'cardio', sets: [{ done: true, min: 20, speed: 8 }] },
+    { id: '0001', mode: 'time', sets: [{ done: true, sec: 45 }] },
+    { id: '0662', bodyweight: true, sets: [{ done: true, r: 12 }] },
+    { id: '1460', side: 'left', sets: [{ done: true, r: 8, side: 'left' }] }
+  ];
+  for (const entry of kinds) {
+    const s = computeSummary(state({ workouts: [{ id: 'w', d: '2026-10-06', entries: [entry] }] }), NOW, 'UTC');
+    assert.equal(s.weekSessions, 1, entry.id);
+  }
+});
+
+test('the numbers do not move with weight lifted, reps, effort, duration, body data or the mobility profile', () => {
+  const light = { ...workout('2026-10-06'), start: 1, end: 2 };
+  const heavy = { ...workout('2026-10-06'), start: 0, end: 99999999,
+    entries: [{ id: '0025', sets: [{ w: 9999, r: 999, done: true, rpe: 10, rir: 0, effort: 10, bw: 300 }] }] };
+  const profile = { bodyweight: [{ d: '2026-10-06', w: 300 }], measurements: { x: 1 }, nutrition: { goal: 'bulk' },
+    mobilityLevel: 'wheelchair', disabledLimbs: ['left_leg'], preferredPosture: 'Seated-Wheelchair', effort: 'rpe' };
+  const a = computeSummary(state({ workouts: [light], planned: [1, 3] }), NOW, 'UTC');
+  const b = computeSummary({ ...state({ workouts: [heavy], planned: [1, 3] }), ...profile }, NOW, 'UTC');
+  assert.deepEqual(a, b);
 });

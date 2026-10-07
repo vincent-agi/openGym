@@ -32,6 +32,8 @@ If you use Gymme to train, read the [user guide](../user/README.md) instead.
 9. [Development guide](development.md) — local setup, code layout, state management, i18n, tests, mobile builds.
 10. [Automation scripts](automation.md) — the `gymme` CLI: maintenance, monitoring, alerts and reporting scripts, conventions, configuration.
 
+11. [Friends module scoring](social-scoring.md) — exactly what counts in rankings and challenges, and why it is fair.
+
 ## Existing documents
 
 These files predate this folder and stay authoritative for their topic:

@@ -13,8 +13,12 @@
 
 /** Every key a summary may contain. Adding one is a privacy decision: update the tests with it. */
 export const SUMMARY_KEYS = Object.freeze([
-  'weekSessions', 'weekPlanned', 'weekConsistency', 'monthSessions', 'streakWeeks', 'activeDays', 'lastActiveDate', 'prCount'
+  'weekSessions', 'weekPlanned', 'weekConsistency', 'monthSessions', 'streakWeeks', 'activeDays', 'lastActiveDate', 'prCount',
+  'weeklyTrend'
 ]);
+
+/** Longest planned break, in days. A break never silences the plan for good. */
+export const MAX_BREAK_DAYS = 14;
 
 /** Days of history behind `activeDays` and `prCount`. */
 export const WINDOW_DAYS = 28;
@@ -81,6 +85,31 @@ export function plannedRoutine(state, iso) {
 }
 
 /**
+ * The planned breaks a user declared (illness, travel, injury), made safe: malformed entries are
+ * dropped and each break is cut to {@link MAX_BREAK_DAYS}. Only the dates are ever read, never a reason.
+ *
+ * @param {object} state
+ * @returns {Array<{from: string, to: string}>}
+ */
+export function breaksOf(state) {
+  if (!Array.isArray(state?.breaks)) return [];
+  return state.breaks
+    .filter(b => b && ISO_DAY.test(b.from) && ISO_DAY.test(b.to) && b.from <= b.to)
+    .map(b => ({ from: b.from, to: b.to < addDays(b.from, MAX_BREAK_DAYS - 1) ? b.to : addDays(b.from, MAX_BREAK_DAYS - 1) }));
+}
+
+/**
+ * Whether a session was planned on a day: a routine is scheduled and the day is not inside a planned break.
+ *
+ * @param {object} state
+ * @param {string} iso
+ * @returns {boolean}
+ */
+export function isPlanned(state, iso) {
+  return !!plannedRoutine(state, iso) && !breaksOf(state).some(b => iso >= b.from && iso <= b.to);
+}
+
+/**
  * A workout counts as a session when it has a valid date not after `today` and one completed set.
  *
  * @param {any} w
@@ -102,6 +131,7 @@ export function isSession(w, today) {
  * @property {string[]} activeDays        ISO dates with a session in the last 28 days, ascending. No other detail.
  * @property {string | null} lastActiveDate  Most recent session date.
  * @property {number} prCount             Personal records in the last 28 days.
+ * @property {number | null} weeklyTrend   Sessions per week over the last 4 completed weeks minus the 4 before, one decimal. A comparison with oneself; null with no history.
  */
 
 /**
@@ -122,7 +152,7 @@ export function computeSummary(state, now, tz) {
   const monthSessions = sessions.filter(w => w.d.slice(0, 7) === today.slice(0, 7)).length;
 
   let weekPlanned = 0;
-  for (let i = 0; i < 7; i++) if (plannedRoutine(st, addDays(weekStart, i))) weekPlanned++;
+  for (let i = 0; i < 7; i++) if (isPlanned(st, addDays(weekStart, i))) weekPlanned++;
   const weekConsistency = weekPlanned ? Math.round(Math.min(1, weekSessions / weekPlanned) * 100) / 100 : null;
 
   const trainedWeeks = new Set(sessions.map(w => mondayOf(w.d)));
@@ -137,17 +167,22 @@ export function computeSummary(state, now, tz) {
   const activeDays = [...new Set(recent.map(w => w.d))].sort();
   const prCount = recent.reduce((n, w) => n + (Array.isArray(w.prs) ? w.prs.length : 0), 0);
 
+  const perWeek = (weeksAgo) => { const mon = addDays(weekStart, -7 * weeksAgo); return sessions.filter(w => w.d >= mon && w.d <= addDays(mon, 6)).length; };
+  const sum = (from, to) => { let n = 0; for (let k = from; k <= to; k++) n += perWeek(k); return n; };
+  const lastFour = sum(1, 4), priorFour = sum(5, 8);
+  const weeklyTrend = lastFour + priorFour ? Math.round(((lastFour - priorFour) / 4) * 10) / 10 : null;
+
   return {
     weekSessions, weekPlanned, weekConsistency, monthSessions, streakWeeks, activeDays,
     lastActiveDate: sessions.length ? sessions.reduce((m, w) => (w.d > m ? w.d : m), '') : null,
-    prCount
+    prCount, weeklyTrend
   };
 }
 
 // Which summary keys each sharing choice unlocks.
 const SHARE_KEYS = {
   sessions: ['weekSessions', 'monthSessions', 'activeDays', 'lastActiveDate'],
-  consistency: ['weekPlanned', 'weekConsistency'],
+  consistency: ['weekPlanned', 'weekConsistency', 'weeklyTrend'],
   streak: ['streakWeeks'],
   prs: ['prCount']
 };

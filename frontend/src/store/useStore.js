@@ -33,6 +33,9 @@ export const DEF = {
   // Dated, numeric goals beyond the single targetW line above (a squat target, a monthly
   // workout count...). See lib/goals.js for the shape and how progress is computed per type.
   goals: [],
+  // Planned breaks (illness, travel, injury) — `[{ from, to }]`, at most 14 days each. The server
+  // leaves those days out of the planned week, so a break never costs you consistency. See lib/breaks.js.
+  breaks: [],
   // Mobility/accessibility profile (issue #21) — all null/empty by default so an existing user
   // sees no change in which exercises are offered until they opt in from Settings. mobilityLevel
   // is one of 'full' | 'partial' | 'wheelchair' | 'limited'; disabledLimbs holds values like

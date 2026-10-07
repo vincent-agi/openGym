@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { t } from '../lib/i18n.js'
-import { PERIODS, metricsFor, rankCrew } from '../lib/crew.js'
+import { PERIODS, metricsFor, rankCrew, trendDisplay } from '../lib/crew.js'
 import { Segmented, Button } from './ui.jsx'
 
 const PERIOD_LABEL = { week: 'Week', month: 'Month' }
@@ -72,6 +72,7 @@ export default function CrewBoard({ data, hideRank, onRefresh, onAdd }) {
             <span className="lrow-m" style={{ minWidth: 0 }}>
               <span className="lrow-t">{r.displayName}{r.isMe ? ' · ' + t('you') : ''}</span>
               {STATUS_TEXT[r.status] && <span className="lrow-s">{t(STATUS_TEXT[r.status](period))}</span>}
+              {(trend => trend && <span className="lrow-s">{t('{0}{1} sessions a week vs usual', trend.sign, trend.amount)}</span>)(trendDisplay(r.trend, r.isMe))}
             </span>
           </span>
           {r.value != null && STATUS_TEXT[r.status] === undefined && <span>{formatValue(r.value, active)}</span>}

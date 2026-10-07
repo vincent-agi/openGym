@@ -28,9 +28,9 @@ export function addDaysIso(iso, days) {
 
 /** @type {Template[]} */
 export const TEMPLATES = [
+  { key: 'plan-4w', title: 'Stick to the plan', type: 'consistency', mode: 'versus', target: 3, days: 28 },
   { key: 'sessions-4w', title: '4 weeks · 12 sessions', type: 'sessions', mode: 'versus', target: 12, days: 28 },
   { key: 'streak-4w', title: '4 weeks in a row', type: 'streak', mode: 'versus', target: 4, days: 28 },
-  { key: 'plan-4w', title: 'Stick to the plan', type: 'consistency', mode: 'versus', target: 3, days: 28 },
   { key: 'coop-30', title: 'Co-op · 30 sessions together', type: 'sessions', mode: 'coop', target: 30, days: 28 }
 ]
 
@@ -44,6 +44,17 @@ export const TEMPLATES = [
 export function buildDraft(template, today) {
   const { title, type, mode, target, days } = template
   return { title, type, mode, target, startDate: today, endDate: addDaysIso(today, days - 1) }
+}
+
+/**
+ * One sentence on why a challenge type is fair, shown when creating it.
+ * Keyed by challenge type; ready for `t()`.
+ */
+export const FAIRNESS = {
+  consistency: 'Fair for everyone: it counts the weeks you do the sessions you planned, whatever your level.',
+  sessions: 'Counts sessions, not weight or size, so anyone can win.',
+  activeDays: 'Counts the days you trained, not how hard.',
+  streak: 'Counts weeks in a row with a session: showing up is what matters.'
 }
 
 const UNITS = { sessions: 'sessions', activeDays: 'active days', streak: 'weeks in a row', consistency: 'weeks on plan' }

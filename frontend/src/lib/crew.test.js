@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { PERIODS, METRICS, metricsFor, rankCrew, crewHighlights } from './crew.js'
+import { PERIODS, METRICS, metricsFor, rankCrew, crewHighlights, trendDisplay } from './crew.js'
 
 const row = (handle, summary, extra = {}) => ({ handle, displayName: handle[0].toUpperCase() + handle.slice(1), hideRank: false, stale: false, summary, ...extra })
 const S = (o = {}) => ({ weekSessions: 0, monthSessions: 0, streakWeeks: 0, weekPlanned: 3, weekConsistency: 0, ...o })
@@ -119,5 +119,29 @@ describe('crewHighlights — the compact Home card', () => {
     const h = crewHighlights(rankCrew(row('me', S({ weekSessions: 1 })), [row('a', S({ weekSessions: 5 }))], { metric: 'sessions', period: 'week', viewerHidesRank: true }))
     expect(h.top).toEqual([])
     expect(h.mine.position).toBeNull()
+  })
+})
+
+describe('personal trend', () => {
+  it('is carried on each row but never changes the order', () => {
+    const rows = rankCrew(row('me', S({ weekSessions: 1, weeklyTrend: 2.5 })), [row('ana', S({ weekSessions: 3, weeklyTrend: -1 }))], { metric: 'sessions', period: 'week' })
+    expect(rows.map(r => [r.handle, r.trend])).toEqual([['ana', -1], ['me', 2.5]])
+  })
+  it('is null when not shared', () => {
+    expect(rankCrew(row('me', S()), [], { metric: 'sessions', period: 'week' })[0].trend).toBeNull()
+  })
+})
+
+describe('trendDisplay', () => {
+  it('shows encouraging figures to everyone', () => {
+    expect(trendDisplay(1.5, false)).toEqual({ sign: '+', amount: '1.5' })
+  })
+  it('keeps a dip private to its owner', () => {
+    expect(trendDisplay(-1.2, false)).toBeNull()
+    expect(trendDisplay(-1.2, true)).toEqual({ sign: '-', amount: '1.2' })
+  })
+  it('says nothing about no change or no data', () => {
+    expect(trendDisplay(0.04, true)).toBeNull()
+    expect(trendDisplay(null, true)).toBeNull()
   })
 })

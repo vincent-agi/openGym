@@ -6,7 +6,7 @@
  * unit tested; {@link createChallengeService} adapts them to storage and HTTP. Progress is always
  * derived on the server from a user's own saved state, never accepted from a client.
  */
-import { addDays, mondayOf, isoInZone, isSession, plannedRoutine } from './summary.js';
+import { addDays, mondayOf, isSession, isPlanned } from './summary.js';
 import { isSharing, normalizeHandle } from './social.js';
 
 import crypto from 'node:crypto';
@@ -95,7 +95,7 @@ export function collectProgress(state, { from, to, today, gaps }) {
   for (let start = mondayOf(from); start <= end; start = addDays(start, 7)) {
     const last = addDays(start, 6);
     let planned = 0;
-    for (let i = 0; i < 7; i++) if (plannedRoutine(state || {}, addDays(start, i))) planned++;
+    for (let i = 0; i < 7; i++) if (isPlanned(state || {}, addDays(start, i))) planned++;
     weeks.push({
       start, planned,
       sessions: counted.filter(w => w.d >= start && w.d <= last).length,

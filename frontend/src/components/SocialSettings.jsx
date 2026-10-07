@@ -3,10 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api.js'
 import { t } from '../lib/i18n.js'
 import { useUI } from '../store/useUI.js'
+import { useStore } from '../store/useStore.js'
+import { todayISO } from '../lib/format.js'
+import { addDaysIso } from '../lib/challenges.js'
+import { planBreak, activeBreak, clearBreaks, MAX_BREAK_DAYS } from '../lib/breaks.js'
 import {
   EMPTY_SOCIAL, DISPLAY_NAME_MAX, normalizeHandle, handleError, displayNameError, canEnableSharing, sharedFields
 } from '../lib/social.js'
 import { Section, Row, Switch, Button, TextField } from './ui.jsx'
+import { fmtDate } from '../lib/format.js'
 
 const SHARE_OPTIONS = [
   { key: 'sessions', title: 'Sessions', subtitle: 'How many sessions you did this week and month.' },
@@ -16,6 +21,41 @@ const SHARE_OPTIONS = [
 ]
 
 const FIELD_LABEL = { sessions: 'Sessions this week', consistency: 'Consistency', streak: 'Week streak', prs: 'Personal records' }
+
+/**
+ * Planned break: days off that the weekly plan skips, so being ill or away never lowers consistency.
+ * The dates live in the user's own state; no reason is asked for or shared.
+ *
+ * @returns {JSX.Element}
+ */
+function BreakRow() {
+  const breaks = useStore(s => s.S.breaks)
+  const update = useStore(s => s.update)
+  const today = todayISO()
+  const current = activeBreak(breaks, today)
+  const [from, setFrom] = useState(today)
+  const [to, setTo] = useState(addDaysIso(today, 6))
+
+  if (current) {
+    return (
+      <Row icon="moon" iconTint="var(--orange)" title={t('Planned break')}
+        subtitle={t('{0} → {1}. These days are left out of your plan.', fmtDate(current.from, true), fmtDate(current.to, true))}>
+        <Button size="sm" onClick={() => update(s => { s.breaks = clearBreaks(s.breaks, today) })}>{t('End break')}</Button>
+      </Row>
+    )
+  }
+  return (
+    <div className="lrow" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8, paddingTop: 13, paddingBottom: 14 }}>
+      <span className="lrow-t">{t('Plan a break')}</span>
+      <span className="lrow-s">{t('Ill, travelling or injured? Up to {0} days that never count against you. Nothing is shared about why.', MAX_BREAK_DAYS)}</span>
+      <div className="row" style={{ gap: 8 }}>
+        <TextField type="date" min={today} value={from} onChange={e => setFrom(e.target.value)} />
+        <TextField type="date" min={from} value={to} onChange={e => setTo(e.target.value)} />
+      </div>
+      <Button variant="tinted" onClick={() => update(s => { s.breaks = planBreak(s.breaks, from, to, today) })}>{t('Start break')}</Button>
+    </div>
+  )
+}
 
 /**
  * "Friends & sharing" section of Settings.
@@ -103,6 +143,7 @@ export default function SocialSettings() {
             <Switch checked={!!draft.share[o.key]} disabled={busy} onChange={v => setShare(o.key, v)} />
           </Row>
         ))}
+        <BreakRow />
         <Row icon="moon" iconTint="var(--purple)" title={t('Hide my rank')}
           subtitle={t('Lists show no positions: encourage each other without ranking.')}>
           <Switch checked={draft.hideRank} disabled={busy}

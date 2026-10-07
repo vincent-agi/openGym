@@ -134,6 +134,7 @@ Its keys are a fixed whitelist (a test fails if one is added unreviewed):
 | `weekPlanned`, `weekConsistency` | Consistency | Sessions planned for the whole week (weekly plan plus per-day overrides) and `weekSessions / weekPlanned`, capped at 1; `null` when nothing was planned. |
 | `streakWeeks` | Week streak | Consecutive weeks with a session. A week with none *yet* does not break it. |
 | `prCount` | Personal records | Records in the last 28 days. |
+| `weeklyTrend` | Consistency | Sessions per week over the last 4 completed weeks minus the 4 before: a comparison with oneself. See [scoring](social-scoring.md). |
 
 "Today" is computed in the owner's `reminder.tz` (UTC when unset), so a week boundary does not move for people abroad.
 Body weight, measurements, nutrition, effort ratings, the mobility profile, exercise names, weights and reps are never read.

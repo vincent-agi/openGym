@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { TEMPLATES, buildDraft, unitLabel, progressLine, groupChallenges, addDaysIso } from './challenges.js'
+import { TEMPLATES, FAIRNESS, buildDraft, unitLabel, progressLine, groupChallenges, addDaysIso } from './challenges.js'
 
 describe('addDaysIso', () => {
   it('adds days across month and year ends', () => {
@@ -68,5 +68,17 @@ describe('groupChallenges', () => {
     expect(g.invited.map(c => c.id)).toEqual(['c'])
     expect(g.running.map(c => c.id)).toEqual(['a', 'b', 'f'])
     expect(g.past.map(c => c.id)).toEqual(['d', 'e'])
+  })
+})
+
+describe('fairness', () => {
+  it('starts from the plan-relative challenge', () => {
+    expect(TEMPLATES[0].type).toBe('consistency')
+  })
+  it('explains every challenge type in one sentence', () => {
+    for (const type of ['sessions', 'activeDays', 'streak', 'consistency']) expect(FAIRNESS[type]).toEqual(expect.any(String))
+  })
+  it('never ranks on strength, size or intensity', () => {
+    for (const tpl of TEMPLATES) expect(['sessions', 'activeDays', 'streak', 'consistency']).toContain(tpl.type)
   })
 })

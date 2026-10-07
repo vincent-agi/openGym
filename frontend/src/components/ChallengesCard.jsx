@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
 import { t } from '../lib/i18n.js'
 import { fmtDate, todayISO } from '../lib/format.js'
-import { TEMPLATES, buildDraft, unitLabel, progressLine, groupChallenges } from '../lib/challenges.js'
+import { TEMPLATES, FAIRNESS, buildDraft, unitLabel, progressLine, groupChallenges } from '../lib/challenges.js'
 import { useUI } from '../store/useUI.js'
 import { Button, Segmented, TextField } from './ui.jsx'
 
@@ -90,6 +90,7 @@ function NewChallenge({ friends, close, onCreated }) {
       ))}
     </div>
     <TextField value={draft.title} maxLength={40} onChange={e => set({ title: e.target.value })} />
+    <div className="muted small" style={{ margin: '6px 2px 0' }}>{t(FAIRNESS[draft.type])}</div>
     <div style={{ height: 8 }} />
     <Segmented options={[{ value: 'versus', label: t('Friendly duel') }, { value: 'coop', label: t('Together') }]} value={draft.mode} onChange={mode => set({ mode })} />
     <div className="muted small" style={{ margin: '6px 2px 10px' }}>

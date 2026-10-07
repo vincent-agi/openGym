@@ -34,6 +34,7 @@ export const metricsFor = period => (period === 'week' ? METRICS : METRICS.filte
  * @property {string} displayName
  * @property {boolean} isMe
  * @property {number | null} value      The number sorted on, when there is one.
+ * @property {number | null} trend      Change in sessions per week against the person's own recent past. Never ranked on.
  * @property {number | null} position   1-based, shared on ties; null when not ranked.
  * @property {'ranked'|'idle'|'noplan'|'stale'|'pending'|'private'|'hidden'} status
  *   Why the row has (or lacks) a position. `idle` means no session yet, never "zero points".
@@ -72,7 +73,8 @@ function describe(row, metric, period) {
  */
 export function rankCrew(me, friends, { metric, period, viewerHidesRank = false }) {
   const rows = [{ ...me, isMe: true }, ...friends.map(f => ({ ...f, isMe: false }))].map(r => ({
-    handle: r.handle, displayName: r.displayName, isMe: r.isMe, position: null, ...describe(r, metric, period)
+    handle: r.handle, displayName: r.displayName, isMe: r.isMe, position: null,
+    trend: typeof r.summary?.weeklyTrend === 'number' ? r.summary.weeklyTrend : null, ...describe(r, metric, period)
   }));
 
   if (viewerHidesRank) return rows.sort(byName);
@@ -91,4 +93,18 @@ export function rankCrew(me, friends, { metric, period, viewerHidesRank = false 
  */
 export function crewHighlights(rows) {
   return { top: rows.filter(r => r.position !== null).slice(0, 3), mine: rows.find(r => r.isMe) };
+}
+
+/**
+ * Wording for a personal trend. A comparison with oneself, so it is never used to rank. Friends
+ * only ever see encouraging figures; a dip is shown to its owner alone.
+ *
+ * @param {number | null} trend  Sessions per week, against the previous four weeks.
+ * @param {boolean} isMe
+ * @returns {{sign: '+' | '-', amount: string} | null}  Null when there is nothing worth saying.
+ */
+export function trendDisplay(trend, isMe) {
+  if (trend === null || Math.abs(trend) < 0.1) return null
+  if (trend < 0 && !isMe) return null
+  return { sign: trend > 0 ? '+' : '-', amount: Math.abs(trend).toFixed(1) }
 }
