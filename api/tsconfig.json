@@ -6,6 +6,6 @@
     "lib": ["ES2023"],
     "types": ["node"]
   },
-  "include": ["*.js", "*.ts", "test/**/*.js", "test/**/*.ts"],
+  "include": ["*.js", "*.ts", "test/**/*.js", "test/**/*.ts", "../shared/*.ts"],
   "exclude": ["node_modules"]
 }

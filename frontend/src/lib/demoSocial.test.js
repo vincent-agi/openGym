@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { demoSocialApi, DEMO_ME_HANDLE } from './demoSocial.js'
-import { SUMMARY_KEYS } from '../../../api/summary.js'
-import { BADGES } from '../../../api/badges.js'
+import { SUMMARY_KEYS, BADGES } from '../../../shared/constants.ts'
 import { CHEER_EMOJI } from './cheers.js'
 import { rankCrew } from './crew.js'
 

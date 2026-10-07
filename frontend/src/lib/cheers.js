@@ -1,12 +1,10 @@
 // Cheers & feed — the small pieces the activity feed needs.
 
+import { CHEER_EMOJI } from '../../../shared/constants.ts'
 import { T } from './i18n.js'
 
-/**
- * The only cheers that exist. Must match `CHEER_EMOJI` in `api/feed.js`; a test compares them.
- * @type {readonly string[]}
- */
-export const CHEER_EMOJI = Object.freeze(['👏', '🔥', '💪', '🎉', '❤️'])
+// The only cheers that exist: one list in shared/constants.ts, read by the API as well.
+export { CHEER_EMOJI }
 
 /**
  * One line of emoji for the cheers received, e.g. `👏🔥🔥`.

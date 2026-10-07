@@ -7,6 +7,7 @@ This page is about **how the code is organised and how to work in it**.
 
 ```
 api/                 backend: server.js (single file), Dockerfile, package.json
+shared/              wire types and constants shared by api/ and frontend/ (erasable TypeScript, no dependency)
 frontend/            React + Vite app
   src/
     App.jsx          router + shell (HashRouter), applies theme/accent/language, mounts global UI

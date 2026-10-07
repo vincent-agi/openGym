@@ -6,21 +6,16 @@
  * unit tested; {@link createChallengeService} adapts them to storage and HTTP. Progress is always
  * derived on the server from a user's own saved state, never accepted from a client.
  */
+import { CHALLENGE_LIMITS, CHALLENGE_TYPES, CHALLENGE_MODES } from '../shared/constants.ts';
 import { addDays, mondayOf, isSession, isPlanned } from './summary.js';
 import { isSharing, normalizeHandle } from './social.js';
 
 import crypto from 'node:crypto';
 
-/** Hard limits on what can be created. */
-export const LIMITS = Object.freeze({
-  titleMax: 40, minDays: 7, maxDays: 90, minParticipants: 2, maxParticipants: 12, maxActivePerUser: 5, maxTarget: 365
-});
-
-/** What a challenge counts. */
-export const TYPES = Object.freeze(['sessions', 'activeDays', 'streak', 'consistency']);
-
-/** `versus`: ranked. `coop`: one shared bar. */
-export const MODES = Object.freeze(['versus', 'coop']);
+// Limits, challenge types and modes live in shared/constants.ts, where the creation form reads them too.
+export const LIMITS = CHALLENGE_LIMITS;
+export const TYPES = CHALLENGE_TYPES;
+export const MODES = CHALLENGE_MODES;
 
 const FIELDS = ['title', 'type', 'mode', 'target', 'startDate', 'endDate', 'invite'];
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;

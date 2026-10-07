@@ -1,12 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { CHEER_EMOJI, cheerLine, timeAgo } from './cheers.js'
-import { CHEER_EMOJI as API_CHEER_EMOJI } from '../../../api/feed.js'
-
-describe('CHEER_EMOJI', () => {
-  it('is exactly the list the API accepts, in the same order', () => {
-    expect([...CHEER_EMOJI]).toEqual([...API_CHEER_EMOJI])
-  })
-})
+import { cheerLine, timeAgo } from './cheers.js'
 
 describe('cheerLine', () => {
   it('repeats each emoji by its count', () => {

@@ -8,6 +8,8 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   server: {
+    // The wire types and constants shared with the API live in ../shared, outside this root.
+    fs: { allow: ['..'] },
     proxy: {
       '/api': { target: backend, changeOrigin: true },
       '/img': { target: media, changeOrigin: true },

@@ -9,10 +9,11 @@
  * Badges are computed on the server from the user's own saved state and from social facts
  * (cheers sent, co-op challenges completed), then stored: once earned, never taken back.
  */
+import { BADGES } from '../shared/constants.ts';
 import { addDays, mondayOf, isoInZone, isSession, breaksOf, sessionLimit } from './summary.js';
 
-/** Every badge that exists. Mirrored by name and description in `frontend/src/lib/badges.js`. */
-export const BADGES = Object.freeze(['first-week', 'hat-trick', 'four-in-a-row', 'back-on-track', 'team-player', 'cheerleader']);
+// Every badge that exists lives in shared/constants.ts; names and descriptions are in the frontend.
+export { BADGES };
 
 /** Cheers a user must have sent for the Cheerleader badge. */
 export const CHEERLEADER_AT = 10;

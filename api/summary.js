@@ -11,14 +11,11 @@
  * summary of its own.
  */
 
-/** Every key a summary may contain. Adding one is a privacy decision: update the tests with it. */
-export const SUMMARY_KEYS = Object.freeze([
-  'weekSessions', 'weekPlanned', 'weekConsistency', 'monthSessions', 'streakWeeks', 'activeDays', 'lastActiveDate', 'prCount',
-  'weeklyTrend'
-]);
+import { SUMMARY_KEYS, MAX_BREAK_DAYS } from '../shared/constants.ts';
 
-/** Longest planned break, in days. A break never silences the plan for good. */
-export const MAX_BREAK_DAYS = 14;
+// Every key a summary may contain, and the longest planned break, live in shared/constants.ts (the
+// frontend renders from the same lists). Adding a key is a privacy decision: update the tests with it.
+export { SUMMARY_KEYS, MAX_BREAK_DAYS };
 
 /** Days of history behind `activeDays` and `prCount`. */
 export const WINDOW_DAYS = 28;

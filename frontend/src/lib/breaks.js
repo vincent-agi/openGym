@@ -4,10 +4,11 @@
 // never recorded, and the server cuts every break to 14 days (api/summary.js), so the app does
 // the same here to keep both sides in agreement.
 
+import { MAX_BREAK_DAYS } from '../../../shared/constants.ts'
 import { addDaysIso } from './challenges.js'
 
-/** Longest planned break, in days. Mirrors the API. */
-export const MAX_BREAK_DAYS = 14
+// Longest planned break, in days: one value in shared/constants.ts, enforced by the API as well.
+export { MAX_BREAK_DAYS }
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/
 const KEEP_DAYS = 90

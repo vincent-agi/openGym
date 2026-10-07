@@ -9,17 +9,13 @@
  *   {@link createSocialRoutes} touches the request/response and the identity store.
  */
 
+import { HANDLE_RE, DISPLAY_NAME_MAX, SHARE_KEYS } from '../shared/constants.ts';
 import { defaultNotify, validateNotify } from './notify-prefs.js';
 import { validateShowBadges } from './badges.js';
 
-/** Handles are 3-20 characters of lowercase letters, digits and underscore. */
-export const HANDLE_RE = /^[a-z0-9_]{3,20}$/;
-
-/** Maximum length of a display name, in characters. */
-export const DISPLAY_NAME_MAX = 30;
-
-/** Keys a user can individually choose to share with friends. */
-export const SHARE_KEYS = Object.freeze(['sessions', 'streak', 'consistency', 'prs']);
+// Handle format, display name length and the share switches live in shared/constants.ts, where the
+// Settings screen reads them too.
+export { HANDLE_RE, DISPLAY_NAME_MAX, SHARE_KEYS };
 
 const TOP_LEVEL_KEYS = Object.freeze(['enabled', 'handle', 'displayName', 'share', 'hideRank', 'notify', 'showBadges']);
 // C0/C1 control characters, which have no business in a name shown to friends.

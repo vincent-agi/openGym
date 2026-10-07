@@ -1,3 +1,4 @@
 # Directories that are fully TypeScript. CI fails if a .js/.jsx/.mjs/.cjs file appears in one of them.
 # Add a directory in the same pull request that converts its last file (one path per line, relative to the repository root).
 # Checked by: node scripts/ts-progress.mjs --check   (see docs/adr/0001-migrate-to-typescript.md)
+shared

@@ -5,8 +5,10 @@
  * Everything starts **off**; a user is only ever pinged about something they asked for.
  */
 
-/** Events a user can opt in to. */
-export const NOTIFY_KINDS = Object.freeze(['friendSession', 'cheerReceived', 'challengeInvite', 'challengeMilestone', 'challengeEnded']);
+import { NOTIFY_KINDS } from '../shared/constants.ts';
+
+// The events a user can opt in to live in shared/constants.ts (the Settings screen lists the same ones).
+export { NOTIFY_KINDS };
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 

@@ -1,5 +1,7 @@
 # API reference
 
+The request and response types of every route below are written once, as TypeScript, in [`shared/`](../../shared) (`session.ts` for the core routes, `social.ts` for `/api/social/*`), together with the constants both sides must agree on (`shared/constants.ts`). That directory is the machine-readable source of truth; this page explains the behaviour.
+
 Base path `/api`, served by `api/server.js` and reached through nginx on the same origin. All bodies and responses
 are **JSON** (`Content-Type: application/json`); responses carry `Cache-Control: no-store`.
 

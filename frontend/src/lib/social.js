@@ -4,13 +4,11 @@
 // (api/social.js) re-validates every value; these helpers only exist to give feedback before
 // a request is made and to describe, honestly, what a friend would be able to see.
 
+import { HANDLE_RE, DISPLAY_NAME_MAX } from '../../../shared/constants.ts'
 import { T } from './i18n.js'
 
-/** Handles are 3-20 characters of lowercase letters, digits and underscore. Mirrors the API. */
-export const HANDLE_RE = /^[a-z0-9_]{3,20}$/
-
-/** Longest display name, in characters. Mirrors the API. */
-export const DISPLAY_NAME_MAX = 30
+// Handle format and display-name length: one definition in shared/constants.ts, enforced by the API as well.
+export { HANDLE_RE, DISPLAY_NAME_MAX }
 
 const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/
 

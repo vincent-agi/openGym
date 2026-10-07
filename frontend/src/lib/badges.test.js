@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { CATALOG, badgeInfo, newBadges } from './badges.js'
-import { BADGES } from '../../../api/badges.js'
+import { BADGES } from '../../../shared/constants.ts'
 
 describe('catalogue', () => {
   it('describes exactly the badges the API can award, in the same order', () => {

@@ -9,10 +9,11 @@
  * Events are derived on the server from the state it already receives, so a client cannot forge
  * one for somebody else.
  */
+import { CHEER_EMOJI } from '../shared/constants.ts';
 import { addDays, isoInZone, isSession, sessionLimit } from './summary.js';
 
-/** The only cheers that exist. Mirrored in `frontend/src/lib/cheers.js`; a test keeps both equal. */
-export const CHEER_EMOJI = Object.freeze(['👏', '🔥', '💪', '🎉', '❤️']);
+// The only cheers that exist. They live in shared/constants.ts, read by the frontend too.
+export { CHEER_EMOJI };
 
 /** Events (and the cheers on them) are forgotten after this many days. */
 export const EVENT_TTL_DAYS = 30;

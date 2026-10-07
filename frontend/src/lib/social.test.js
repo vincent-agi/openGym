@@ -79,7 +79,7 @@ describe('sharedFields — what friends will see', () => {
 })
 
 import { NOTIFY_OPTIONS, QUIET_HOURS } from './social.js'
-import { NOTIFY_KINDS } from '../../../api/notify-prefs.js'
+import { NOTIFY_KINDS } from '../../../shared/constants.ts'
 
 describe('notification preferences', () => {
   it('are all off by default, with quiet hours at night', () => {
