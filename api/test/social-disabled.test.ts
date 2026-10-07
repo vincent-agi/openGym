@@ -1,9 +1,9 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startTestServer, SOCIAL_ROUTES } from './helpers.ts';
+import { startTestServer, loadServer, SOCIAL_ROUTES } from './helpers.ts';
+import type { TestServer } from './helpers.ts';
 
-/** @type {import('./helpers.ts').TestServer} */
-let app;
+let app: TestServer;
 
 before(async () => { app = await startTestServer({ SOCIAL_ENABLED: '0' }); });
 after(async () => { await app.close(); });
@@ -22,6 +22,6 @@ test('every social route answers 404 when the instance disabled the module', asy
 });
 
 test('no social route is registered at all', async () => {
-  const mod = await import('../server.ts');
+  const mod = await loadServer();
   assert.deepEqual(mod.socialRouteKeys(), []);
 });

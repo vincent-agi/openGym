@@ -1,6 +1,6 @@
 /**
  * Composition root of the friends & challenges module: builds every social service from the
- * server's own helpers and wires them together, so `server.js` only has to mount the result.
+ * server's own helpers and wires them together, so `server.ts` only has to mount the result.
  *
  * Services stay independent of one another; the only place that knows how a saved workout becomes
  * a summary, a challenge update, a feed event and a push notification is {@link createSocialModule}.
@@ -14,28 +14,33 @@ import { createNotifier } from './notifier.ts';
 import { createBadgeService } from './badge-service.ts';
 import { eraseSocialFootprint } from './social-erase.ts';
 import { createLimiter, createGuard } from './rate-limit.ts';
-import { emptySocialCollections } from './types.ts';
+import { bodyFields, emptySocialCollections, SOCIAL_KEYS } from './types.ts';
+import type { PushMessage } from './notifier.ts';
+import type { Db, Routes, Services, StateDoc, StoredDb, User } from './types.ts';
+
+/** What the composition root hands back to the server. */
+export interface SocialModule {
+  routes: Routes
+  /** Runs after a user's state was saved: everything derived from it is refreshed. */
+  afterStateSaved: (user: User, state: StateDoc) => void
+  /** Periodic work: announce finished challenges, then deliver whatever is due. */
+  maintain: () => Promise<void>
+  /** Starts the background timers. */
+  start: () => void
+  /** Social figures for the admin dashboard: counts only, never who or what. */
+  countsFor: (uid: string) => { enabled: boolean; friends: number; challenges: number }
+}
 
 /**
- * @param {object} ctx
- * @param {object} ctx.db  Identity store; the module adds its own collections to it.
- * @param {() => void} ctx.saveDb
- * @param {(req: import('node:http').IncomingMessage) => (object | null)} ctx.readSession
- * @param {(res: import('node:http').ServerResponse, code: number, body: object) => void} ctx.json
- * @param {(req: import('node:http').IncomingMessage) => Promise<any>} ctx.readBody
- * @param {(uid: string) => (object | null)} ctx.readState
- * @param {(uid: string, message: object) => Promise<void>} ctx.sendPush
- * @param {() => number} [ctx.now]
- * @returns {{
- *   routes: Record<string, Function>,
- *   afterStateSaved: (user: object, state: object) => void,
- *   maintain: () => Promise<void>,
- *   start: () => void,
- *   countsFor: (uid: string) => {enabled: boolean, friends: number, challenges: number}
- * }}
+ * @param ctx  Server services. `db` is the identity store (the module adds its own collections to it),
+ *   `readState` gives a user's saved state, `sendPush` delivers a Web Push, `now` is the clock.
  */
-export function createSocialModule({ db, saveDb, readSession, json, readBody, readState, sendPush, now = Date.now }) {
-  for (const [key, empty] of Object.entries(emptySocialCollections())) db[key] ||= empty;
+export function createSocialModule({ db: stored, saveDb, readSession, json, readBody, readState, sendPush, now = Date.now }:
+  Omit<Services, 'db'> & { db: StoredDb; sendPush: (uid: string, message: PushMessage) => Promise<void> }): SocialModule {
+  // A database written before the social module existed lacks its collections.
+  const empty = emptySocialCollections();
+  for (const key of SOCIAL_KEYS) if (!stored[key]) Object.assign(stored, { [key]: empty[key] });
+  const db = stored as Db;   // complete now
 
   const notifier = createNotifier({ db, saveDb, sendPush, readState, now });
   const badges = createBadgeService({ db, saveDb, now });
@@ -46,20 +51,20 @@ export function createSocialModule({ db, saveDb, readSession, json, readBody, re
   const feed = createFeedService(base);
 
   /** Runs after a user's state was saved: everything derived from it is refreshed. */
-  const afterStateSaved = (user, state) => {
+  const afterStateSaved = (user: User, state: StateDoc): void => {
     sharing.refresh(user, state);
     challenges.recordProgress(user, state);
     badges.refresh(user, state);
     const created = feed.recordEvents(user, state);
     if (created.length) {
       for (const friend of relationsOf(db.friendships, user.id).friends) {
-        notifier.notify(friend.uid, 'friendSession', { name: user.social.displayName });
+        notifier.notify(friend.uid, 'friendSession', { name: user.social!.displayName });   // the user is sharing, so has settings
       }
     }
   };
 
   /** Reacts to a user turning sharing on or off. */
-  const onChange = (user, wasSharing) => {
+  const onChange = (user: User, wasSharing: boolean): void => {
     if (user.social?.enabled) {
       const saved = wasSharing ? null : readState(user.id);   // nothing to summarise before the first sync
       if (saved) { sharing.refresh(user, saved); badges.refresh(user, saved); }
@@ -68,9 +73,9 @@ export function createSocialModule({ db, saveDb, readSession, json, readBody, re
   };
 
   /** A friendship ended (removed or blocked): clean up what the two shared. */
-  const onSever = (actor, other) => { feed.onSever(actor, other); challenges.onSever(actor, other); };
+  const onSever = (actor: string, other: string): void => { feed.onSever(actor, other); challenges.onSever(actor, other); };
 
-  const routes = {
+  const routes: Routes = {
     /**
      * "Leave": erases everything the friends module stored about the caller. Needs `{confirm: true}`
      * so it cannot be triggered by accident, and works whether or not sharing is currently on.
@@ -78,7 +83,7 @@ export function createSocialModule({ db, saveDb, readSession, json, readBody, re
     'POST /api/social/leave': async (req, res) => {
       const user = readSession(req);
       if (!user) return json(res, 401, { error: 'not signed in' });
-      if ((await readBody(req)).confirm !== true) return json(res, 400, { error: 'send {"confirm": true} to erase your friends data' });
+      if (bodyFields(await readBody(req)).confirm !== true) return json(res, 400, { error: 'send {"confirm": true} to erase your friends data' });
       challenges.eraseUser(user.id, user.social?.handle || '');
       eraseSocialFootprint(db, user.id);
       saveDb();
@@ -90,7 +95,7 @@ export function createSocialModule({ db, saveDb, readSession, json, readBody, re
   };
 
   /** Periodic work: announce finished challenges, then deliver whatever is due. */
-  const maintain = async () => {
+  const maintain = async (): Promise<void> => {
     challenges.prune();
     const codes = pruneFriendCodes(db.friendCodes, now());
     if (codes.length !== db.friendCodes.length) { db.friendCodes = codes; saveDb(); }
@@ -101,19 +106,13 @@ export function createSocialModule({ db, saveDb, readSession, json, readBody, re
     await notifier.flush();
   };
 
-  /**
-   * Social figures for the admin dashboard: counts only, never who or what.
-   *
-   * @param {string} uid
-   * @returns {{enabled: boolean, friends: number, challenges: number}}
-   */
-  const countsFor = uid => ({
+  const countsFor: SocialModule['countsFor'] = uid => ({
     enabled: !!db.users.find(u => u.id === uid)?.social?.enabled,
     friends: relationsOf(db.friendships, uid).friends.length,
     challenges: db.challenges.filter(c => c.participants.some(p => p.uid === uid && p.status === 'joined')).length
   });
 
-  const start = () => { setInterval(() => { maintain().catch(e => console.error('social maintenance failed', e)); }, 30000).unref(); };
+  const start = (): void => { setInterval(() => { maintain().catch(e => console.error('social maintenance failed', e)); }, 30000).unref(); };
 
   return { routes, afterStateSaved, maintain, start, countsFor };
 }

@@ -17,6 +17,10 @@ import { isoInZone, ownerTz } from './summary.ts';
 import { isSharing } from './social.ts';
 import { inQuietHours, minutesUntilQuietEnds } from './notify-prefs.ts';
 import { pushText } from './push-messages.ts';
+import type { MessageKey, PushText, PushVars } from './push-messages.ts';
+import type { NotifyKind } from '../shared/constants.ts';
+import type { SharingUser } from './social.ts';
+import type { Notify, Services, User } from './types.ts';
 
 /** Social pushes one recipient can get in a day. */
 export const DAILY_CAP = 3;
@@ -32,42 +36,45 @@ const LOG_KEEP_MS = 2 * 86400000;
 /**
  * Minutes since midnight at an instant, in a time zone. An unknown zone falls back to UTC.
  *
- * @param {number} ms
- * @param {string} tz  IANA zone.
- * @returns {number}
+ * @param ms  Epoch milliseconds.
+ * @param tz  IANA zone.
  */
-export function localMinutes(ms, tz) {
-  const parse = zone => {
+export function localMinutes(ms: number, tz: string): number {
+  const parse = (zone: string) => {
     const parts = new Intl.DateTimeFormat('en-GB', { timeZone: zone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(ms);
-    const get = type => Number(parts.find(p => p.type === type).value);
+    const get = (type: string) => Number(parts.find(p => p.type === type)!.value);
     return get('hour') * 60 + get('minute');
   };
   try { return parse(tz); } catch { return parse('UTC'); }
 }
 
-/**
- * @typedef {object} PushMessage
- * @property {string} title
- * @property {string} body
- * @property {string} tag   Replaces an earlier notification with the same tag.
- * @property {string} url   Hash route the app opens when the notification is tapped.
- */
+/** A notification ready to send. */
+export interface PushMessage extends PushText {
+  /** Replaces an earlier notification with the same tag. */
+  tag: string
+  /** Hash route the app opens when the notification is tapped. */
+  url: string
+}
+
+/** The fields {@link wording} reads; which ones matter depends on the kind of event. */
+export type WordingData = { names?: string[]; name?: string; emoji?: string; title?: string; stage?: string };
 
 /**
  * The message for an event, in the recipient's language. Always encouraging; see the rules at the
- * top of this file. The wording itself lives in `push-messages.js`.
+ * top of this file. The wording itself lives in `push-messages.ts`.
  *
- * @param {'friendSession'|'cheerReceived'|'challengeInvite'|'challengeMilestone'|'challengeEnded'} kind
- * @param {object} data  Fields depend on the kind: `names`, `name`, `emoji`, `title`, `stage`.
- * @param {unknown} [lang]  Language of the recipient's app; English when unknown or not translated yet.
- * @returns {PushMessage}
+ * @param kind
+ * @param data  Fields depend on the kind: `names`, `name`, `emoji`, `title`, `stage`.
+ * @param lang  Language of the recipient's app; English when unknown or not translated yet.
  */
-export function wording(kind, data, lang = 'en') {
+export function wording(kind: NotifyKind, data: WordingData, lang: unknown = 'en'): PushMessage {
   const url = '#/crew';
-  const text = (key, vars) => pushText(lang, key, vars);
+  const text = (key: MessageKey, vars: PushVars) => pushText(lang, key, vars);
   switch (kind) {
-    case 'friendSession':
-      return { ...(data.names.length > 1 ? text('friendSessionMany', { n: data.names.length }) : text('friendSessionOne', { name: data.names[0] })), tag: 'social-session', url };
+    case 'friendSession': {
+      const names = data.names!;   // a friend-session event always carries the names (see `queue`)
+      return { ...(names.length > 1 ? text('friendSessionMany', { n: names.length }) : text('friendSessionOne', { name: names[0] })), tag: 'social-session', url };
+    }
     case 'cheerReceived':
       return { ...text('cheerReceived', data), tag: 'social-cheer', url };
     case 'challengeInvite':
@@ -79,35 +86,40 @@ export function wording(kind, data, lang = 'en') {
   }
 }
 
+/** What the notifier hands back to the composition root. */
+export interface Notifier {
+  /** Queues a notification for a user, or declines (not sharing, kind off, no subscription). Never throws. */
+  notify: Notify
+  /** Delivers what is due. */
+  flush: () => Promise<void>
+  /** Starts the background delivery loop. */
+  start: (everyMs?: number) => void
+}
+
 /**
- * @param {object} ctx
- * @param {{users: object[], subs: object[], socialOutbox: object[], socialPushLog: object[]}} ctx.db
- * @param {() => void} ctx.saveDb
- * @param {(uid: string, message: PushMessage) => Promise<void>} ctx.sendPush  Web Push delivery.
- * @param {(uid: string) => (object | null)} ctx.readState  Saved state, for the user's time zone.
- * @param {() => number} [ctx.now]
- * @returns {{
- *   notify: (uid: string, kind: string, data: object) => Promise<boolean>,
- *   flush: () => Promise<void>,
- *   start: (everyMs?: number) => void
- * }}
+ * @param ctx  `sendPush` is the Web Push delivery, `readState` gives the saved state (for the user's
+ *   time zone and language), `now` the clock.
  */
-export function createNotifier({ db, saveDb, sendPush, readState, now = Date.now }) {
-  const userById = id => db.users.find(u => u.id === id);
-  const tzOf = uid => ownerTz(readState(uid)) || 'UTC';
+export function createNotifier({ db, saveDb, sendPush, readState, now = Date.now }: Pick<Services, 'db' | 'saveDb' | 'readState'> & {
+  sendPush: (uid: string, message: PushMessage) => Promise<void>
+  now?: () => number
+}): Notifier {
+  const userById = (id: string) => db.users.find(u => u.id === id);
+  const tzOf = (uid: string) => ownerTz(readState(uid)) || 'UTC';
   /** The language the recipient's app is set to, read at send time so a change before delivery is honoured. */
-  const langOf = uid => readState(uid)?.lang;
-  const eligible = (user, kind) => !!user && isSharing(user) && !!user.social.notify?.[kind] && db.subs.some(s => s.userId === user.id);
+  const langOf = (uid: string): unknown => readState(uid)?.lang;
+  const eligible = (user: User | undefined, kind: NotifyKind): user is SharingUser =>
+    !!user && isSharing(user) && !!user.social.notify?.[kind] && db.subs.some(s => s.userId === user.id);
 
   /** Moves a delivery time out of quiet hours. */
-  const afterQuiet = (user, tz, at) => {
+  const afterQuiet = (user: SharingUser, tz: string, at: number): number => {
     const quiet = user.social.notify.quiet;
     const minutes = localMinutes(at, tz);
     if (!inQuietHours(quiet, minutes)) return at;
     return at - (at % 60000) + minutesUntilQuietEnds(quiet, minutes) * 60000;
   };
 
-  const notify = async (uid, kind, data) => {
+  const notify: Notify = async (uid, kind, data) => {
     try {
       return queue(uid, kind, data);
     } catch (e) {
@@ -117,7 +129,7 @@ export function createNotifier({ db, saveDb, sendPush, readState, now = Date.now
   };
 
   /** Puts a notification in the outbox, or declines. */
-  const queue = (uid, kind, data) => {
+  const queue = (uid: string, kind: NotifyKind, data: Record<string, unknown>): boolean => {
     const user = userById(uid);
     if (!eligible(user, kind)) return false;
     const t = now(), tz = tzOf(uid);
@@ -126,11 +138,12 @@ export function createNotifier({ db, saveDb, sendPush, readState, now = Date.now
       const day = isoInZone(t, tz);
       const waiting = db.socialOutbox.find(i => i.uid === uid && i.kind === kind && isoInZone(i.createdAt, tz) === day);
       if (waiting) {
-        if (!waiting.data.names.includes(data.name)) waiting.data.names.push(data.name);
+        const names = waiting.data.names as string[];   // written just below, for every friend-session item
+        if (!names.includes(data.name as string)) names.push(data.name as string);
         saveDb();
         return true;
       }
-      db.socialOutbox.push({ id: crypto.randomBytes(6).toString('base64url'), uid, kind, data: { names: [data.name] }, createdAt: t, deliverAt: afterQuiet(user, tz, t + BATCH_MS) });
+      db.socialOutbox.push({ id: crypto.randomBytes(6).toString('base64url'), uid, kind, data: { names: [data.name as string] }, createdAt: t, deliverAt: afterQuiet(user, tz, t + BATCH_MS) });
     } else {
       db.socialOutbox.push({ id: crypto.randomBytes(6).toString('base64url'), uid, kind, data, createdAt: t, deliverAt: afterQuiet(user, tz, t) });
     }
@@ -138,7 +151,7 @@ export function createNotifier({ db, saveDb, sendPush, readState, now = Date.now
     return true;
   };
 
-  const flush = async () => {
+  const flush = async (): Promise<void> => {
     const t = now();
     const due = db.socialOutbox.filter(i => i.deliverAt <= t);
     db.socialOutbox = db.socialOutbox.filter(i => i.deliverAt > t);
@@ -156,13 +169,13 @@ export function createNotifier({ db, saveDb, sendPush, readState, now = Date.now
       if (today.length >= DAILY_CAP || (item.kind === 'friendSession' && today.some(l => l.kind === 'friendSession'))) continue;
 
       db.socialPushLog.push({ uid: item.uid, kind: item.kind, ts: t, date: day });
-      try { await sendPush(item.uid, wording(item.kind, item.data, langOf(item.uid))); } catch (e) { console.error('social push failed', e); }
+      try { await sendPush(item.uid, wording(item.kind, item.data as WordingData, langOf(item.uid))); } catch (e) { console.error('social push failed', e); }
     }
     if (due.length) saveDb();
   };
 
-  /** Starts the background delivery loop. @param {number} [everyMs] */
-  const start = (everyMs = 30000) => { setInterval(() => { flush().catch(e => console.error('push flush failed', e)); }, everyMs).unref(); };
+  /** Starts the background delivery loop. */
+  const start = (everyMs = 30000): void => { setInterval(() => { flush().catch(e => console.error('push flush failed', e)); }, everyMs).unref(); };
 
   return { notify, flush, start };
 }

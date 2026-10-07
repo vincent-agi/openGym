@@ -1,6 +1,8 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startTestServer, SOCIAL_ROUTES } from './helpers.ts';
+import { loadServer } from './helpers.ts';
+import type { Json, Person, ServerModule, TestServer, TestUser } from './helpers.ts';
 
 /**
  * Authorization matrix of the social module.
@@ -9,19 +11,18 @@ import { startTestServer, SOCIAL_ROUTES } from './helpers.ts';
  * everything A has: they must get nothing, and the *same* nothing, whatever their relationship.
  */
 
-/** @type {import('./helpers.ts').TestServer} */
-let app;
-let mod;
+let app: TestServer;
+let mod: ServerModule;
 let seq = 0;
 
-before(async () => { app = await startTestServer(); mod = await import('../server.ts'); });
+before(async () => { app = await startTestServer(); mod = await loadServer(); });
 after(async () => { await app.close(); });
 
 const today = () => new Date().toISOString().slice(0, 10);
-const later = n => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
-const call = (method, path, as, body) => app.request(path, { method, as, body });
+const later = (n: number) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+const call = (method: string, path: string, as?: TestUser, body?: unknown) => app.request(path, { method, as, body });
 
-async function person(label) {
+async function person(label: string): Promise<Person> {
   const user = app.createUser(label);
   const handle = `${label}_${++seq}`;
   await call('PUT', '/api/social/me', user, { enabled: true, handle, displayName: label });
@@ -29,13 +30,28 @@ async function person(label) {
 }
 
 /** Owner A with private things, and one person per relationship. */
-async function scene() {
+interface Scene {
+  owner: Person
+  anonymous: undefined
+  silent: TestUser
+  stranger: Person
+  pending: Person
+  friend: Person
+  blocked: Person
+  removed: Person
+  eventId: string
+  challengeId: string
+}
+
+async function scene(): Promise<Scene> {
   const owner = await person('owner');
-  const world = { owner, anonymous: undefined, silent: app.createUser('silent'), stranger: await person('stranger') };
-  world.pending = await person('pending');
-  world.friend = await person('friend');
-  world.blocked = await person('blocked');
-  world.removed = await person('removed');
+  const silent = app.createUser('silent');
+  const stranger = await person('stranger');
+  const pending = await person('pending');
+  const friend = await person('friend');
+  const blocked = await person('blocked');
+  const removed = await person('removed');
+  const world: Scene = { owner, anonymous: undefined, silent, stranger, pending, friend, blocked, removed, eventId: '', challengeId: '' };
 
   await call('POST', '/api/social/friends/request', world.pending, { handle: owner.handle });
   for (const f of [world.friend, world.blocked, world.removed]) {
@@ -82,7 +98,7 @@ test('every route that needs sharing answers 403 to someone who is not sharing',
 test('outsiders get the same answer for everything the owner has', async () => {
   const w = await scene();
   const outsiders = { stranger: w.stranger, pending: w.pending, blocked: w.blocked, removed: w.removed };
-  const attacks = [
+  const attacks: Array<[string, string, unknown]> = [
     ['GET', `/api/social/challenge?id=${w.challengeId}`, undefined],
     ['POST', '/api/social/challenges/join', { id: w.challengeId }],
     ['POST', '/api/social/challenges/leave', { id: w.challengeId }],
@@ -94,7 +110,7 @@ test('outsiders get the same answer for everything the owner has', async () => {
     ['POST', '/api/social/friends/unblock', { handle: w.owner.handle }]
   ];
   for (const [label, user] of Object.entries(outsiders)) {
-    const answers = [];
+    const answers: string[] = [];
     for (const [method, path, body] of attacks) {
       const r = await call(method, path, user, body);
       assert.equal(r.status, 404, `${label}: ${method} ${path}`);
@@ -106,7 +122,7 @@ test('outsiders get the same answer for everything the owner has', async () => {
 
 test('asking to be friends again is only possible for people who are not blocked, and always looks the same when it is not', async () => {
   const w = await scene();
-  const answer = async user => call('POST', '/api/social/friends/request', user, { handle: w.owner.handle });
+  const answer = async (user: Json) => call('POST', '/api/social/friends/request', user, { handle: w.owner.handle });
   const blocked = await answer(w.blocked);
   const pending = await answer(w.pending);                  // already asked: a duplicate
   const unknown = await call('POST', '/api/social/friends/request', w.stranger, { handle: 'nobody_at_all' });
@@ -121,20 +137,20 @@ test('outsiders see none of the owner data in lists', async () => {
   const w = await scene();
   for (const [label, user] of Object.entries({ stranger: w.stranger, pending: w.pending, blocked: w.blocked, removed: w.removed })) {
     const summary = (await call('GET', '/api/social/friends/summary', user)).body;
-    assert.ok(!summary.friends.some(f => f.handle === w.owner.handle), `${label}: summary`);
+    assert.ok(!summary.friends.some((f: Json) => f.handle === w.owner.handle), `${label}: summary`);
     const feed = (await call('GET', '/api/social/feed', user)).body;
-    assert.ok(!feed.events.some(e => e.handle === w.owner.handle), `${label}: feed`);
+    assert.ok(!feed.events.some((e: Json) => e.handle === w.owner.handle), `${label}: feed`);
     const friends = (await call('GET', '/api/social/friends', user)).body;
-    assert.ok(!friends.friends.some(f => f.handle === w.owner.handle), `${label}: friends`);
+    assert.ok(!friends.friends.some((f: Json) => f.handle === w.owner.handle), `${label}: friends`);
     const challenges = (await call('GET', '/api/social/challenges', user)).body.challenges;
-    assert.ok(!challenges.some(c => c.id === w.challengeId), `${label}: challenges`);
+    assert.ok(!challenges.some((c: Json) => c.id === w.challengeId), `${label}: challenges`);
   }
 });
 
 test('an accepted friend, by contrast, sees exactly the shared parts', async () => {
   const w = await scene();
-  assert.ok((await call('GET', '/api/social/friends/summary', w.friend)).body.friends.some(f => f.handle === w.owner.handle));
-  assert.ok((await call('GET', '/api/social/feed', w.friend)).body.events.some(e => e.handle === w.owner.handle));
+  assert.ok((await call('GET', '/api/social/friends/summary', w.friend)).body.friends.some((f: Json) => f.handle === w.owner.handle));
+  assert.ok((await call('GET', '/api/social/feed', w.friend)).body.events.some((e: Json) => e.handle === w.owner.handle));
   assert.equal((await call('GET', `/api/social/challenge?id=${w.challengeId}`, w.friend)).status, 200);
   assert.equal((await call('POST', '/api/social/cheer', w.friend, { eventId: w.eventId, emoji: '👏' })).status, 200);
 });
@@ -149,7 +165,7 @@ test('the blocked and removed people cannot invite the owner to anything', async
 
 test('cheers between people who stopped being friends are gone', async () => {
   const w = await scene();
-  assert.equal(mod.db.socialCheers.filter(c => c.from === w.blocked.id).length, 0);
+  assert.equal(mod.db.socialCheers.filter((c: Json) => c.from === w.blocked.id).length, 0);
 });
 
 test('no social route reads another user saved state', async () => {

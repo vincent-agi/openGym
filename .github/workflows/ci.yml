@@ -63,16 +63,14 @@ jobs:
           cache: npm
           cache-dependency-path: api/package-lock.json
       - run: npm ci
-      - name: Syntax check
-        run: for f in *.js; do node --check "$f"; done
       - name: Type check
         run: npm run typecheck
       - name: Unit & route tests
         run: npm test
       - name: Boot smoke
-        # Complements the route tests: proves `node server.js` itself starts and answers HTTP.
+        # Complements the route tests: proves `node server.ts` itself starts (Node strips the types, there is no build) and answers HTTP.
         run: |
-          DATA_DIR="$(mktemp -d)" PORT=3999 node server.js &
+          DATA_DIR="$(mktemp -d)" PORT=3999 node server.ts &
           pid=$!
           trap 'kill $pid 2>/dev/null || true' EXIT
           for i in $(seq 1 20); do

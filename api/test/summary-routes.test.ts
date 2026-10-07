@@ -1,10 +1,10 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startTestServer } from './helpers.ts';
+import { startTestServer, loadServer } from './helpers.ts';
+import type { TestServer, TestUser, Person, Json } from './helpers.ts';
 import { SUMMARY_KEYS } from '../summary.ts';
 
-/** @type {import('./helpers.ts').TestServer} */
-let app;
+let app: TestServer;
 let seq = 0;
 
 before(async () => { app = await startTestServer(); });
@@ -12,20 +12,20 @@ after(async () => { await app.close(); });
 
 const today = () => new Date().toISOString().slice(0, 10);
 const yesterday = () => new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-const session = d => ({ id: 'w' + d, d, entries: [{ id: '0025', sets: [{ w: 60, r: 5, done: true }] }] });
+const session = (d: string) => ({ id: 'w' + d, d, entries: [{ id: '0025', sets: [{ w: 60, r: 5, done: true }] }] });
 
-async function sharingUser(label, share) {
+async function sharingUser(label: string, share?: Record<string, boolean>): Promise<Person> {
   const user = app.createUser(label);
   const handle = `${label}_${++seq}`;
   await app.request('/api/social/me', { method: 'PUT', as: user, body: { enabled: true, handle, displayName: label, ...(share ? { share } : {}) } });
   return { ...user, handle };
 }
-async function befriend(a, b) {
+async function befriend(a: Person, b: Person) {
   await app.request('/api/social/friends/request', { method: 'POST', as: a, body: { handle: b.handle } });
   await app.request('/api/social/friends/respond', { method: 'POST', as: b, body: { handle: a.handle, action: 'accept' } });
 }
-const save = (user, state) => app.request('/api/data', { method: 'PUT', as: user, body: { state } });
-const feed = as => app.request('/api/social/friends/summary', { as });
+const save = (user: TestUser, state: unknown) => app.request('/api/data', { method: 'PUT', as: user, body: { state } });
+const feed = (as: TestUser) => app.request('/api/social/friends/summary', { as });
 
 test('the friends summary requires a session and sharing', async () => {
   assert.equal((await app.request('/api/social/friends/summary')).status, 401);
@@ -58,7 +58,7 @@ test('the summary only ever carries whitelisted keys, whatever the state contain
     measurements: { [today()]: { waist: 77 } }, mobilityLevel: 'wheelchair', socialSummary: { weekSessions: 999 }
   });
   const row = (await feed(b)).body.friends[0];
-  for (const k of Object.keys(row.summary)) assert.ok(SUMMARY_KEYS.includes(k), `unexpected key ${k}`);
+  for (const k of Object.keys(row.summary)) assert.ok((SUMMARY_KEYS as readonly string[]).includes(k), `unexpected key ${k}`);
   const text = JSON.stringify((await feed(b)).body);
   for (const secret of ['123.4', 'cake', '999', 'waist', 'wheelchair', '0025']) assert.ok(!text.includes(secret), secret);
   assert.equal(row.summary.weekSessions, 1);   // the forged client field is ignored
@@ -91,7 +91,7 @@ test('a friend who has not synced yet shows up without a summary', async () => {
   const a = await sharingUser('new_a');
   const b = await sharingUser('new_b');
   await befriend(a, b);
-  const row = (await feed(b)).body.friends.find(f => f.handle === a.handle);
+  const row = (await feed(b)).body.friends.find((f: Json) => f.handle === a.handle);
   assert.equal(row.summary, null);
 });
 
@@ -104,7 +104,7 @@ test('turning sharing off removes the summary at once, turning it on rebuilds it
 
   await app.request('/api/social/me', { method: 'PUT', as: a, body: { enabled: false } });
   assert.deepEqual((await feed(b)).body.friends, []);
-  const mod = await import('../server.ts');
+  const mod = await loadServer();
   assert.equal(mod.db.socialSummaries[a.id], undefined);
 
   await app.request('/api/social/me', { method: 'PUT', as: a, body: { enabled: true } });
@@ -117,7 +117,7 @@ test('a summary older than 14 days is flagged stale', async () => {
   const b = await sharingUser('stale_b');
   await befriend(a, b);
   await save(a, { workouts: [session(today())] });
-  const mod = await import('../server.ts');
+  const mod = await loadServer();
   mod.db.socialSummaries[a.id].updatedAt = Date.now() - 15 * 86400000;
   assert.equal((await feed(b)).body.friends[0].stale, true);
 });
@@ -125,7 +125,7 @@ test('a summary older than 14 days is flagged stale', async () => {
 test('users who never share are never summarised', async () => {
   const quiet = app.createUser('never');
   await save(quiet, { workouts: [session(today())] });
-  const mod = await import('../server.ts');
+  const mod = await loadServer();
   assert.equal(mod.db.socialSummaries[quiet.id], undefined);
 });
 

@@ -22,8 +22,8 @@ export type MessageKey =
 /** A language the notifications are written in; add it to {@link CATALOG} and it is picked up. */
 export type PushLang = 'en' | 'fr' | 'es';
 
-/** Values for the placeholders of a message. */
-export type PushVars = Record<string, string | number>;
+/** Values for the placeholders of a message; each is written with `String()`. */
+export type PushVars = Record<string, unknown>;
 
 /** Placeholders: `{name}` a friend, `{n}` a number of friends, `{emoji}` a cheer, `{title}` a challenge. */
 const CATALOG: Record<PushLang, Record<MessageKey, PushText>> = {

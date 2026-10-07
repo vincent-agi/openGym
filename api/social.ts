@@ -19,6 +19,9 @@ import type { Db, JsonResponder, Routes, Services, SocialHooks, StoredSocial, Us
 
 export type { SocialSettings };
 
+/** A user whose friends settings exist and who is sharing: what the friend-facing routes work with. */
+export type SharingUser = User & { social: StoredSocial };
+
 /** Outcome of {@link validateSocialUpdate}. */
 export type SocialValidation =
   | { ok: true; value: StoredSocial }
@@ -82,7 +85,7 @@ export function normalizeHandle(raw: unknown): string {
  *
  * @param user
  */
-export function isSharing(user: Pick<User, 'social' | 'disabled'> | null | undefined): boolean {
+export function isSharing<U extends Pick<User, 'social' | 'disabled'>>(user: U | null | undefined): user is U & { social: StoredSocial } {
   return !!user?.social?.enabled && !user.disabled;
 }
 
@@ -161,7 +164,7 @@ export function validateSocialUpdate(body: unknown, current: StoredSocial, { isH
  * @param res
  * @returns The user, or null when a response was already sent.
  */
-export function requireSharing(readSession: Services['readSession'], json: JsonResponder, req: IncomingMessage, res: ServerResponse): User | null {
+export function requireSharing(readSession: Services['readSession'], json: JsonResponder, req: IncomingMessage, res: ServerResponse): SharingUser | null {
   const user = readSession(req);
   if (!user) { json(res, 401, { error: 'not signed in' }); return null; }
   if (!isSharing(user)) { json(res, 403, { error: 'turn on sharing first' }); return null; }

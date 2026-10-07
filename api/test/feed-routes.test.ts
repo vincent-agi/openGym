@@ -1,22 +1,23 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startTestServer } from './helpers.ts';
+import { startTestServer, loadServer, must } from './helpers.ts';
+import type { Db } from '../types.ts';
+import type { TestServer, TestUser, Person, Json } from './helpers.ts';
 
-/** @type {import('./helpers.ts').TestServer} */
-let app;
-let db;
+let app: TestServer;
+let db: Db;
 let seq = 0;
 
-before(async () => { app = await startTestServer(); db = (await import('../server.ts')).db; });
+before(async () => { app = await startTestServer(); db = (await loadServer()).db; });
 after(async () => { await app.close(); });
 
 const today = () => new Date().toISOString().slice(0, 10);
 const session = (d = today(), id = 'w' + d) => ({ id, d, routineName: 'Secret push day', entries: [{ id: '0025', sets: [{ w: 140, r: 5, done: true }] }] });
-const save = (user, workouts) => app.request('/api/data', { method: 'PUT', as: user, body: { state: { workouts } } });
-const post = (path, as, body) => app.request('/api/social/' + path, { method: 'POST', as, body });
-const feed = (as, q = '') => app.request('/api/social/feed' + q, { as });
+const save = (user: TestUser, workouts: unknown[]) => app.request('/api/data', { method: 'PUT', as: user, body: { state: { workouts } } });
+const post = (path: string, as: TestUser, body?: unknown) => app.request('/api/social/' + path, { method: 'POST', as, body });
+const feed = (as?: TestUser, q = '') => app.request('/api/social/feed' + q, { as });
 
-async function sharingUser(label, share) {
+async function sharingUser(label: string, share?: Record<string, boolean>): Promise<Person> {
   const user = app.createUser(label);
   const handle = `${label}_${++seq}`;
   await app.request('/api/social/me', { method: 'PUT', as: user, body: { enabled: true, handle, displayName: label, ...(share ? { share } : {}) } });
@@ -164,7 +165,7 @@ test('events and cheers older than 30 days are forgotten', async () => {
   await save(a, [session()]);
   const [event] = (await feed(b)).body.events;
   await post('cheer', b, { eventId: event.id, emoji: '🔥' });
-  db.socialEvents.find(e => e.id === event.id).createdAt = Date.now() - 31 * 86400000;
+  must(db.socialEvents.find(e => e.id === event.id)).createdAt = Date.now() - 31 * 86400000;
   await save(a, [session(), session(today(), 'second')]);          // any new event triggers pruning
   assert.ok(!db.socialEvents.some(e => e.id === event.id));
   assert.ok(!db.socialCheers.some(c => c.eventId === event.id));
@@ -175,7 +176,7 @@ test('the feed is newest first and pages with before', async () => {
   for (let i = 0; i < 3; i++) { await save(a, [session(today(), 'w' + i)]); }
   db.socialEvents.filter(e => e.uid === a.id).forEach((e, i) => { e.createdAt = 1000000 + i * 1000; });
   const all = (await feed(b)).body;
-  assert.deepEqual(all.events.map(e => e.createdAt), [1002000, 1001000, 1000000]);
+  assert.deepEqual(all.events.map((e: Json) => e.createdAt), [1002000, 1001000, 1000000]);
   const page = (await feed(b, '?before=1001500')).body;
-  assert.deepEqual(page.events.map(e => e.createdAt), [1001000, 1000000]);
+  assert.deepEqual(page.events.map((e: Json) => e.createdAt), [1001000, 1000000]);
 });

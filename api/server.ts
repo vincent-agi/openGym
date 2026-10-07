@@ -10,7 +10,36 @@ import {
   generateAuthenticationOptions, verifyAuthenticationResponse
 } from '@simplewebauthn/server';
 import webpush from 'web-push';
+import type { AuthenticationResponseJSON, AuthenticatorTransportFuture, RegistrationResponseJSON } from '@simplewebauthn/server';
 import { createSocialModule } from './social-module.ts';
+import type { SocialModule } from './social-module.ts';
+import { bodyFields } from './types.ts';
+import type { Cred, InviteRecord, Routes, StateDoc, StoredDb, Sub, User } from './types.ts';
+
+/** A notification as the service worker shows it. */
+interface PushPayload { title: string; body: string; tag: string; url?: string }
+
+/**
+ * The part of a user's saved state that the reminder loop and the admin screens read. The document is
+ * whatever the app sent and is not validated here; the social modules narrow it field by field instead.
+ * TODO(ts): validate on `PUT /api/data` so these readers can trust the shape (tracked in #60).
+ */
+interface AppState {
+  reminder?: { on?: boolean; tz?: string; time?: string }
+  workouts?: Array<{ d: string }>
+  routines?: Array<{ id: string; name: string; emoji?: string; ex?: unknown[] }>
+  week?: Record<number, string | undefined>
+  dayPlan?: Record<string, string | undefined>
+  unit?: string
+  bodyweight?: unknown[]
+  _ts?: number
+}
+
+/** A WebAuthn ceremony waiting for its answer (in memory, 5 minutes). */
+interface PendingChallenge { challenge: string; name?: string; uid?: string; code?: string; exp: number }
+
+/** What the admin dashboard shows about someone training right now. */
+interface Presence { name: string; exIdx: number; exTotal: number; setsDone: number; setsTotal: number; startedAt: number; updatedAt: number }
 
 const PORT = +(process.env.PORT || 3000);
 const DATA = process.env.DATA_DIR || '/data';
@@ -40,31 +69,31 @@ if (!fs.existsSync(secretFile)) fs.writeFileSync(secretFile, crypto.randomBytes(
 const SECRET = fs.readFileSync(secretFile, 'utf8').trim();
 
 const dbFile = path.join(DATA, 'db.json');
-let db = { users: [], creds: [], subs: [], invites: [] };
+let db: StoredDb = { users: [], creds: [], subs: [], invites: [] };
 try { db = JSON.parse(fs.readFileSync(dbFile, 'utf8')); } catch {}
 db.subs = db.subs || [];
 db.invites = db.invites || [];
-const isAdmin = user => !!user && (user.admin === true || ADMIN_UIDS.includes(user.id));
-function saveDb() { atomicWrite(dbFile, JSON.stringify(db, null, 2)); }
-function atomicWrite(file, content) {
+const isAdmin = (user: User | null | undefined): boolean => !!user && (user.admin === true || ADMIN_UIDS.includes(user.id));
+function saveDb(): void { atomicWrite(dbFile, JSON.stringify(db, null, 2)); }
+function atomicWrite(file: string, content: string): void {
   const tmp = file + '.tmp';
   fs.writeFileSync(tmp, content);
   fs.renameSync(tmp, file);
 }
-const stateFile = uid => path.join(DATA, 'state-' + uid.replace(/[^a-zA-Z0-9_-]/g, '') + '.json');
-function readState(uid) {
+const stateFile = (uid: string): string => path.join(DATA, 'state-' + uid.replace(/[^a-zA-Z0-9_-]/g, '') + '.json');
+function readState(uid: string): StateDoc | null {
   try { return JSON.parse(fs.readFileSync(stateFile(uid), 'utf8')); } catch { return null; }
 }
 
 /* ---------- push notifications (Web Push / VAPID) ---------- */
 const vapidFile = path.join(DATA, 'vapid.json');
-let vapid;
+let vapid: webpush.VapidKeys;
 try { vapid = JSON.parse(fs.readFileSync(vapidFile, 'utf8')); }
 catch { vapid = webpush.generateVAPIDKeys(); fs.writeFileSync(vapidFile, JSON.stringify(vapid), { mode: 0o600 }); }
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || (SECURE ? ORIGIN : 'mailto:admin@localhost');
 webpush.setVapidDetails(VAPID_SUBJECT, vapid.publicKey, vapid.privateKey);
 
-async function sendPush(userId, payload) {
+async function sendPush(userId: string, payload: PushPayload): Promise<void> {
   const subs = db.subs.filter(s => s.userId === userId);
   if (!subs.length) return;
   const body = JSON.stringify(payload);
@@ -77,8 +106,9 @@ async function sendPush(userId, payload) {
     // actually control anyway.
     try { await webpush.sendNotification({ endpoint: sub.endpoint, keys: sub.keys }, body, { urgency: 'high' }); }
     catch (e) {
-      console.error('push send failed', userId, e.statusCode, e.body || e.message);
-      if (e.statusCode === 404 || e.statusCode === 410) {
+      const err = e as { statusCode?: number; body?: string; message?: string };   // web-push rejects with a WebPushError
+      console.error('push send failed', userId, err.statusCode, err.body || err.message);
+      if (err.statusCode === 404 || err.statusCode === 410) {
         db.subs = db.subs.filter(s => s.endpoint !== sub.endpoint); dirty = true;
       }
     }
@@ -88,8 +118,8 @@ async function sendPush(userId, payload) {
 
 // Rest-timer alerts: client schedules on start/extend, cancels on skip or on-screen completion —
 // this only fires when the tab was backgrounded/suspended and never got to cancel it itself.
-const restTimers = new Map(); // userId -> Timeout
-function scheduleRestTimer(userId, sec) {
+const restTimers = new Map<string, NodeJS.Timeout>(); // userId -> Timeout
+function scheduleRestTimer(userId: string, sec: number): void {
   const t = restTimers.get(userId);
   if (t) clearTimeout(t);
   restTimers.set(userId, setTimeout(() => {
@@ -97,7 +127,7 @@ function scheduleRestTimer(userId, sec) {
     sendPush(userId, { title: 'Rest over 💪', body: 'Time for your next set.', tag: 'rest-timer' });
   }, sec * 1000));
 }
-function cancelRestTimer(userId) {
+function cancelRestTimer(userId: string): void {
   const t = restTimers.get(userId);
   if (t) { clearTimeout(t); restTimers.delete(userId); }
 }
@@ -106,8 +136,8 @@ function cancelRestTimer(userId) {
 // parallel rather than through a new pipeline. The client only calls this for a rest period that
 // already decided (client-side, against the profile + interval) it's due one, so this just
 // covers the tab-backgrounded case; it fires a few seconds in, while the rest is still running.
-const pressureReliefTimers = new Map(); // userId -> Timeout
-function schedulePressureRelief(userId) {
+const pressureReliefTimers = new Map<string, NodeJS.Timeout>(); // userId -> Timeout
+function schedulePressureRelief(userId: string): void {
   const t = pressureReliefTimers.get(userId);
   if (t) clearTimeout(t);
   pressureReliefTimers.set(userId, setTimeout(() => {
@@ -115,36 +145,38 @@ function schedulePressureRelief(userId) {
     sendPush(userId, { title: 'Pressure relief 🧘', body: 'Shift your weight or do a chair push-up.', tag: 'pressure-relief' });
   }, 5000));
 }
-function cancelPressureRelief(userId) {
+function cancelPressureRelief(userId: string): void {
   const t = pressureReliefTimers.get(userId);
   if (t) { clearTimeout(t); pressureReliefTimers.delete(userId); }
 }
 
 // "Workout planned today" reminder — one per user per day, at their chosen time.
 // Duplicated (not imported) from frontend/src/lib/history.js effectiveRoutineId — tiny pure helper, not worth sharing across the two runtimes.
-function effectiveRoutineId(S, iso) {
+function effectiveRoutineId(S: AppState, iso: string): string | null {
   const ov = S.dayPlan?.[iso];
   if (ov === 'rest') return null;
   if (ov && S.routines?.some(r => r.id === ov)) return ov;
   const wd = new Date(iso + 'T12:00:00').getDay();
   return S.week?.[wd] || null;
 }
+/** A user's saved state as the reminder loop and the admin screens read it. */
+const appState = (uid: string): AppState | null => readState(uid) as AppState | null;
 // Computes "now" in an arbitrary IANA zone (e.g. "Europe/Lisbon") instead of the server's own —
 // each user's reminder fires by their own clock, wherever they and their phone actually are.
-function userNow(tz) {
+function userNow(tz: string): { date: string; hhmm: string } | null {
   try {
     const parts = new Intl.DateTimeFormat('en-CA', {
       timeZone: tz, hour12: false,
       year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
     }).formatToParts(new Date());
-    const g = t => parts.find(p => p.type === t)?.value;
+    const g = (t: string) => parts.find(p => p.type === t)?.value;
     return { date: `${g('year')}-${g('month')}-${g('day')}`, hhmm: `${g('hour')}:${g('minute')}` };
   } catch { return null; } // unknown/invalid tz string — skip this user rather than guess
 }
 setInterval(() => {
   for (const user of db.users) {
     if (!db.subs.some(s => s.userId === user.id)) continue;
-    const S = readState(user.id);
+    const S = appState(user.id);
     if (!S?.reminder?.on) continue;
     const now = userNow(S.reminder.tz || 'UTC');
     if (!now || S.reminder.time !== now.hhmm) continue;
@@ -166,11 +198,11 @@ setInterval(() => {
 }, 10000).unref();
 
 /* ---------- sessions (signed cookie) ---------- */
-function sign(payload) {
+function sign(payload: string): string {
   const mac = crypto.createHmac('sha256', SECRET).update(payload).digest('base64url');
   return payload + '.' + mac;
 }
-function verifySig(token) {
+function verifySig(token: string): string | null {
   const i = token.lastIndexOf('.');
   if (i < 0) return null;
   const payload = token.slice(0, i), mac = token.slice(i + 1);
@@ -185,12 +217,12 @@ function verifySig(token) {
 // verifying, which is the only revocation there was before short of deleting ./data/secret and
 // signing out the whole instance. Cookies minted before `sv` existed have no third field and are
 // read as version 0, matching a user who has never bumped — they stay valid until they expire.
-const sessionVersion = user => user.sv || 0;
-function makeSession(user) {
+const sessionVersion = (user: User): number => user.sv || 0;
+function makeSession(user: User): string {
   const exp = Date.now() + SESSION_DAYS * 86400000;
   return sign(user.id + ':' + exp + ':' + sessionVersion(user));
 }
-function readSession(req) {
+function readSession(req: http.IncomingMessage): User | null {
   const cookies = Object.fromEntries((req.headers.cookie || '').split(';').map(c => {
     const i = c.indexOf('='); return i < 0 ? ['', ''] : [c.slice(0, i).trim(), c.slice(i + 1).trim()];
   }));
@@ -210,27 +242,27 @@ function readSession(req) {
   return user;
 }
 // Guard for /api/admin/* — resolves the caller and 401/403s if they aren't an admin.
-function requireAdmin(req, res) {
+function requireAdmin(req: http.IncomingMessage, res: http.ServerResponse): User | null {
   const user = readSession(req);
   if (!user) { json(res, 401, { error: 'not signed in' }); return null; }
   if (!isAdmin(user)) { json(res, 403, { error: 'forbidden' }); return null; }
   return user;
 }
-function sessionCookie(user) {
+function sessionCookie(user: User): string {
   return `gymsid=${makeSession(user)}; Path=/; Max-Age=${SESSION_DAYS * 86400}; HttpOnly;${SECURE} SameSite=Lax`;
 }
 const clearCookie = `gymsid=; Path=/; Max-Age=0; HttpOnly;${SECURE} SameSite=Lax`;
 
 /* ---------- challenge store (in-memory, 5 min TTL) ---------- */
-const challenges = new Map(); // cid -> {challenge, name?, uid?, exp}
-function putChallenge(data) {
+const challenges = new Map<string, PendingChallenge>(); // cid -> pending ceremony
+function putChallenge(data: Omit<PendingChallenge, 'exp'>): string {
   const cid = crypto.randomBytes(16).toString('base64url');
   challenges.set(cid, { ...data, exp: Date.now() + 5 * 60000 });
   return cid;
 }
-function takeChallenge(cid) {
-  const c = challenges.get(cid);
-  challenges.delete(cid);
+function takeChallenge(cid: unknown): PendingChallenge | null {
+  const c = challenges.get(cid as string);
+  challenges.delete(cid as string);
   if (!c || c.exp < Date.now()) return null;
   return c;
 }
@@ -238,15 +270,15 @@ setInterval(() => { for (const [k, v] of challenges) if (v.exp < Date.now()) cha
 
 /* ---------- helpers ---------- */
 /** What the app is told about the signed-in user. `social` lets it skip every friends request for people who never opted in. */
-const publicUser = user => ({ id: user.id, name: user.name, admin: isAdmin(user), social: !!user.social?.enabled });
-function json(res, code, obj, extraHeaders) {
+const publicUser = (user: User) => ({ id: user.id, name: user.name, admin: isAdmin(user), social: !!user.social?.enabled });
+function json(res: http.ServerResponse, code: number, obj: unknown, extraHeaders?: Record<string, string>): void {
   const body = JSON.stringify(obj);
   res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...(extraHeaders || {}) });
   res.end(body);
 }
-function readBody(req) {
+function readBody(req: http.IncomingMessage): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    let size = 0; const chunks = [];
+    let size = 0; const chunks: Buffer[] = [];
     req.on('data', d => {
       size += d.length;
       if (size > MAX_BODY) { reject(new Error('body too large')); req.destroy(); return; }
@@ -259,14 +291,14 @@ function readBody(req) {
     req.on('error', reject);
   });
 }
-const b64uToBuf = s => Buffer.from(s, 'base64url');
+const b64uToBuf = (s: string) => Buffer.from(s, 'base64url');
 
 /* ---------- live presence (in-memory) ---------- */
 // Clients heartbeat /api/activity while a workout is on screen; the admin dashboard reads who's
 // live. Purely ephemeral — never persisted. Expires shortly after the last ping.
-const presence = new Map();               // uid -> { name, exIdx, exTotal, setsDone, setsTotal, startedAt, updatedAt }
+const presence = new Map<string, Presence>();
 const PRESENCE_TTL = 70000;               // ~3.5× the 20s client heartbeat
-function livePresence(uid) {
+function livePresence(uid: string): Presence | null {
   const p = presence.get(uid);
   if (!p) return null;
   if (Date.now() - p.updatedAt > PRESENCE_TTL) { presence.delete(uid); return null; }
@@ -275,7 +307,7 @@ function livePresence(uid) {
 setInterval(() => { for (const [k, v] of presence) if (Date.now() - v.updatedAt > PRESENCE_TTL) presence.delete(k); }, 30000).unref();
 
 /* ---------- routes ---------- */
-const routes = {
+const routes: Routes = {
   'GET /api/health': async (req, res) => json(res, 200, { ok: true, users: db.users.length }),
 
   // Public config the login screen needs before anyone is signed in.
@@ -288,7 +320,7 @@ const routes = {
   },
 
   'POST /api/register/options': async (req, res) => {
-    const body = await readBody(req);
+    const body = bodyFields(await readBody(req));
     const name = String(body.name || '').trim().slice(0, 40);
     if (!name) return json(res, 400, { error: 'name required' });
     const code = String(body.code || '').trim().toUpperCase();
@@ -307,19 +339,19 @@ const routes = {
   },
 
   'POST /api/register/verify': async (req, res) => {
-    const body = await readBody(req);
+    const body = bodyFields(await readBody(req));
     const c = takeChallenge(body.cid);
     if (!c || !c.uid) return json(res, 400, { error: 'challenge expired — try again' });
     let verification;
     try {
       verification = await verifyRegistrationResponse({
-        response: body.credential,
+        response: body.credential as RegistrationResponseJSON,   // the library validates the shape and throws on a bad one
         expectedChallenge: c.challenge,
         expectedOrigin: ORIGIN,
         expectedRPID: RP_ID,
         requireUserVerification: false
       });
-    } catch (e) { return json(res, 400, { error: 'verification failed: ' + e.message }); }
+    } catch (e) { return json(res, 400, { error: 'verification failed: ' + (e as Error).message }); }
     if (!verification.verified) return json(res, 400, { error: 'not verified' });
     const { credential } = verification.registrationInfo;
     if (db.creds.find(x => x.id === credential.id)) return json(res, 409, { error: 'credential already registered' });
@@ -329,14 +361,14 @@ const routes = {
       invite = db.invites.find(i => i.code === c.code && !i.usedBy && !i.revoked);
       if (!invite) return json(res, 403, { error: 'invite code is no longer valid — ask for a new one' });
     }
-    const user = { id: c.uid, name: c.name, created: new Date().toISOString() };
+    const user: User = { id: c.uid, name: c.name!, created: new Date().toISOString() };   // `name` always travels with `uid`
     if (invite) { user.invitedBy = invite.code; invite.usedBy = user.id; invite.usedAt = user.created; }
     db.users.push(user);
     db.creds.push({
       id: credential.id, userId: user.id,
       publicKey: Buffer.from(credential.publicKey).toString('base64url'),
       counter: credential.counter || 0,
-      transports: body.credential?.response?.transports || []
+      transports: (body.credential as RegistrationResponseJSON | undefined)?.response?.transports || []
     });
     saveDb();
     json(res, 200, { user: publicUser(user) }, { 'Set-Cookie': sessionCookie(user) });
@@ -351,15 +383,16 @@ const routes = {
   },
 
   'POST /api/login/verify': async (req, res) => {
-    const body = await readBody(req);
+    const body = bodyFields(await readBody(req));
     const c = takeChallenge(body.cid);
     if (!c) return json(res, 400, { error: 'challenge expired — try again' });
-    const cred = db.creds.find(x => x.id === body.credential?.id);
+    const credential = body.credential as AuthenticationResponseJSON | undefined;   // verified by the library below
+    const cred = db.creds.find(x => x.id === credential?.id);
     if (!cred) return json(res, 404, { error: 'unknown passkey — create a profile first' });
     let verification;
     try {
       verification = await verifyAuthenticationResponse({
-        response: body.credential,
+        response: credential!,   // `cred` was found by its id, so the credential exists
         expectedChallenge: c.challenge,
         expectedOrigin: ORIGIN,
         expectedRPID: RP_ID,
@@ -368,10 +401,10 @@ const routes = {
           id: cred.id,
           publicKey: b64uToBuf(cred.publicKey),
           counter: cred.counter,
-          transports: cred.transports
+          transports: cred.transports as AuthenticatorTransportFuture[]
         }
       });
-    } catch (e) { return json(res, 400, { error: 'verification failed: ' + e.message }); }
+    } catch (e) { return json(res, 400, { error: 'verification failed: ' + (e as Error).message }); }
     if (!verification.verified) return json(res, 400, { error: 'not verified' });
     cred.counter = verification.authenticationInfo.newCounter;
     saveDb();
@@ -407,12 +440,13 @@ const routes = {
   'PUT /api/data': async (req, res) => {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
-    const body = await readBody(req);
+    const body = bodyFields(await readBody(req));
     if (!body.state || typeof body.state !== 'object') return json(res, 400, { error: 'state required' });
-    delete body.state.active;              // in-progress workouts stay device-local
-    atomicWrite(stateFile(user.id), JSON.stringify(body.state));
-    try { afterStateSaved(user, body.state); } catch (e) { console.error('social update failed after a save', e); }   // the training itself is already stored
-    json(res, 200, { ok: true, ts: body.state._ts || null });
+    const state = body.state as StateDoc;
+    delete state.active;                   // in-progress workouts stay device-local
+    atomicWrite(stateFile(user.id), JSON.stringify(state));
+    try { afterStateSaved(user, state); } catch (e) { console.error('social update failed after a save', e); }   // the training itself is already stored
+    json(res, 200, { ok: true, ts: state._ts || null });
   },
 
   'GET /api/push/public-key': async (req, res) => json(res, 200, { key: vapid.publicKey }),
@@ -420,11 +454,11 @@ const routes = {
   'POST /api/push/subscribe': async (req, res) => {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
-    const body = await readBody(req);
-    const sub = body.subscription;
+    const body = bodyFields(await readBody(req));
+    const sub = body.subscription as { endpoint?: string; keys?: { p256dh?: string; auth?: string } } | undefined;
     if (!sub?.endpoint || !sub?.keys?.p256dh || !sub?.keys?.auth) return json(res, 400, { error: 'invalid subscription' });
     db.subs = db.subs.filter(s => s.endpoint !== sub.endpoint);
-    db.subs.push({ userId: user.id, endpoint: sub.endpoint, keys: sub.keys, created: new Date().toISOString() });
+    db.subs.push({ userId: user.id, endpoint: sub.endpoint, keys: sub.keys as Sub['keys'], created: new Date().toISOString() });   // p256dh and auth were just checked
     saveDb();
     json(res, 200, { ok: true });
   },
@@ -432,7 +466,7 @@ const routes = {
   'POST /api/push/unsubscribe': async (req, res) => {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
-    const body = await readBody(req);
+    const body = bodyFields(await readBody(req));
     db.subs = db.subs.filter(s => !(s.userId === user.id && s.endpoint === body.endpoint));
     saveDb();
     json(res, 200, { ok: true });
@@ -448,8 +482,8 @@ const routes = {
   'POST /api/push/rest-timer': async (req, res) => {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
-    const body = await readBody(req);
-    const sec = Math.max(1, Math.min(3600, Math.round(+body.seconds || 0)));
+    const body = bodyFields(await readBody(req));
+    const sec = Math.max(1, Math.min(3600, Math.round(Number(body.seconds) || 0)));
     if (!sec) return json(res, 400, { error: 'seconds required' });
     scheduleRestTimer(user.id, sec);
     json(res, 200, { ok: true });
@@ -480,13 +514,13 @@ const routes = {
   'POST /api/activity': async (req, res) => {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
-    const body = await readBody(req);
+    const body = bodyFields(await readBody(req));
     if (body.active) {
       presence.set(user.id, {
         name: String(body.name || '').slice(0, 60),
-        exIdx: +body.exIdx || 0, exTotal: +body.exTotal || 0,
-        setsDone: +body.setsDone || 0, setsTotal: +body.setsTotal || 0,
-        startedAt: +body.startedAt || Date.now(),
+        exIdx: Number(body.exIdx) || 0, exTotal: Number(body.exTotal) || 0,
+        setsDone: Number(body.setsDone) || 0, setsTotal: Number(body.setsTotal) || 0,
+        startedAt: Number(body.startedAt) || Date.now(),
         updatedAt: Date.now()
       });
     } else presence.delete(user.id);
@@ -498,7 +532,7 @@ const routes = {
   'GET /api/admin/users': async (req, res) => {
     if (!requireAdmin(req, res)) return;
     const users = db.users.map(u => {
-      const S = readState(u.id) || {};
+      const S: AppState = appState(u.id) || {};
       const workouts = S.workouts || [];
       const last = workouts[workouts.length - 1];
       return {
@@ -518,10 +552,10 @@ const routes = {
   // Drill-down: full workout history + body-weight log for one user.
   'GET /api/admin/user': async (req, res) => {
     if (!requireAdmin(req, res)) return;
-    const id = new URL(req.url, 'http://x').searchParams.get('id');
+    const id = new URL(req.url ?? '/', 'http://x').searchParams.get('id');
     const u = db.users.find(x => x.id === id);
     if (!u) return json(res, 404, { error: 'no such user' });
-    const S = readState(u.id) || {};
+    const S: AppState = appState(u.id) || {};
     json(res, 200, {
       user: { id: u.id, name: u.name, created: u.created || null, disabled: !!u.disabled, admin: isAdmin(u), invitedBy: u.invitedBy || null },
       unit: S.unit || 'kg',
@@ -534,7 +568,7 @@ const routes = {
 
   'POST /api/admin/user/disable': async (req, res) => {
     if (!requireAdmin(req, res)) return;
-    const body = await readBody(req);
+    const body = bodyFields(await readBody(req));
     const u = db.users.find(x => x.id === body.id);
     if (!u) return json(res, 404, { error: 'no such user' });
     if (isAdmin(u)) return json(res, 400, { error: 'cannot disable an admin' });
@@ -555,14 +589,14 @@ const routes = {
 
   'POST /api/admin/invites/new': async (req, res) => {
     const admin = requireAdmin(req, res); if (!admin) return;
-    const body = await readBody(req);
-    let code;
+    const body = bodyFields(await readBody(req));
+    let code: string;
     // 16 hex chars = 64 bits, up from 8 chars / 32 bits. The app has no rate limiting by design
     // (that's the reverse proxy's job) and /api/register/options tells a caller whether a code is
     // good, so the code itself has to be the thing that isn't worth guessing. Codes already in
     // db.json keep working — validation is an exact string compare, never a length or format check.
     do { code = crypto.randomBytes(8).toString('hex').toUpperCase(); } while (db.invites.some(i => i.code === code));
-    const invite = { code, note: String(body.note || '').slice(0, 60), createdBy: admin.id, created: new Date().toISOString() };
+    const invite: InviteRecord = { code, note: String(body.note || '').slice(0, 60), createdBy: admin.id, created: new Date().toISOString() };
     db.invites.push(invite);
     saveDb();
     json(res, 200, { invite });
@@ -570,7 +604,7 @@ const routes = {
 
   'POST /api/admin/invites/revoke': async (req, res) => {
     if (!requireAdmin(req, res)) return;
-    const body = await readBody(req);
+    const body = bodyFields(await readBody(req));
     const inv = db.invites.find(i => i.code === String(body.code || '').toUpperCase());
     if (!inv) return json(res, 404, { error: 'no such code' });
     if (inv.usedBy) return json(res, 400, { error: 'already used — cannot revoke' });
@@ -581,9 +615,9 @@ const routes = {
 };
 
 // Friends & challenges module. `afterStateSaved` runs whenever a user's state is saved (PUT /api/data).
-let afterStateSaved = () => {};
-let maintainSocial = async () => {};
-let socialCounts = () => ({ enabled: false, friends: 0, challenges: 0 });
+let afterStateSaved: SocialModule['afterStateSaved'] = () => {};
+let maintainSocial: SocialModule['maintain'] = async () => {};
+let socialCounts: SocialModule['countsFor'] = () => ({ enabled: false, friends: 0, challenges: 0 });
 if (SOCIAL_ENABLED) {
   const social = createSocialModule({ db, saveDb, readSession, json, readBody, readState, sendPush });
   Object.assign(routes, social.routes);
@@ -595,7 +629,7 @@ if (SOCIAL_ENABLED) {
 
 /** The HTTP server. Exported so tests can bind it to an ephemeral port; started below only when run directly. */
 export const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://x');
+  const url = new URL(req.url ?? '/', 'http://x');
   const key = req.method + ' ' + url.pathname;
   const handler = routes[key];
   if (!handler) return json(res, 404, { error: 'not found' });
@@ -613,7 +647,7 @@ const socialRouteKeys = () => Object.keys(routes).filter(k => k.includes(' /api/
 
 export { db, saveDb, sessionCookie, maintainSocial as runSocialMaintenance, socialRouteKeys };
 
-// `node server.js` (Docker, `npm start`) listens; importing this module (tests) does not.
+// `node server.ts` (Docker, `npm start`) listens; importing this module (tests) does not.
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   server.listen(PORT, () => console.log(`gym-api on :${PORT} (rpID=${RP_ID}, origin=${ORIGIN})`));
 }

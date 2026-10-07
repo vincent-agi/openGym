@@ -1,6 +1,6 @@
 import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
-import { startTestServer } from './helpers.ts'
+import { startTestServer, loadServer } from './helpers.ts'
 import { IDENTITY_KEYS, SOCIAL_KEYS, emptySocialCollections } from '../types.ts'
 import type { Db } from '../types.ts'
 
@@ -14,8 +14,7 @@ let db: Db
 
 before(async () => {
   app = await startTestServer()
-  // server.js is still JavaScript, so its `db` is inferred from the literal; it becomes `Db` once the entry point is converted.
-  db = (await import('../server.ts')).db as unknown as Db
+  db = (await loadServer()).db
 })
 after(async () => { await app.close() })
 

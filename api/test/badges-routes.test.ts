@@ -1,34 +1,34 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startTestServer } from './helpers.ts';
+import { startTestServer, loadServer, must } from './helpers.ts';
+import type { TestServer, TestUser, ServerModule, Person, Json } from './helpers.ts';
 
-/** @type {import('./helpers.ts').TestServer} */
-let app;
-let mod;
+let app: TestServer;
+let mod: ServerModule;
 let seq = 0;
 
-before(async () => { app = await startTestServer(); mod = await import('../server.ts'); });
+before(async () => { app = await startTestServer(); mod = await loadServer(); });
 after(async () => { await app.close(); });
 
 const today = () => new Date().toISOString().slice(0, 10);
-const iso = offset => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
-const session = (d, id = 'w' + d) => ({ id, d, entries: [{ id: 'x', sets: [{ done: true }] }] });
-const save = (user, workouts) => app.request('/api/data', { method: 'PUT', as: user, body: { state: { workouts } } });
-const post = (path, as, body) => app.request('/api/social/' + path, { method: 'POST', as, body });
-const me = as => app.request('/api/social/me', { as });
-const put = (as, body) => app.request('/api/social/me', { method: 'PUT', as, body });
+const iso = (offset: number) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
+const session = (d: string, id = 'w' + d) => ({ id, d, entries: [{ id: 'x', sets: [{ done: true }] }] });
+const save = (user: TestUser, workouts: unknown[]) => app.request('/api/data', { method: 'PUT', as: user, body: { state: { workouts } } });
+const post = (path: string, as: TestUser, body?: unknown) => app.request('/api/social/' + path, { method: 'POST', as, body });
+const me = (as: TestUser) => app.request('/api/social/me', { as });
+const put = (as: TestUser, body?: unknown) => app.request('/api/social/me', { method: 'PUT', as, body });
 
-async function person(label) {
+async function person(label: string): Promise<Person> {
   const user = app.createUser(label);
   const handle = `${label}_${++seq}`;
   await put(user, { enabled: true, handle, displayName: label });
   return { ...user, handle };
 }
-async function friends(a, b) {
+async function friends(a: Person, b: Person) {
   await post('friends/request', a, { handle: b.handle });
   await post('friends/respond', b, { handle: a.handle, action: 'accept' });
 }
-const ids = body => body.social.earned.map(b => b.id).sort();
+const ids = (body: Json) => body.social.earned.map((b: Json) => b.id).sort();
 
 test('a new user has earned nothing and shows nothing', async () => {
   const user = await person('fresh');
@@ -66,7 +66,7 @@ test('showBadges only accepts known badge ids, and friends see only what is chos
   assert.equal((await put(a, { showBadges: ['hat-trick', 'cheerleader'] })).status, 200);                      // cheerleader not earned
 
   const shown = (await app.request('/api/social/friends/summary', { as: b })).body.friends[0].badges;
-  assert.deepEqual(shown.map(x => x.id), ['hat-trick']);
+  assert.deepEqual(shown.map((x: Json) => x.id), ['hat-trick']);
   assert.match(shown[0].date, /^\d{4}-\d{2}-\d{2}$/);
 });
 
@@ -105,7 +105,7 @@ test('finishing a co-op challenge together earns Team player for everyone in it'
   await post('challenges/join', b, { id: body.challenge.id });
   await save(a, [session(today())]); await save(b, [session(today())]);   // 2 of 2
 
-  const ch = mod.db.challenges.find(c => c.id === body.challenge.id);
+  const ch = must(mod.db.challenges.find(c => c.id === body.challenge.id));
   ch.startDate = iso(-10); ch.endDate = iso(-1);
   await mod.runSocialMaintenance();
   assert.ok(ids((await me(a)).body).includes('team-player'));
@@ -117,7 +117,7 @@ test('a co-op challenge that fell short earns nothing', async () => {
   await friends(a, b);
   const { body } = await post('challenges', a, { title: 'Too big', type: 'sessions', mode: 'coop', target: 50, startDate: today(), endDate: iso(27), invite: [b.handle] });
   await post('challenges/join', b, { id: body.challenge.id });
-  const ch = mod.db.challenges.find(c => c.id === body.challenge.id);
+  const ch = must(mod.db.challenges.find(c => c.id === body.challenge.id));
   ch.startDate = iso(-10); ch.endDate = iso(-1);
   await mod.runSocialMaintenance();
   assert.ok(!ids((await me(a)).body).includes('team-player'));

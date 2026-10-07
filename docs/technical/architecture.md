@@ -28,7 +28,7 @@
 | Service | Source | Image | Role |
 |---|---|---|---|
 | `web` | `web/Dockerfile`, `web/nginx.conf` | `ghcr.io/duartesantos8/opengym-web` | Multi-stage build: `node:22-alpine` builds the Vite app, `nginx:1.27-alpine` serves it and proxies `/api/`. |
-| `api` | `api/Dockerfile`, `api/server.js` | `ghcr.io/duartesantos8/opengym-api` | One Node file. Passkey auth, per-user state storage, push, admin. |
+| `api` | `api/Dockerfile`, `api/server.ts` | `ghcr.io/duartesantos8/opengym-api` | One Node file. Passkey auth, per-user state storage, push, admin. |
 | `media` | inline in `docker-compose.yml` | `alpine/git` | One-shot job: `git clone --depth 1` of `hasaneyldrm/exercises-dataset` into `./media/img` and `./media/gif` if `./media/img` is empty. `restart: "no"`. |
 
 `web` waits for `media` to complete (`service_completed_successfully`) and for `api` to start (`service_started`, not
@@ -80,7 +80,7 @@ The server is a **dumb document store**; all merge logic is on the client.
 Consequence: **last write wins, per whole profile.** Two devices editing offline will overwrite each other's
 changes; the later `_ts` wins. There is no field-level merge and no server-side version check.
 
-## Backend (`api/server.js`)
+## Backend (`api/server.ts`)
 
 A single ES module of ~580 lines using `node:http`. No router, no middleware: a `routes` object keyed by
 `"METHOD /path"`.

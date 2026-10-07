@@ -6,7 +6,7 @@ This page is about **how the code is organised and how to work in it**.
 ## Repository layout
 
 ```
-api/                 backend: server.js (single file), Dockerfile, package.json
+api/                 backend: server.ts (single file), Dockerfile, package.json
 shared/              wire types and constants shared by api/ and frontend/ (erasable TypeScript, no dependency)
 frontend/            React + Vite app
   src/
@@ -56,7 +56,7 @@ API directly instead of through Docker:
 
 ```bash
 cd api && npm ci
-DATA_DIR=$(mktemp -d) RP_ID=localhost ORIGIN=http://localhost:5173 node server.js
+DATA_DIR=$(mktemp -d) RP_ID=localhost ORIGIN=http://localhost:5173 node server.ts
 ```
 
 Set `ORIGIN` to the **dev server's** origin (Vite defaults to `http://localhost:5173`) or WebAuthn verification fails.
@@ -118,12 +118,12 @@ npm ci
 npm test                # node --test test/  (Node built-ins only, no extra dependency)
 ```
 
-Tests live in `api/test/*.test.js` and run each file in its own process. `test/helpers.ts` exposes
-`startTestServer()`: it boots the real `server.js` on an ephemeral port with a throw-away `DATA_DIR`, and
+Tests live in `api/test/*.test.ts` and run each file in its own process. `test/helpers.ts` exposes
+`startTestServer()`: it boots the real `server.ts` on an ephemeral port with a throw-away `DATA_DIR`, and
 `createUser()` writes a user straight into the identity store and returns a session cookie signed by the production
 code (no WebAuthn ceremony). Use `request(path, { method, body, as })` to call routes as a given user.
 
-`server.js` only listens when it is the entry point (`node server.js`); importing it, as the tests do, does not.
+`server.ts` only listens when it is the entry point (`node server.ts`); importing it, as the tests do, does not.
 CI runs `npm test` in the `API (syntax + boot smoke)` job, followed by the boot smoke test.
 
 ## Frontend architecture

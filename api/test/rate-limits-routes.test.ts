@@ -1,20 +1,21 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startTestServer } from './helpers.ts';
+import type { TestUser } from './helpers.ts';
+import type { TestServer, Person, Json } from './helpers.ts';
 
-/** @type {import('./helpers.ts').TestServer} */
-let app;
+let app: TestServer;
 let seq = 0;
 
 before(async () => { app = await startTestServer(); });
 after(async () => { await app.close(); });
 
 const today = () => new Date().toISOString().slice(0, 10);
-const call = (method, path, as, body, ip) => app.request(path, { method, as, body, ip });
+const call = (method: string, path: string, as?: TestUser, body?: unknown, ip?: string) => app.request(path, { method, as, body, ip });
 let ipSeq = 0;
 const freshIp = () => `198.51.100.${++ipSeq}`;
 
-async function person(label) {
+async function person(label: string): Promise<Person> {
   const user = app.createUser(label);
   const handle = `${label}_${++seq}`;
   await call('PUT', '/api/social/me', user, { enabled: true, handle, displayName: label });

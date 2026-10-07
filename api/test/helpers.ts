@@ -1,17 +1,17 @@
 /**
  * Test helpers for the Gymme API.
  *
- * `server.js` reads its configuration from the environment when it is first imported, so a
+ * `server.ts` reads its configuration from the environment when it is first imported, so a
  * test file calls {@link startTestServer} once (each file runs in its own process under
  * `node --test`) and gets a real HTTP server bound to an ephemeral port with a throw-away
  * data directory. Nothing here touches WebAuthn: users are written straight into the
  * identity store and authenticated with a cookie minted by the production signer.
  */
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { AddressInfo } from 'node:net';
-import type { Server } from 'node:http';
 import type { Db, User } from '../types.ts';
 
 /** A user created by {@link TestServer.createUser}. */
@@ -24,6 +24,18 @@ export interface TestUser {
   cookie: string
 }
 
+/** Fails the test when a lookup found nothing; otherwise returns what it found. */
+export function must<T>(value: T | undefined | null, what = 'record'): T {
+  assert.ok(value, `${what} not found`);
+  return value;
+}
+
+/** A database holding only the collections the unit under test reads. */
+export const fakeDb = (collections: Record<string, unknown>): Db => collections as unknown as Db;   // cast: partial by design
+
+/** A test user who turned sharing on, with the handle they chose. */
+export type Person = TestUser & { handle: string };
+
 export interface RequestOptions {
   /** HTTP verb, defaults to `GET`. */
   method?: string
@@ -35,11 +47,17 @@ export interface RequestOptions {
   ip?: string
 }
 
+/**
+ * Any JSON a route answered with. Tests read arbitrary fields of whatever came back and assert on them
+ * right after, so describing each shape would only restate the assertion.
+ */
+// any: parsed response bodies are untyped by nature
+export type Json = any;
+
 /** A response of {@link TestServer.request}; `body` is the parsed JSON, or null when there is none. */
 export interface TestResponse {
   status: number
-  // any: tests read arbitrary fields of whatever the route answered, and assert on them right after
-  body: any
+  body: Json
   headers: Headers
 }
 
@@ -56,13 +74,12 @@ export interface TestServer {
   close: () => Promise<void>
 }
 
-/** The parts of `server.js` the helpers use; replaced by the real types when the server is converted. */
-interface ServerModule {
-  server: Server
-  db: Db
-  saveDb: () => void
-  sessionCookie: (user: User) => string
-}
+/** The server module as tests see it: started with the social module on, so every collection exists. */
+export type ServerModule = Omit<typeof import('../server.ts'), 'db'> & { db: Db };
+
+/** Imports the server; use it after {@link startTestServer}, which sets the environment the server reads. */
+export const loadServer = async (): Promise<ServerModule> =>
+  (await import('../server.ts')) as unknown as ServerModule;   // cast: the social module is enabled unless a test turns it off
 
 /**
  * Boots the API on an ephemeral port with an isolated data directory.
@@ -74,7 +91,7 @@ export async function startTestServer(env: Record<string, string> = {}): Promise
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gymme-api-test-'));
   Object.assign(process.env, { DATA_DIR: dataDir, ORIGIN: 'http://localhost:8080', RP_ID: 'localhost' }, env);
 
-  const mod = (await import('../server.ts')) as unknown as ServerModule;
+  const mod = await import('../server.ts');
   await new Promise<void>(resolve => mod.server.listen(0, '127.0.0.1', resolve));
   const baseUrl = `http://127.0.0.1:${(mod.server.address() as AddressInfo).port}`;
 

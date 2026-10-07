@@ -7,7 +7,19 @@
  */
 import { computeSummary, filterSummary, ownerTz } from './summary.ts';
 import { isSharing, requireSharing } from './social.ts';
+import type { SharingUser } from './social.ts';
 import { relationsOf } from './friends.ts';
+import type { CrewRow, CrewSummaryResponse } from '../shared/social.ts';
+import type { Routes, Services, StateDoc, User } from './types.ts';
+
+/** What the sharing service hands back to the composition root. */
+export interface SharingService {
+  /** Recomputes and stores a user's summary; a no-op when they are not sharing. */
+  refresh: (user: User, state: StateDoc) => void
+  /** Deletes a user's stored summary. */
+  forget: (uid: string) => void
+  routes: Routes
+}
 
 /** A summary not refreshed for this long is flagged `stale` to friends. */
 export const STALE_AFTER_MS = 14 * 86400000;
@@ -16,33 +28,17 @@ export const STALE_AFTER_MS = 14 * 86400000;
 const REFRESH_EVERY_MS = 6 * 3600000;
 
 /**
- * @typedef {object} StoredSummary
- * @property {import('./summary.ts').Summary} data
- * @property {number} updatedAt  Epoch ms of the last refresh.
+ * @param ctx  Server services; `now` is the clock, injectable for tests.
  */
-
-/**
- * @param {object} ctx
- * @param {{users: object[], friendships: object[], socialSummaries: Record<string, StoredSummary>}} ctx.db
- * @param {() => void} ctx.saveDb
- * @param {(req: import('node:http').IncomingMessage) => (object | null)} ctx.readSession
- * @param {(res: import('node:http').ServerResponse, code: number, body: object) => void} ctx.json
- * @param {() => number} [ctx.now]  Clock, injectable for tests.
- * @returns {{
- *   refresh: (user: object, state: object) => void,
- *   forget: (uid: string) => void,
- *   routes: Record<string, Function>
- * }}
- */
-export function createSharingService({ db, saveDb, readSession, json, now = Date.now }) {
+export function createSharingService({ db, saveDb, readSession, json, now = Date.now }: Pick<Services, 'db' | 'saveDb' | 'readSession' | 'json'> & { now?: () => number }): SharingService {
   /**
    * Recomputes and stores a user's summary. A no-op for users who are not sharing, and never throws:
    * a bad state must not make saving it fail.
    *
-   * @param {object} user   Owner, as found in the identity store.
-   * @param {object} state  The state just saved.
+   * @param user   Owner, as found in the identity store.
+   * @param state  The state just saved.
    */
-  const refresh = (user, state) => {
+  const refresh = (user: User, state: StateDoc): void => {
     if (!isSharing(user)) return;
     try {
       const t = now();
@@ -57,17 +53,17 @@ export function createSharingService({ db, saveDb, readSession, json, now = Date
     }
   };
 
-  /** Deletes a user's stored summary. @param {string} uid */
-  const forget = uid => {
+  /** Deletes a user's stored summary. */
+  const forget = (uid: string): void => {
     if (db.socialSummaries[uid]) { delete db.socialSummaries[uid]; saveDb(); }
   };
 
-  const routes = {
+  const routes: Routes = {
     'GET /api/social/friends/summary': async (req, res) => {
       const user = requireSharing(readSession, json, req, res);
       if (!user) return;
       const t = now();
-      const row = person => {
+      const row = (person: SharingUser): CrewRow => {
         const stored = db.socialSummaries[person.id];
         return {
           handle: person.social.handle,
@@ -83,7 +79,8 @@ export function createSharingService({ db, saveDb, readSession, json, now = Date
         .map(r => db.users.find(u => u.id === r.uid))
         .filter(isSharing)
         .map(row);
-      json(res, 200, { me: row(user), friends });
+      const answer: CrewSummaryResponse = { me: row(user), friends };
+      json(res, 200, answer);
     }
   };
 

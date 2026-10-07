@@ -1,6 +1,8 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startTestServer } from './helpers.ts';
+import { startTestServer, loadServer, fakeDb } from './helpers.ts';
+import type { Db } from '../types.ts';
+import type { TestServer, Json } from './helpers.ts';
 import { createNotifier } from '../notifier.ts';
 import { defaultNotify } from '../notify-prefs.ts';
 
@@ -9,17 +11,16 @@ import { defaultNotify } from '../notify-prefs.ts';
  * saving their training or changing their settings, and must never take the server down.
  */
 
-/** @type {import('./helpers.ts').TestServer} */
-let app;
-let db;
+let app: TestServer;
+let db: Db;
 
-before(async () => { app = await startTestServer(); db = (await import('../server.ts')).db; });
+before(async () => { app = await startTestServer(); db = (await loadServer()).db; });
 after(async () => { await app.close(); });
 
-const session = d => ({ id: 'w' + d, d, entries: [{ id: 'x', sets: [{ done: true }] }] });
+const session = (d: string) => ({ id: 'w' + d, d, entries: [{ id: 'x', sets: [{ done: true }] }] });
 const today = () => new Date().toISOString().slice(0, 10);
 
-async function sharing(label) {
+async function sharing(label: string) {
   const user = app.createUser(label);
   await app.request('/api/social/me', { method: 'PUT', as: user, body: { enabled: true, handle: label + '_r', displayName: label } });
   return user;
@@ -40,7 +41,7 @@ test('saving training still succeeds when the social data is corrupt', async () 
 test('changing social settings still succeeds when a follow-up step fails', async () => {
   const user = await sharing('res_b');
   const saved = db.challenges;
-  db.challenges = null;
+  db.challenges = null as unknown as typeof saved;   // a corrupt store, on purpose
   try {
     const r = await app.request('/api/social/me', { method: 'PUT', as: user, body: { hideRank: true } });
     assert.equal(r.status, 200);
@@ -50,7 +51,7 @@ test('changing social settings still succeeds when a follow-up step fails', asyn
 
 test('a notification that fails reports false instead of rejecting', async () => {
   const notify = { ...defaultNotify(), cheerReceived: true };
-  const db2 = { users: [{ id: 'u', social: { enabled: true, notify } }], subs: [{ userId: 'u' }], socialOutbox: null, socialPushLog: [] };
+  const db2 = fakeDb({ users: [{ id: 'u', social: { enabled: true, notify } }], subs: [{ userId: 'u' }], socialOutbox: null, socialPushLog: [] });
   const n = createNotifier({ db: db2, saveDb() {}, sendPush: async () => {}, readState: () => null });
   assert.equal(await n.notify('u', 'cheerReceived', { name: 'x', emoji: '🔥' }), false);
 });
@@ -58,8 +59,8 @@ test('a notification that fails reports false instead of rejecting', async () =>
 test('a push that cannot be sent does not stop the rest of the queue', async () => {
   const notify = { ...defaultNotify(), cheerReceived: true, challengeEnded: true };
   const user = { id: 'u', social: { enabled: true, notify } };
-  const sent = [];
-  const db2 = { users: [user], subs: [{ userId: 'u' }], socialOutbox: [], socialPushLog: [] };
+  const sent: string[] = [];
+  const db2 = fakeDb({ users: [user], subs: [{ userId: 'u' }], socialOutbox: [], socialPushLog: [] });
   let calls = 0;
   const n = createNotifier({
     db: db2, saveDb() {}, readState: () => null,

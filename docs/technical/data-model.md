@@ -387,4 +387,4 @@ A destructive state change needs a one-off script over `state-*.json` run with t
   with a push subscription **and** a reminder enabled (cheap per user, linear in their number). The admin
   `GET /api/admin/users` reads **every** state file.
 - **Practical ceiling:** hundreds of users on a small VM. If you need more, you need a real database — which means
-  changing `api/server.js`, not tuning it.
+  changing `api/server.ts`, not tuning it.

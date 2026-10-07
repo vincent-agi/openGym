@@ -185,6 +185,12 @@ export interface SocialCollections {
 /** The whole of `db.json`. */
 export type Db = IdentityStore & SocialCollections
 
+/**
+ * The database as the server loads it: the social collections only exist once the social module has added
+ * them (it does so at start-up, and not at all when the module is disabled).
+ */
+export type StoredDb = IdentityStore & Partial<SocialCollections>
+
 /** Collection names, in file order. A test compares them to the database the server builds. */
 export const IDENTITY_KEYS = ['users', 'creds', 'subs', 'invites'] as const
 export const SOCIAL_KEYS = [
@@ -231,6 +237,14 @@ export interface StateDoc {
 export type Route = (req: IncomingMessage, res: ServerResponse) => Promise<void> | void
 /** Keyed `"METHOD /api/path"`. */
 export type Routes = Record<string, Route>
+
+/**
+ * The fields of a request body, read without checking that the body is an object. `readBody` resolves to
+ * whatever JSON the client sent, so a body that is `null` or a primitive makes the first field read throw
+ * and the request ends in the server's catch-all 500.
+ * TODO(ts): validate the shape in each handler and answer 400 (tracked in the server conversion, #60).
+ */
+export const bodyFields = (body: unknown): Record<string, unknown> => body as Record<string, unknown>
 
 export type JsonResponder = (res: ServerResponse, code: number, body: unknown, headers?: Record<string, string>) => void
 

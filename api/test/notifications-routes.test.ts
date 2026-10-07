@@ -1,34 +1,34 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startTestServer } from './helpers.ts';
+import { startTestServer, loadServer, must } from './helpers.ts';
+import type { TestServer, TestUser, ServerModule, Person, Json } from './helpers.ts';
 
-/** @type {import('./helpers.ts').TestServer} */
-let app;
-let mod;
+let app: TestServer;
+let mod: ServerModule;
 let seq = 0;
 
-before(async () => { app = await startTestServer(); mod = await import('../server.ts'); });
+before(async () => { app = await startTestServer(); mod = await loadServer(); });
 after(async () => { await app.close(); });
 
 const today = () => new Date().toISOString().slice(0, 10);
-const iso = offset => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
+const iso = (offset: number) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
 const session = (d = today(), id = 'w' + d) => ({ id, d, entries: [{ id: 'x', sets: [{ done: true }] }] });
-const save = (user, days) => app.request('/api/data', { method: 'PUT', as: user, body: { state: { workouts: days.map(d => session(d)) } } });
-const post = (path, as, body) => app.request('/api/social/' + path, { method: 'POST', as, body });
-const outbox = (user, kind) => mod.db.socialOutbox.filter(i => i.uid === user.id && (!kind || i.kind === kind));
+const save = (user: TestUser, days: string[]) => app.request('/api/data', { method: 'PUT', as: user, body: { state: { workouts: days.map(d => session(d)) } } });
+const post = (path: string, as: TestUser, body?: unknown) => app.request('/api/social/' + path, { method: 'POST', as, body });
+const outbox = (user: TestUser, kind?: string) => mod.db.socialOutbox.filter(i => i.uid === user.id && (!kind || i.kind === kind));
 
 const ALL_ON = { friendSession: true, cheerReceived: true, challengeInvite: true, challengeMilestone: true, challengeEnded: true };
 
 /** A sharing user, optionally subscribed to push, with the given notification preferences. */
-async function person(label, { notify = ALL_ON, subscribed = true, share } = {}) {
+async function person(label: string, { notify = ALL_ON, subscribed = true, share }: { notify?: Record<string, unknown>; subscribed?: boolean; share?: Record<string, boolean> } = {}): Promise<Person> {
   const user = app.createUser(label);
   const handle = `${label}_${++seq}`;
   const r = await app.request('/api/social/me', { method: 'PUT', as: user, body: { enabled: true, handle, displayName: label, notify, ...(share ? { share } : {}) } });
   assert.equal(r.status, 200);
-  if (subscribed) mod.db.subs.push({ userId: user.id, endpoint: 'https://push.invalid/' + user.id, keys: {} });
+  if (subscribed) mod.db.subs.push({ userId: user.id, endpoint: 'https://push.invalid/' + user.id, keys: { p256dh: 'k', auth: 'a' } });
   return { ...user, handle };
 }
-async function friends(a, b) {
+async function friends(a: Person, b: Person) {
   await post('friends/request', a, { handle: b.handle });
   await post('friends/respond', b, { handle: a.handle, action: 'accept' });
 }
@@ -116,7 +116,7 @@ test('a co-op challenge notifies everyone at halfway and again at the target, on
   await save(b, [today()]);                                           // same state: nothing new
   assert.equal(outbox(a, 'challengeMilestone').length, 1);
 
-  const ch = mod.db.challenges.find(c => c.id === body.challenge.id);
+  const ch = must(mod.db.challenges.find(c => c.id === body.challenge.id));
   ch.target = 2;                                                      // pretend the target is now reached
   await save(a, [today()]);
   assert.deepEqual(outbox(a, 'challengeMilestone').map(i => i.data.stage), ['half', 'target']);
@@ -127,11 +127,11 @@ test('finishing a challenge notifies each participant once, when maintenance run
   await friends(a, b);
   const { body } = await post('challenges', a, { title: 'Short one', type: 'sessions', mode: 'versus', target: 3, startDate: today(), endDate: iso(7), invite: [b.handle] });
   await post('challenges/join', b, { id: body.challenge.id });
-  const delivered = user => mod.db.socialPushLog.filter(l => l.uid === user.id && l.kind === 'challengeEnded').length;
+  const delivered = (user: Json) => mod.db.socialPushLog.filter(l => l.uid === user.id && l.kind === 'challengeEnded').length;
   await mod.runSocialMaintenance();
   assert.equal(delivered(a) + delivered(b), 0);                       // still running
 
-  const ch = mod.db.challenges.find(c => c.id === body.challenge.id);
+  const ch = must(mod.db.challenges.find(c => c.id === body.challenge.id));
   ch.startDate = iso(-10); ch.endDate = iso(-1);
   await mod.runSocialMaintenance();
   await mod.runSocialMaintenance();

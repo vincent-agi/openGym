@@ -27,7 +27,7 @@ Triggers: every `pull_request`, and `push` to `main`. Concurrency: cancels super
 | Job (required check name) | Steps |
 |---|---|
 | `Frontend (test + build)` | `npm ci` → `npm run test` (Vitest) → `npm run typecheck` → TypeScript ratchet and progress summary (from the repository root) → locale parity → doc links → `npm run build` in `frontend/`. |
-| `API (syntax + boot smoke)` | `npm ci` → `node --check server.js` → `npm run typecheck` → `npm test` → start the server on port 3999 with a temp `DATA_DIR` and poll until it answers any HTTP status. |
+| `API (syntax + boot smoke)` | `npm ci` → `npm run typecheck` → `npm test` → start `node server.ts` on port 3999 with a temp `DATA_DIR` and poll until it answers any HTTP status. |
 | `Scripts (shellcheck + tests) (ubuntu-latest / macos-latest)` | `shellcheck -S warning` on `scripts/`, then `scripts/tests/run.sh` under the system bash (3.2 on macOS) and `gymme help --check`. **Not required yet**: add it to branch protection once stable. |
 
 **TypeScript migration.** `npm run typecheck` runs `tsc --noEmit` in both packages (the JavaScript that has not been converted yet is
@@ -161,7 +161,7 @@ Exact settings are in [`BRANCH_PROTECTION.md`](../BRANCH_PROTECTION.md). In shor
 ```bash
 # what ci.yml runs
 ( cd frontend && npm ci && npm test && npm run build )
-( cd api && npm ci && node --check server.js )
+( cd api && npm ci && npm run typecheck && npm test )
 
 # locales (not in CI)
 node frontend/scripts/check-locales.mjs

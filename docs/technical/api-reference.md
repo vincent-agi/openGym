@@ -2,7 +2,7 @@
 
 The request and response types of every route below are written once, as TypeScript, in [`shared/`](../../shared) (`session.ts` for the core routes, `social.ts` for `/api/social/*`), together with the constants both sides must agree on (`shared/constants.ts`). That directory is the machine-readable source of truth; this page explains the behaviour.
 
-Base path `/api`, served by `api/server.js` and reached through nginx on the same origin. All bodies and responses
+Base path `/api`, served by `api/server.ts` and reached through nginx on the same origin. All bodies and responses
 are **JSON** (`Content-Type: application/json`); responses carry `Cache-Control: no-store`.
 
 There is no versioning, no OpenAPI document and no request-schema validation beyond the checks listed here. The
@@ -271,7 +271,7 @@ To exercise authenticated endpoints, copy the `gymsid` cookie value from a brows
 
 ## Writing a new endpoint
 
-1. Add an entry to the `routes` object in `api/server.js`, keyed `"METHOD /api/path"`.
+1. Add an entry to the `routes` object in `api/server.ts`, keyed `"METHOD /api/path"`.
 2. Start with `readSession(req)` (or `requireAdmin(req, res)`) and return early on `null`.
 3. Parse input with `await readBody(req)`; validate every field you use — nothing validates for you.
 4. Persist with `atomicWrite` (state files) or mutate `db` then `saveDb()` (identity data).

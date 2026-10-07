@@ -12,6 +12,7 @@
 import crypto from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { isSharing, requireSharing } from './social.ts';
+import { bodyFields } from './types.ts';
 import type { FriendCode, Friendship, FriendshipStatus, Services, SocialHooks, User, Db, Routes, Route } from './types.ts';
 
 export type { FriendCode, Friendship, FriendshipStatus };
@@ -215,14 +216,12 @@ export function createFriendRoutes({ db, saveDb, readSession, json, readBody, no
   const card = (id: string, extra: Record<string, unknown> = {}) => { const u = byId(id)!; return { handle: u.social!.handle, displayName: u.social!.displayName, ...extra }; };
 
   const caller = (req: IncomingMessage, res: ServerResponse) => requireSharing(readSession, json, req, res);
-  // A body that parses to `null` or a primitive is not rejected yet, and reading a field of it throws; #60 closes that gap.
-  const fieldsOf = (body: unknown) => body as Record<string, unknown>;
 
   /** Wraps an action on an existing relationship identified by `{handle}`. */
   const onHandle = (action: (user: User, other: User, body: Record<string, unknown>) => Outcome): Route => async (req, res) => {
     const user = caller(req, res);
     if (!user) return;
-    const body = fieldsOf(await readBody(req));
+    const body = bodyFields(await readBody(req));
     const other = byHandle(body.handle);
     const result = other ? action(user, other, body) : FAIL;
     if (!result.ok) return json(res, 404, { error: 'not found' });
@@ -259,7 +258,7 @@ export function createFriendRoutes({ db, saveDb, readSession, json, readBody, no
     'POST /api/social/friends/request': async (req, res) => {
       const user = caller(req, res);
       if (!user) return;
-      const body = fieldsOf(await readBody(req));
+      const body = bodyFields(await readBody(req));
       const code = typeof body.code === 'string' && body.code ? body.code : null;
       if (!guard(code ? 'friendCode' : 'friendRequest', req, res, user)) return;
       let target: User | null | undefined;
@@ -289,7 +288,7 @@ export function createFriendRoutes({ db, saveDb, readSession, json, readBody, no
     'POST /api/social/friends/block': async (req, res) => {
       const user = caller(req, res);
       if (!user) return;
-      const other = byHandle(fieldsOf(await readBody(req)).handle);
+      const other = byHandle(bodyFields(await readBody(req)).handle);
       if (other) { blockUser(db.friendships, user.id, other.id, now()); onSever(user.id, other.id); saveDb(); }
       json(res, 200, { ok: true });
     }

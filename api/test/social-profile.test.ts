@@ -1,9 +1,9 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startTestServer } from './helpers.ts';
+import type { TestServer } from './helpers.ts';
 
-/** @type {import('./helpers.ts').TestServer} */
-let app;
+let app: TestServer;
 
 before(async () => { app = await startTestServer(); });
 after(async () => { await app.close(); });

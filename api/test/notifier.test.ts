@@ -1,21 +1,23 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import type { Notifier, PushMessage } from '../notifier.ts';
+import { fakeDb } from './helpers.ts';
 import { createNotifier, wording, localMinutes, DAILY_CAP, BATCH_MS, MAX_DEFER_MS } from '../notifier.ts';
 import { defaultNotify } from '../notify-prefs.ts';
 
-const at = iso => Date.parse(iso);
+const at = (iso: string) => Date.parse(iso);
 const HOUR = 3600000;
 
 /** A recipient who opted in to everything, unless overridden. */
-function recipient(over = {}) {
+function recipient(over: Record<string, unknown> = {}) {
   const notify = { ...defaultNotify(), friendSession: true, cheerReceived: true, challengeInvite: true, challengeMilestone: true, challengeEnded: true };
   return { id: 'r', social: { enabled: true, handle: 'rae', displayName: 'Rae', share: {}, notify, ...over } };
 }
 
 function setup({ user = recipient(), subscribed = true, tz = 'UTC', start = '2026-10-07T12:00:00Z' } = {}) {
   const clock = { t: at(start) };
-  const sent = [];
-  const db = { users: [user], subs: subscribed ? [{ userId: user.id }] : [], socialOutbox: [], socialPushLog: [] };
+  const sent: Array<Partial<PushMessage> & { uid?: string }> = [];
+  const db = fakeDb({ users: [user], subs: subscribed ? [{ userId: user.id }] : [], socialOutbox: [], socialPushLog: [] });
   const n = createNotifier({
     db, saveDb() {}, now: () => clock.t,
     sendPush: async (uid, payload) => { sent.push({ uid, ...payload }); },
@@ -23,7 +25,7 @@ function setup({ user = recipient(), subscribed = true, tz = 'UTC', start = '202
   });
   return { n, db, sent, clock, user };
 }
-const advance = async (ctx, ms) => { ctx.clock.t += ms; await ctx.n.flush(); };
+const advance = async (ctx: { clock: { t: number }; n: Notifier }, ms: number) => { ctx.clock.t += ms; await ctx.n.flush(); };
 
 test('nothing is sent unless the user opted in to that kind', async () => {
   const ctx = setup({ user: recipient({ notify: defaultNotify() }) });

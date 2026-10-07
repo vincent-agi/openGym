@@ -1,24 +1,24 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startTestServer } from './helpers.ts';
+import { startTestServer, loadServer, must } from './helpers.ts';
+import type { TestServer, TestUser, Person, Json } from './helpers.ts';
 
-/** @type {import('./helpers.ts').TestServer} */
-let app;
+let app: TestServer;
 let seq = 0;
 
 before(async () => { app = await startTestServer(); });
 after(async () => { await app.close(); });
 
 /** Creates a user who opted in to sharing under a unique handle. */
-async function sharingUser(label) {
+async function sharingUser(label: string): Promise<Person> {
   const user = app.createUser(label);
   const handle = `${label}_${++seq}`.toLowerCase();
   const r = await app.request('/api/social/me', { method: 'PUT', as: user, body: { enabled: true, handle, displayName: label } });
   assert.equal(r.status, 200);
   return { ...user, handle };
 }
-const post = (path, as, body) => app.request('/api/social/friends/' + path, { method: 'POST', as, body });
-const list = as => app.request('/api/social/friends', { as });
+const post = (path: string, as: TestUser, body?: unknown) => app.request('/api/social/friends/' + path, { method: 'POST', as, body });
+const list = (as: TestUser) => app.request('/api/social/friends', { as });
 
 test('every friend route requires a session', async () => {
   for (const [method, path] of [['GET', ''], ['POST', '/code'], ['POST', '/request'], ['POST', '/respond'], ['POST', '/remove'], ['POST', '/block'], ['POST', '/unblock']]) {
@@ -48,8 +48,8 @@ test('a friend code lets someone send a request, and the owner can accept it', a
   assert.equal((await list(marc)).body.outgoing[0].handle, lea.handle);
 
   assert.equal((await post('respond', lea, { handle: marc.handle, action: 'accept' })).status, 200);
-  assert.deepEqual((await list(lea)).body.friends.map(f => f.handle), [marc.handle]);
-  assert.deepEqual((await list(marc)).body.friends.map(f => f.handle), [lea.handle]);
+  assert.deepEqual((await list(lea)).body.friends.map((f: Json) => f.handle), [marc.handle]);
+  assert.deepEqual((await list(marc)).body.friends.map((f: Json) => f.handle), [lea.handle]);
 });
 
 test('codes are case-insensitive and can be used by several people', async () => {
@@ -101,8 +101,8 @@ test('an expired code is refused', async () => {
   const lea = await sharingUser('exp');
   const other = await sharingUser('expfriend');
   const { body } = await post('code', lea, {});
-  const mod = await import('../server.ts');
-  mod.db.friendCodes.find(c => c.code === body.code).expiresAt = Date.now() - 1000;
+  const mod = await loadServer();
+  must(mod.db.friendCodes.find(c => c.code === body.code)).expiresAt = Date.now() - 1000;
   assert.equal((await post('request', other, { code: body.code })).status, 404);
 });
 

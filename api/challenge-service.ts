@@ -1,5 +1,5 @@
 /**
- * Storage and HTTP for friendly challenges. The rules live in `challenges.js`; this file only
+ * Storage and HTTP for friendly challenges. The rules live in `challenges.ts`; this file only
  * connects them to the identity store, the friend graph and the routes.
  *
  * Progress is recomputed from the participant's own saved state whenever it is saved
@@ -9,62 +9,62 @@ import crypto from 'node:crypto';
 import { addDays, isoInZone, ownerTz, sessionLimit } from './summary.ts';
 import { isSharing, requireSharing } from './social.ts';
 import { relationsOf } from './friends.ts';
+import { bodyFields } from './types.ts';
+import type { ServerResponse } from 'node:http';
+import type { ChallengeView } from '../shared/social.ts';
+import type { Challenge, Participant, Routes, Services, SocialHooks, StateDoc, User } from './types.ts';
+import type { SharingUser } from './social.ts';
 import {
   LIMITS, validateChallengeInput, collectProgress, progressOf, statusOf, activeCountFor, challengeView, removeParticipant, isStale
 } from './challenges.ts';
 
-/**
- * @typedef {object} ChallengeService
- * @property {(user: object, state: object) => void} recordProgress
- *   Updates the stored progress of every live challenge the user is in, from their saved state.
- * @property {(user: object, wasSharing: boolean) => void} onSharingChange
- *   Pauses or resumes the user's participations when they turn sharing off or back on.
- * @property {(actor: string, other: string) => void} onSever
- *   A friendship ended: whoever ended it leaves the challenges the two share.
- * @property {(uid: string, handle: string) => void} eraseUser
- *   Removes a user from every challenge and from every stored result.
- * @property {() => void} prune
- *   Forgets challenges that ended long ago, with their progress.
- * @property {() => Array<{title: string, uids: string[], coopDone: boolean, endDate: string}>} collectEnded
- *   Challenges that finished since the last call, once each: whom to tell, and whether a co-op target was reached.
- * @property {Record<string, Function>} routes
- */
+/** What the challenge service hands back to the composition root. */
+export interface ChallengeService {
+  /** Updates the stored progress of every live challenge the user is in, from their saved state. */
+  recordProgress: (user: User, state: StateDoc) => void
+  /** Pauses or resumes the user's participations when they turn sharing off or back on. */
+  onSharingChange: (user: User, wasSharing: boolean) => void
+  /** A friendship ended: whoever ended it leaves the challenges the two share. */
+  onSever: (actor: string, other: string) => void
+  /** Removes a user from every challenge and from every stored result. */
+  eraseUser: (uid: string, handle: string) => void
+  /** Forgets challenges that ended long ago, with their progress. */
+  prune: () => void
+  /** Challenges that finished since the last call, once each: whom to tell, and whether a co-op target was reached. */
+  collectEnded: () => EndedChallenge[]
+  routes: Routes
+}
+
+/** A challenge that just finished, as {@link ChallengeService.collectEnded} reports it. */
+export interface EndedChallenge { title: string; uids: string[]; coopDone: boolean; endDate: string }
 
 /**
- * @param {object} ctx
- * @param {{users: object[], friendships: object[], challenges: object[], challengeProgress: Record<string, Record<string, object>>}} ctx.db
- * @param {() => void} ctx.saveDb
- * @param {(req: import('node:http').IncomingMessage) => (object | null)} ctx.readSession
- * @param {(res: import('node:http').ServerResponse, code: number, body: object) => void} ctx.json
- * @param {(req: import('node:http').IncomingMessage) => Promise<any>} ctx.readBody
- * @param {(uid: string) => (object | null)} ctx.readState  Reads a user's saved state, null before the first sync.
- * @param {(uid: string, kind: string, data: object) => Promise<boolean>} [ctx.notify]  Push notifier; the default does nothing.
- * @param {(rule: string, req: object, res: object, user: object) => boolean} [ctx.guard]  Rate-limit guard.
- * @param {() => number} [ctx.now]
- * @returns {ChallengeService}
+ * @param ctx  `readState` reads a user's saved state (null before the first sync), `notify` is the push
+ *   notifier (the default does nothing), `guard` the rate-limit guard, `now` the clock.
  */
-export function createChallengeService({ db, saveDb, readSession, json, readBody, readState, notify = async () => false, guard = () => true, now = Date.now }) {
+export function createChallengeService({ db, saveDb, readSession, json, readBody, readState, notify = async () => false, guard = () => true, now = Date.now }:
+  Pick<Services, 'db' | 'saveDb' | 'readSession' | 'json' | 'readBody' | 'readState'> & Pick<SocialHooks, 'notify' | 'guard'> & { now?: () => number }): ChallengeService {
   const utcToday = () => isoInZone(now(), 'UTC');
-  const userById = id => db.users.find(u => u.id === id);
-  const userByHandle = handle => db.users.find(u => u.social?.handle === handle);
-  const participantOf = (ch, uid) => ch.participants.find(p => p.uid === uid);
-  const liveStatus = ch => ['upcoming', 'active'].includes(statusOf(ch, utcToday()));
+  const userById = (id: string) => db.users.find(u => u.id === id);
+  const userByHandle = (handle: string) => db.users.find(u => u.social?.handle === handle);
+  const participantOf = (ch: Pick<Challenge, 'participants'>, uid: string) => ch.participants.find(p => p.uid === uid);
+  const liveStatus = (ch: Challenge) => ['upcoming', 'active'].includes(statusOf(ch, utcToday()));
 
   /** The challenge as shown to participants; an ended one is frozen the first time it is read. */
-  const viewOf = ch => {
+  const viewOf = (ch: Challenge): ChallengeView => {
     if (ch.final) return ch.final;
     const today = utcToday();
     const members = ch.participants.filter(p => userById(p.uid));
-    const people = Object.fromEntries(members.map(p => [p.uid, userById(p.uid).social || { handle: '', displayName: '' }]));
+    const people = Object.fromEntries(members.map(p => [p.uid, userById(p.uid)!.social || { handle: '', displayName: '' }]));
     const view = challengeView({ ...ch, participants: members }, {
-      progress: db.challengeProgress[ch.id] || {}, people, isSharing: uid => isSharing(userById(uid)), today
+      progress: db.challengeProgress[ch.id] || {}, people, isSharing: (uid: string) => isSharing(userById(uid)), today
     });
     if (view.status === 'ended') { ch.final = view; saveDb(); }
     return view;
   };
 
-  /** Recomputes one participant's progress. @returns {boolean} whether anything changed */
-  const record = (ch, p, state, today) => {
+  /** Recomputes one participant's progress. Returns whether anything changed. */
+  const record = (ch: Challenge, p: Participant, state: StateDoc, today: string): boolean => {
     const from = p.joinedDate && p.joinedDate > ch.startDate ? p.joinedDate : ch.startDate;
     const data = collectProgress(state, { from, to: ch.endDate, today, gaps: p.gaps || [] });
     const store = (db.challengeProgress[ch.id] ||= {});
@@ -74,7 +74,7 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
   };
 
   /** Tells people when a challenge passes half-way (co-op) or when someone reaches the target. Each only once. */
-  const checkMilestones = ch => {
+  const checkMilestones = (ch: Challenge): boolean => {
     const progress = db.challengeProgress[ch.id] || {};
     const joined = ch.participants.filter(p => p.status === 'joined' && isSharing(userById(p.uid)));
     let changed = false;
@@ -98,7 +98,7 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
     return changed;
   };
 
-  const recordProgress = (user, state) => {
+  const recordProgress = (user: User, state: StateDoc): void => {
     if (!isSharing(user)) return;
     try {
       const tz = ownerTz(state);
@@ -116,7 +116,7 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
     } catch (e) { console.error('challenge progress failed for', user.id, e); }
   };
 
-  const onSharingChange = (user, wasSharing) => {
+  const onSharingChange = (user: User, wasSharing: boolean): void => {
     const today = utcToday();
     const nowSharing = isSharing(user);
     let changed = false;
@@ -134,24 +134,24 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
   };
 
   /** Finds a challenge the caller takes part in; answers 404 otherwise, whatever the reason. */
-  const mine = (res, user, id) => {
+  const mine = (res: ServerResponse, user: User, id: unknown): Challenge | null => {
     const ch = db.challenges.find(c => c.id === id);
     if (!ch || !participantOf(ch, user.id)) { json(res, 404, { error: 'not found' }); return null; }
     return ch;
   };
 
-  const routes = {
+  const routes: Routes = {
     'GET /api/social/challenges': async (req, res) => {
       const user = requireSharing(readSession, json, req, res);
       if (!user) return;
-      const list = db.challenges.filter(c => ['joined', 'invited'].includes(participantOf(c, user.id)?.status));
+      const list = db.challenges.filter(c => (['joined', 'invited'] as Array<string | undefined>).includes(participantOf(c, user.id)?.status));
       json(res, 200, { challenges: list.map(viewOf) });
     },
 
     'GET /api/social/challenge': async (req, res) => {
       const user = requireSharing(readSession, json, req, res);
       if (!user) return;
-      const ch = mine(res, user, new URL(req.url, 'http://x').searchParams.get('id'));
+      const ch = mine(res, user, new URL(req.url ?? '/', 'http://x').searchParams.get('id'));
       if (ch) json(res, 200, { challenge: viewOf(ch) });
     },
 
@@ -163,20 +163,21 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
       if (!checked.ok) return json(res, 400, { error: checked.error });
 
       const friends = new Set(relationsOf(db.friendships, user.id).friends.map(f => f.uid));
-      const invitees = checked.value.invite.map(userByHandle);
-      if (invitees.some(u => !u || !friends.has(u.id) || !isSharing(u))) {
+      const found = checked.value.invite.map(userByHandle);
+      if (found.some(u => !u || !friends.has(u.id) || !isSharing(u))) {
         return json(res, 400, { error: 'you can only invite friends who are sharing' });
       }
+      const invitees = found as SharingUser[];   // every one of them was just checked
       if (activeCountFor(db.challenges, user.id, today) >= LIMITS.maxActivePerUser) {
         return json(res, 409, { error: `you can be in at most ${LIMITS.maxActivePerUser} challenges at once` });
       }
 
       const { invite, ...fields } = checked.value;
-      const ch = {
+      const ch: Challenge = {
         id: crypto.randomBytes(8).toString('base64url'), ownerId: user.id, ...fields, status: 'open', createdAt: now(),
         participants: [
           { uid: user.id, status: 'joined', joinedAt: now(), joinedDate: today, gaps: [] },
-          ...invitees.map(u => ({ uid: u.id, status: 'invited' }))
+          ...invitees.map((u): Participant => ({ uid: u.id, status: 'invited' }))
         ]
       };
       db.challenges.push(ch);
@@ -188,9 +189,9 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
     'POST /api/social/challenges/join': async (req, res) => {
       const user = requireSharing(readSession, json, req, res);
       if (!user) return;
-      const ch = mine(res, user, (await readBody(req)).id);
+      const ch = mine(res, user, bodyFields(await readBody(req)).id);
       if (!ch) return;
-      const p = participantOf(ch, user.id);
+      const p = participantOf(ch, user.id)!;   // `mine` proved the caller takes part
       if (!['invited', 'left'].includes(p.status) || !liveStatus(ch)) return json(res, 404, { error: 'not found' });
       if (activeCountFor(db.challenges, user.id, utcToday()) >= LIMITS.maxActivePerUser) {
         return json(res, 409, { error: `you can be in at most ${LIMITS.maxActivePerUser} challenges at once` });
@@ -206,9 +207,9 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
     'POST /api/social/challenges/leave': async (req, res) => {
       const user = requireSharing(readSession, json, req, res);
       if (!user) return;
-      const ch = mine(res, user, (await readBody(req)).id);
+      const ch = mine(res, user, bodyFields(await readBody(req)).id);
       if (!ch) return;
-      const p = participantOf(ch, user.id);
+      const p = participantOf(ch, user.id)!;   // `mine` proved the caller takes part
       if (!['invited', 'joined'].includes(p.status)) return json(res, 404, { error: 'not found' });
       p.status = 'left';
       if (ch.ownerId === user.id) {
@@ -222,7 +223,7 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
     'POST /api/social/challenges/cancel': async (req, res) => {
       const user = requireSharing(readSession, json, req, res);
       if (!user) return;
-      const ch = mine(res, user, (await readBody(req)).id);
+      const ch = mine(res, user, bodyFields(await readBody(req)).id);
       if (!ch || ch.ownerId !== user.id) { if (ch) json(res, 404, { error: 'not found' }); return; }
       ch.status = 'cancelled';
       saveDb();
@@ -230,7 +231,7 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
     }
   };
 
-  const collectEnded = () => {
+  const collectEnded = (): EndedChallenge[] => {
     const today = utcToday();
     const finished = db.challenges.filter(ch => ch.status !== 'cancelled' && !ch.endedNotified && statusOf(ch, today) === 'ended');
     finished.forEach(ch => { ch.endedNotified = true; viewOf(ch); });   // reading it once freezes the results
@@ -243,18 +244,18 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
   };
 
   /** Takes a user out of one challenge, and forgets their progress in it. */
-  const dropFrom = (ch, uid) => {
+  const dropFrom = (ch: Challenge, uid: string): void => {
     removeParticipant(ch, uid);
     delete db.challengeProgress[ch.id]?.[uid];
   };
 
-  const onSever = (actor, other) => {
+  const onSever = (actor: string, other: string): void => {
     const shared = db.challenges.filter(ch => participantOf(ch, actor) && participantOf(ch, other));
     shared.forEach(ch => dropFrom(ch, actor));
     if (shared.length) saveDb();
   };
 
-  const eraseUser = (uid, handle) => {
+  const eraseUser = (uid: string, handle: string): void => {
     for (const ch of db.challenges) {
       if (participantOf(ch, uid)) dropFrom(ch, uid);
       if (ch.final) ch.final = { ...ch.final, participants: ch.final.participants.filter(p => p.handle !== handle) };
@@ -262,7 +263,7 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
     saveDb();
   };
 
-  const prune = () => {
+  const prune = (): void => {
     const today = utcToday();
     const keep = db.challenges.filter(ch => !isStale(ch, today));
     if (keep.length === db.challenges.length) return;
