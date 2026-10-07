@@ -10,6 +10,7 @@ import {
   generateAuthenticationOptions, verifyAuthenticationResponse
 } from '@simplewebauthn/server';
 import webpush from 'web-push';
+import { createSocialRoutes } from './social.js';
 
 const PORT = +(process.env.PORT || 3000);
 const DATA = process.env.DATA_DIR || '/data';
@@ -19,6 +20,8 @@ const RP_NAME = process.env.RP_NAME || 'Gymme';
 // Admin dashboard (issue): admins are matched by uid; INVITE_ONLY gates new signups behind a
 // code the admin generates. Both default off so a fresh self-hosted instance stays open.
 const ADMIN_UIDS = (process.env.ADMIN_UIDS || '').split(',').map(s => s.trim()).filter(Boolean);
+// Friends & challenges module (v1.7). On by default; each user still has to opt in themselves.
+const SOCIAL_ENABLED = !/^(0|false|no|off)$/i.test(process.env.SOCIAL_ENABLED || '');
 const INVITE_ONLY = /^(1|true|yes|on)$/i.test(process.env.INVITE_ONLY || '');
 // 90 days keeps someone who trains a few times a week permanently signed in without a stolen
 // cookie staying good for a year. Overridable because a family instance and one on the open
@@ -274,7 +277,7 @@ const routes = {
   'GET /api/health': async (req, res) => json(res, 200, { ok: true, users: db.users.length }),
 
   // Public config the login screen needs before anyone is signed in.
-  'GET /api/config': async (req, res) => json(res, 200, { invite_only: INVITE_ONLY }),
+  'GET /api/config': async (req, res) => json(res, 200, { invite_only: INVITE_ONLY, social_enabled: SOCIAL_ENABLED }),
 
   'GET /api/me': async (req, res) => {
     const user = readSession(req);
@@ -572,6 +575,8 @@ const routes = {
     json(res, 200, { ok: true });
   }
 };
+
+if (SOCIAL_ENABLED) Object.assign(routes, createSocialRoutes({ db, saveDb, readSession, json, readBody }));
 
 /** The HTTP server. Exported so tests can bind it to an ephemeral port; started below only when run directly. */
 export const server = http.createServer(async (req, res) => {

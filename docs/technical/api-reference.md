@@ -53,7 +53,7 @@ Request body ≤ **5 MB**. No other limits: no rate limiting, no pagination, no 
 | Method & path | Auth | Description |
 |---|---|---|
 | `GET /api/health` | public | `{"ok":true,"users":<count>}`. Use for liveness checks. Exposes the user count. |
-| `GET /api/config` | public | `{"invite_only":<bool>}`. Lets the login screen know whether to ask for a code. |
+| `GET /api/config` | public | `{"invite_only":<bool>,"social_enabled":<bool>}`. Lets the login screen know whether to ask for a code, and Settings whether to offer the friends module. |
 
 ### Identity and sessions
 
@@ -92,6 +92,16 @@ Pushes are sent with urgency `high`. Subscriptions answering HTTP 404 or 410 are
 The daily "workout planned" reminder has no endpoint: it is produced by the 10-second server loop from each user's
 `reminder` settings (see [architecture](architecture.md#background-timers-all-unrefd)).
 
+### Friends & sharing
+
+Registered only when `SOCIAL_ENABLED` is not off; otherwise every path below answers `404 {"error":"not found"}`.
+Implemented in `api/social.js`. Unknown JSON fields are rejected with `400`.
+
+| Method & path | Auth | Description |
+|---|---|---|
+| `GET /api/social/me` | session | `{"social":{enabled, handle, displayName, share:{sessions, streak, consistency, prs}, hideRank}}`. A user who never opened the module gets the private defaults (`enabled:false`, empty handle). |
+| `PUT /api/social/me` | session | Partial update of the same object. `handle`: 3-20 chars `[a-z0-9_]`, stored lowercase, unique across the instance (`409` on clash). `displayName`: 1-30 chars, no control characters. `share.*`, `enabled` and `hideRank` must be booleans. `enabled:true` requires a handle and a display name (`400` otherwise); `enabled:false` always succeeds. Returns the stored settings. |
+
 ### Live presence
 
 | Method & path | Auth | Description |
@@ -121,7 +131,7 @@ curl -fsS https://gym.example.com/api/health
 # {"ok":true,"users":3}
 
 curl -fsS https://gym.example.com/api/config
-# {"invite_only":true}
+# {"invite_only":true,"social_enabled":true}
 ```
 
 To exercise authenticated endpoints, copy the `gymsid` cookie value from a browser session you own and pass it with

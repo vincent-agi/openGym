@@ -21,6 +21,7 @@ Gymme is configured with environment variables, loaded from `.env` next to `dock
 | `RP_NAME` | `Gymme` | Display name shown in the passkey prompt. |
 | `ADMIN_UIDS` | *(empty)* | Comma-separated user ids that get the admin dashboard and `/api/admin/*`. Ids are in `data/db.json` → `users[].id`. A user can also be an admin via `"admin": true` in `db.json`. Empty means **no admin**. |
 | `INVITE_ONLY` | *(off)* | `1`, `true`, `yes` or `on` (case-insensitive) requires a valid invite code to register. Existing accounts are unaffected. |
+| `SOCIAL_ENABLED` | *(on)* | `0`, `false`, `no` or `off` (case-insensitive) switches the friends & challenges module off for the whole instance: every `/api/social/*` route answers `404` and `GET /api/config` reports `social_enabled:false`, so the app hides the feature. Even when on, each user must opt in from Settings. |
 | `SESSION_DAYS` | `90` | Lifetime of **newly issued** session cookies, in days (minimum 1). Existing cookies keep the lifetime they were issued with. |
 | `VAPID_SUBJECT` | `ORIGIN` if HTTPS, else `mailto:admin@localhost` | The `sub` claim for Web Push. Push services may require a real `mailto:` or `https:` URL; set `VAPID_SUBJECT=mailto:you@example.com` if a push provider rejects the default. |
 

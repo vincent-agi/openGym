@@ -60,7 +60,14 @@ from clients will overwrite manual edits.
       "admin": true,                      // optional; also settable via ADMIN_UIDS
       "invitedBy": "A1B2C3D4E5F60718",    // optional; invite code used
       "sv": 2,                            // optional; session version, see below
-      "lastReminder": "2026-10-05"        // optional; ISO date of last day-reminder push
+      "lastReminder": "2026-10-05",       // optional; ISO date of last day-reminder push
+      "social": {                         // optional; friends module settings, absent until first saved
+        "enabled": false,                 // master switch; false = invisible to everyone
+        "handle": "lea_fit",              // unique, lowercase, 3-20 of [a-z0-9_]
+        "displayName": "Léa",
+        "share": { "sessions": true, "streak": true, "consistency": true, "prs": false },
+        "hideRank": false
+      }
     }
   ],
   "creds": [                              // WebAuthn credentials; N:1 to users in practice 1:1
