@@ -12,6 +12,7 @@ Other guides in this folder:
 - [Automation scripts (`gymme` CLI)](technical/automation.md)
 - [Building the mobile apps](MOBILE.md)
 - [Branch protection policy](BRANCH_PROTECTION.md)
+- [Architecture decision records](adr/README.md)
 
 Project-level documents: [`README.md`](../README.md) · [`CONTRIBUTING.md`](../CONTRIBUTING.md) ·
 [`SECURITY.md`](../SECURITY.md) · [`CHANGELOG.md`](../CHANGELOG.md)
