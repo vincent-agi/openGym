@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { effectiveRoutine } from '../lib/history.js'
-import { todayISO } from '../lib/format.js'
+import { todayISO } from '../lib/format.ts'
 import { t } from '../lib/i18n.js'
 import Icon from './Icon.jsx'
 

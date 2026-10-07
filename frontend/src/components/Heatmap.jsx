@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { fmtVol, isoOf, todayISO, MONTHS } from '../lib/format.js'
+import { fmtVol, isoOf, todayISO, MONTHS } from '../lib/format.ts'
 import { t } from '../lib/i18n.js'
 
 // GitHub-style activity heatmap, shaded by time trained per day.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isWheelchairProfile, pressureReliefDue, DEFAULT_PRESSURE_RELIEF_INTERVAL } from './pressureRelief.js'
+import { isWheelchairProfile, pressureReliefDue, DEFAULT_PRESSURE_RELIEF_INTERVAL } from './pressureRelief.ts'
 
 describe('isWheelchairProfile', () => {
   it('is true for mobilityLevel wheelchair or preferredPosture Seated-Wheelchair', () => {

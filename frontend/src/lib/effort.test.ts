@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import {
   rirOf, toScale, displayScale, avgRir, effortSummary, hasEffort, effortWeeks,
   effortHistogram, isHardSet, HARD_RIR, MIN_RATED
-} from './effort.js'
-import { isoOf } from './format.js'
+} from './effort.ts'
+import { isoOf } from './format.ts'
 
 const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return d }
 // One workout on a day, with the sets given. Everything here is a finished set unless a set

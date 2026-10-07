@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from './api.js'
 import { useStore } from '../store/useStore.js'
-import { localTZ } from './format.js'
+import { localTZ } from './format.ts'
 import { shouldAskServer } from './social.js'
 import { DEMO } from './demo.js'
 import { MOBILE } from './mobile.js'

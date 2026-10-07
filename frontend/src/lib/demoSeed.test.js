@@ -6,7 +6,7 @@ import { buildDemoState } from './demoSeed.js'
 import {
   effortSummary, effortWeeks, effortHistogram, hasEffort, displayScale, avgRir,
   rirOf, isHardSet, MIN_RATED, HARD_RIR
-} from './effort.js'
+} from './effort.ts'
 import { effortOf, modeOf } from './history.js'
 
 const S = buildDemoState()

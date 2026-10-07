@@ -1,4 +1,4 @@
-import { uid } from './format.js'
+import { uid } from './format.ts'
 
 // Calorie/macro target estimate from bodyweight alone — the profile has no height or age
 // field (DEF in store/useStore.js), so this uses a weight × activity-level multiplier instead

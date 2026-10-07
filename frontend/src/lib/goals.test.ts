@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { addGoal, removeGoal, updateGoal, goalProgress } from './goals.js'
+import { addGoal, removeGoal, updateGoal, goalProgress } from './goals.ts'
 
 describe('addGoal / removeGoal / updateGoal', () => {
   it('appends to an empty or missing list', () => {

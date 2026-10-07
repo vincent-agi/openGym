@@ -4,7 +4,7 @@ import { api } from '../lib/api.js'
 import { t, T } from '../lib/i18n.js'
 import { useUI } from '../store/useUI.js'
 import { useStore } from '../store/useStore.js'
-import { todayISO } from '../lib/format.js'
+import { todayISO } from '../lib/format.ts'
 import { addDaysIso } from '../lib/challenges.js'
 import { planBreak, activeBreak, clearBreaks, MAX_BREAK_DAYS } from '../lib/breaks.js'
 import {
@@ -13,7 +13,7 @@ import {
 import { pushSupported } from '../lib/push.js'
 import { Section, Row, SelectRow, Switch, Button, TextField } from './ui.jsx'
 import { confirmSheet } from '../sheets.jsx'
-import { fmtDate } from '../lib/format.js'
+import { fmtDate } from '../lib/format.ts'
 
 const SHARE_OPTIONS = [
   { key: 'sessions', title: T('Sessions'), subtitle: T('How many sessions you did this week and month.') },

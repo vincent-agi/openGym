@@ -19,7 +19,7 @@
 // building a DOM.
 
 import { EXDB, EXIDX } from './exercises.js'
-import { uid } from './format.js'
+import { uid } from './format.ts'
 
 /* ----------------------------------------------------------------- CSV ---- */
 

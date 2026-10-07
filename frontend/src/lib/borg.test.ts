@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { BORG_SCALE, borgLabel } from './borg.js'
+import { BORG_SCALE, borgLabel } from './borg.ts'
 
 describe('BORG_SCALE', () => {
   it('is the 10 whole-number values from 1 to 10 — big tappable targets, not a slider', () => {

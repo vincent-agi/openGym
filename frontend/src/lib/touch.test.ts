@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { effectiveLargeTouch } from './touch.js'
+import { effectiveLargeTouch } from './touch.ts'
 
 describe('effectiveLargeTouch', () => {
   it('is off by default for a profile with no mobility fields set', () => {

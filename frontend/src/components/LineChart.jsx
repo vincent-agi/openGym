@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { fmtNum, fmtDate, MONTHS, isoOf } from '../lib/format.js'
+import { fmtNum, fmtDate, MONTHS, isoOf } from '../lib/format.ts'
 import { t } from '../lib/i18n.js'
 
 const W = 340   // viewBox width; the svg stretches to its container, height comes from `h`

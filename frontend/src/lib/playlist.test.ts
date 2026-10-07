@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parsePlaylistUrl, restEndPlaylist } from './playlist.js'
+import { parsePlaylistUrl, restEndPlaylist } from './playlist.ts'
 
 describe('parsePlaylistUrl', () => {
   it('recognizes Spotify links, with or without www', () => {

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { api } from '../lib/api.js'
-import { localTZ } from '../lib/format.js'
+import { localTZ } from '../lib/format.ts'
 import { registerCustom } from '../lib/exercises.js'
 import { DEMO, DEMO_SEEDED } from '../lib/demo.js'
 import { MOBILE, nativeLoad, nativeSave, syncReminder } from '../lib/mobile.js'
@@ -57,7 +57,7 @@ export const DEF = {
 }
 const clone = o => JSON.parse(JSON.stringify(o))
 
-export { effectiveLargeTouch } from '../lib/touch.js'
+export { effectiveLargeTouch } from '../lib/touch.ts'
 
 function loadState() {
   try {

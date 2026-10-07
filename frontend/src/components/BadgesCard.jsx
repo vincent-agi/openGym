@@ -1,6 +1,6 @@
 import { api } from '../lib/api.js'
 import { t } from '../lib/i18n.js'
-import { fmtDate } from '../lib/format.js'
+import { fmtDate } from '../lib/format.ts'
 import { CATALOG } from '../lib/badges.js'
 import { useUI } from '../store/useUI.js'
 import { Switch } from './ui.jsx'

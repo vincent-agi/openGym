@@ -10,7 +10,7 @@
 
 import { EXIDX, isBodyweightEq } from './exercises.js'
 import { modeOf, fmtSec, isBw, isPerSide, sideReps } from './history.js'
-import { uid, todayISO, DAYN, fmtNum, exCount } from './format.js'
+import { uid, todayISO, DAYN, fmtNum, exCount } from './format.ts'
 import { t } from './i18n.js'
 
 const PLAN_FMT = 1

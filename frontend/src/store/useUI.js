@@ -1,11 +1,11 @@
 import { create } from 'zustand'
-import { uid } from '../lib/format.js'
-import { beep, vibrate } from '../lib/sound.js'
-import { restEndPlaylist } from '../lib/playlist.js'
+import { uid } from '../lib/format.ts'
+import { beep, vibrate } from '../lib/sound.ts'
+import { restEndPlaylist } from '../lib/playlist.ts'
 import { api } from '../lib/api.js'
 import { t } from '../lib/i18n.js'
 import { useStore } from './useStore.js'
-import { pressureReliefDue } from '../lib/pressureRelief.js'
+import { pressureReliefDue } from '../lib/pressureRelief.ts'
 
 // Fire-and-forget: lets the server push a "rest over" alert if this tab gets suspended
 // before the local timer completes. No-ops for guests / offline.

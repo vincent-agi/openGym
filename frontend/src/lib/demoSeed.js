@@ -1,7 +1,7 @@
 // The example profile behind the demo build (see demo.js). Imported dynamically, so it stays
 // out of the bundle self-hosters ship.
-import { isoOf, uid } from './format.js'
-import { starterRoutines } from './starter.js'
+import { isoOf, uid } from './format.ts'
+import { starterRoutines } from './starter.ts'
 import { modeOf } from './history.js'
 
 // Starting weight and weekly increment per exercise of the starter plan (kg).

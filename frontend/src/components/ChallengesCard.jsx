@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
 import { t, T } from '../lib/i18n.js'
-import { fmtDate, todayISO } from '../lib/format.js'
+import { fmtDate, todayISO } from '../lib/format.ts'
 import { TEMPLATES, FAIRNESS, buildDraft, unitLabel, progressLine, groupChallenges } from '../lib/challenges.js'
 import { useUI } from '../store/useUI.js'
 import { Button, Segmented, TextField } from './ui.jsx'

@@ -3,7 +3,7 @@ import { useUI } from '../store/useUI.js'
 import { t } from '../lib/i18n.js'
 import { Button } from './ui.jsx'
 import { exOr } from '../lib/exercises.js'
-import { PRESSURE_RELIEF_EXERCISE_ID } from '../lib/pressureRelief.js'
+import { PRESSURE_RELIEF_EXERCISE_ID } from '../lib/pressureRelief.ts'
 import { exerciseDetailSheet } from '../sheets.jsx'
 import Icon from './Icon.jsx'
 

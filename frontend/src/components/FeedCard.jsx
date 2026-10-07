@@ -1,6 +1,6 @@
 import { t } from '../lib/i18n.js'
 import { api } from '../lib/api.js'
-import { fmtDate } from '../lib/format.js'
+import { fmtDate } from '../lib/format.ts'
 import { CHEER_EMOJI, cheerLine, timeAgo } from '../lib/cheers.js'
 import { useUI } from '../store/useUI.js'
 

@@ -3,22 +3,22 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { EXIDX } from '../lib/exercises.js'
 import { lastBW, streakWeeks, setLabel, modeOf, effortOf } from '../lib/history.js'
-import { fmtNum, fmtDate, fmtVol, todayISO, weekKey } from '../lib/format.js'
+import { fmtNum, fmtDate, fmtVol, todayISO, weekKey } from '../lib/format.ts'
 import { t } from '../lib/i18n.js'
 import { bwSheet, goalSheet, calendarSheet, workoutDetailSheet, WorkoutRow, bwDeltaColor, measurementSheet, newGoalSheet, deleteGoal } from '../sheets.jsx'
-import { MEASUREMENT_FIELDS, seriesFor } from '../lib/measurements.js'
-import { goalProgress } from '../lib/goals.js'
+import { MEASUREMENT_FIELDS, seriesFor } from '../lib/measurements.ts'
+import { goalProgress } from '../lib/goals.ts'
 import { exOr } from '../lib/exercises.js'
 import LineChart from '../components/LineChart.jsx'
 import Heatmap from '../components/Heatmap.jsx'
 import Icon from '../components/Icon.jsx'
 import BodyMap, { BodyMapLegend } from '../components/BodyMap.jsx'
 import { loadOfWorkouts, rankOf, MUSCLE_NAME } from '../lib/muscles.js'
-import { e1rmSeries, best1RM } from '../lib/onerm.js'
+import { e1rmSeries, best1RM } from '../lib/onerm.ts'
 import {
   hasEffort, displayScale, scaleName, toScale, avgRir, effortSummary, effortWeeks,
   effortHistogram, isHardSet, HARD_RIR
-} from '../lib/effort.js'
+} from '../lib/effort.ts'
 import { Button, Segmented, SelectRow } from '../components/ui.jsx'
 
 // Which muscles the training in a window actually hit — and, the point of the card,

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../store/useStore.js'
 import { t } from '../lib/i18n.js'
-import { todayISO, isoOf, fmtDate } from '../lib/format.js'
+import { todayISO, isoOf, fmtDate } from '../lib/format.ts'
 import { calcTargets, latestWeightKg, dayTotals, GOALS, ACTIVITY_LEVELS } from '../lib/nutrition.js'
 import Icon from '../components/Icon.jsx'
 import { Button, Segmented, SelectRow } from '../components/ui.jsx'

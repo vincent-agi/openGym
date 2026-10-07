@@ -1,4 +1,4 @@
-import { best1RM } from './onerm.js'
+import { best1RM } from './onerm.ts'
 import { lastBW } from './history.js'
 
 export const GOAL_TYPES = ['lift', 'bodyweight', 'volume']

@@ -1,6 +1,6 @@
 // The Push/Pull/Legs starter plan. Shared by the "Load starter plan" action in Settings
 // and by the demo build, which seeds a history on top of exactly these routines.
-import { uid } from './format.js'
+import { uid } from './format.ts'
 
 const SPEC = [
   ['Push Day', 'barbell', [['0025', 4, 8], ['0047', 3, 10], ['0426', 3, 10], ['0334', 3, 12], ['0241', 3, 12], ['0251', 3, 10]]],

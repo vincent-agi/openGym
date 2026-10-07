@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { seriesFor, setMeasurement, deleteMeasurement } from './measurements.js'
+import { seriesFor, setMeasurement, deleteMeasurement } from './measurements.ts'
 
 describe('seriesFor', () => {
   it('returns points sorted oldest first, regardless of key order', () => {
