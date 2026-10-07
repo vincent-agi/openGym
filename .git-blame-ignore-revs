@@ -1,3 +1,6 @@
 # Mechanical commits that `git blame` should skip (renames and import specifier updates).
 # GitHub honours this file automatically. Locally: git config blame.ignoreRevsFile .git-blame-ignore-revs
 # scripts/ts-rename.sh appends to it; see docs/technical/development.md.
+# chore(ts): rename api/notify-prefs.js api/push-messages.js api/badges.js api/rate-limit.js api/feed.js api/test/notify-prefs.test.js api/test/push-messages.test.js api/test/badges.test.js api/test/rate-limit.test.js api/test/feed.test.js
+7959386e90c8169e1a4b2c25c07eb927f8a5492a
+95d0306ed6fc2f62abcf6586bdbe0a2956dc09b1
