@@ -118,6 +118,26 @@ people, and revoked when its owner creates a new one.
 | `POST /api/social/friends/block` | Body `{handle}`. Silent: the blocked user is not told, loses the friendship and can no longer send requests. Always `200`, even for an unknown handle, so it cannot be used to probe handles. |
 | `POST /api/social/friends/unblock` | Body `{handle}`. Only the blocker can. |
 
+#### Shared summary
+
+| Method & path | Description |
+|---|---|
+| `GET /api/social/friends/summary` | Needs a session and sharing. `{friends:[{handle, displayName, summary, updatedAt, stale}]}` for **accepted** friends who are sharing. `summary` holds only the keys that friend chose to share, or `null` if they have not synced since enabling sharing. `stale` is true when `updatedAt` is older than 14 days. |
+
+The summary is computed by the server (`api/summary.js`) from the state saved with `PUT /api/data`; clients cannot submit one.
+Its keys are a fixed whitelist (a test fails if one is added unreviewed):
+
+| Key | Shared with the choice | Meaning |
+|---|---|---|
+| `weekSessions`, `monthSessions` | Sessions | Sessions this week (Monday to today) and this month. A session is a workout with at least one completed set. Workouts dated after today are ignored. |
+| `activeDays`, `lastActiveDate` | Sessions | ISO dates with a session in the last 28 days. No times, routines, exercises or volumes. |
+| `weekPlanned`, `weekConsistency` | Consistency | Sessions planned for the whole week (weekly plan plus per-day overrides) and `weekSessions / weekPlanned`, capped at 1; `null` when nothing was planned. |
+| `streakWeeks` | Week streak | Consecutive weeks with a session. A week with none *yet* does not break it. |
+| `prCount` | Personal records | Records in the last 28 days. |
+
+"Today" is computed in the owner's `reminder.tz` (UTC when unset), so a week boundary does not move for people abroad.
+Body weight, measurements, nutrition, effort ratings, the mobility profile, exercise names, weights and reps are never read.
+
 Adding by exact handle does reveal that a *sharing* user with that handle exists. Treat handles as findable by anyone
 who has an account on the instance; users who want to stay unlisted should not enable sharing or should add friends by code only.
 

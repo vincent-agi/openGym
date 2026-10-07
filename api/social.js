@@ -139,6 +139,22 @@ export function validateSocialUpdate(input, current, { isHandleTaken }) {
 }
 
 /**
+ * Resolves the caller of a friend-facing route: signed in, and sharing. Answers 401 / 403 itself.
+ *
+ * @param {(req: import('node:http').IncomingMessage) => (object | null)} readSession
+ * @param {(res: import('node:http').ServerResponse, code: number, body: object) => void} json
+ * @param {import('node:http').IncomingMessage} req
+ * @param {import('node:http').ServerResponse} res
+ * @returns {object | null} The user, or null when a response was already sent.
+ */
+export function requireSharing(readSession, json, req, res) {
+  const user = readSession(req);
+  if (!user) { json(res, 401, { error: 'not signed in' }); return null; }
+  if (!isSharing(user)) { json(res, 403, { error: 'turn on sharing first' }); return null; }
+  return user;
+}
+
+/**
  * Builds the `/api/social/*` route table.
  *
  * Routes are only registered when the instance enabled the module, so a disabled instance
@@ -151,9 +167,11 @@ export function validateSocialUpdate(input, current, { isHandleTaken }) {
  *   Resolves the signed-in user, or null.
  * @param {(res: import('node:http').ServerResponse, code: number, body: object) => void} ctx.json  JSON responder.
  * @param {(req: import('node:http').IncomingMessage) => Promise<any>} ctx.readBody  JSON body reader.
+ * @param {(user: object, wasSharing: boolean) => void} [ctx.onChange]  Called after settings were saved,
+ *   with whether the user was sharing *before* the change.
  * @returns {Record<string, (req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => Promise<void>>}
  */
-export function createSocialRoutes({ db, saveDb, readSession, json, readBody }) {
+export function createSocialRoutes({ db, saveDb, readSession, json, readBody, onChange = () => {} }) {
   /** @param {{social?: SocialSettings}} user */
   const settingsOf = user => ({ ...defaultSocial(), ...(user.social || {}) });
 
@@ -172,8 +190,10 @@ export function createSocialRoutes({ db, saveDb, readSession, json, readBody }) 
         isHandleTaken: handle => db.users.some(u => u.id !== user.id && u.social?.handle === handle)
       });
       if (!result.ok) return json(res, result.status, { error: result.error });
+      const wasSharing = isSharing(user);
       user.social = result.value;
       saveDb();
+      onChange(user, wasSharing);
       json(res, 200, { social: user.social });
     }
   };

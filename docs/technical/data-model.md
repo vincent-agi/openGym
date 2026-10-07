@@ -94,6 +94,13 @@ from clients will overwrite manual edits.
   "friendCodes": [                        // friends module: shareable codes, 14 days
     { "code": "K7QH2MWD4X", "uid": "piYdx5GveQarq8u9", "createdAt": 1791370000000, "expiresAt": 1792580000000 }
   ],
+  "socialSummaries": {                    // friends module: derived, never client-supplied
+    "piYdx5GveQarq8u9": {                 // keyed by user id; only present while the user is sharing
+      "updatedAt": 1791371000000,
+      "data": { "weekSessions": 2, "weekPlanned": 3, "weekConsistency": 0.67, "monthSessions": 6,
+                "streakWeeks": 4, "activeDays": ["2026-10-05", "2026-10-07"], "lastActiveDate": "2026-10-07", "prCount": 1 }
+    }
+  },
   "subs": [                               // Web Push subscriptions
     {
       "userId": "piYdx5GveQarq8u9",
@@ -123,6 +130,7 @@ from clients will overwrite manual edits.
 | `creds.userId → users.id` | A credential without a user logs in with `500 user missing`. Registration always creates one credential per user; there is no API to add more. |
 | `subs.userId → users.id` | Orphan subscriptions are harmless. Dead endpoints (HTTP 404/410 from the push service) are removed automatically on send. |
 | `friendships.a/b → users.id` | Orphans are harmless. A blocked record is never shown to the blocked user. |
+| `socialSummaries.<uid>` | Rewritten on every state save when the content changed (or after 6 h), and deleted the moment the user turns sharing off. |
 | `friendCodes.uid → users.id` | Expired and revoked codes are refused; creating a new code removes the owner's old ones. |
 | `invites.usedBy → users.id` | Redeemed invites cannot be revoked via the API. |
 | `state-<uid>.json ↔ users.id` | **No foreign key.** Deleting a user from `db.json` leaves the state file orphaned; deleting the file leaves a user with an empty profile. |

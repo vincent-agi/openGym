@@ -10,7 +10,7 @@
  * - **Blocks are silent.** The blocked party never learns they were blocked.
  */
 import crypto from 'node:crypto';
-import { isSharing } from './social.js';
+import { isSharing, requireSharing } from './social.js';
 
 /** Letters and digits without the look-alikes `0 O 1 I L`, so a code survives being read aloud. */
 export const FRIEND_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -228,13 +228,7 @@ export function createFriendRoutes({ db, saveDb, readSession, json, readBody, no
   const byHandle = handle => db.users.find(u => u.social?.handle === String(handle || '').trim().replace(/^@/, '').toLowerCase());
   const card = (id, extra = {}) => { const u = byId(id); return { handle: u.social.handle, displayName: u.social.displayName, ...extra }; };
 
-  /** Resolves the caller, who must be signed in and sharing. Answers the error itself. */
-  const caller = (req, res) => {
-    const user = readSession(req);
-    if (!user) { json(res, 401, { error: 'not signed in' }); return null; }
-    if (!isSharing(user)) { json(res, 403, { error: 'turn on sharing first' }); return null; }
-    return user;
-  };
+  const caller = (req, res) => requireSharing(readSession, json, req, res);
 
   /** Wraps an action on an existing relationship identified by `{handle}`. */
   const onHandle = action => async (req, res) => {
