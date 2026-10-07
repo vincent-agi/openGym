@@ -33,9 +33,9 @@ Triggers: every `pull_request`, and `push` to `main`. Concurrency: cancels super
 There is deliberately **no `paths:` filter**: a required check skipped by a path filter stays "pending" forever and blocks
 the merge.
 
-Known gaps: the API has **no automated test suite** (the smoke test only proves the process starts), and
-`frontend/scripts/check-locales.mjs` — which guards that all 11 locale files share the same key set — is **not wired
-into CI**. Run it locally after touching strings: `node frontend/scripts/check-locales.mjs`.
+The `Frontend` job also runs `node scripts/check-locales.mjs` (all 11 locale files share one key set) and
+`node scripts/check-doc-links.mjs` (no broken relative links in the Markdown documentation). The `API` job runs the
+`node:test` suite. Run any of them locally after touching strings or docs.
 
 ### `security.yml` — Security
 

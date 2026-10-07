@@ -106,4 +106,10 @@ describe('demo seed — effort', () => {
     const flat = st => st.workouts.map(w => w.entries.map(e => e.sets.map(s => `${s.w}x${s.r}/${s.rir ?? ''}/${s.rpe ?? ''}`).join(',')).join('|')).join(';')
     expect(flat(b)).toBe(flat(S))
   })
+
+  it('keeps friends data out of the example profile: the crew is served separately by demoSocial.js', () => {
+    const state = buildDemoState()
+    for (const key of ['_social', 'friends', 'friendships', 'challenges', 'socialSummaries']) expect(key in state).toBe(false)
+    expect(JSON.stringify(state)).not.toContain('lea_fit')
+  })
 })

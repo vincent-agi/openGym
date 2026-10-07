@@ -21,7 +21,7 @@ frontend/            React + Vite app
     instr/           generated exercise-instruction packs (9 languages)
   public/            service worker, manifest, icons
   android/ ios/      Capacitor native shells
-  scripts/           check-locales.mjs
+  scripts/           check-locales.mjs, check-doc-links.mjs
 web/                 Dockerfile (build SPA → nginx) + nginx.conf
 website/             static project website (no build step)
 docs/                documentation (user/, technical/, plus legacy guides)
@@ -67,7 +67,8 @@ Set `ORIGIN` to the **dev server's** origin (Vite defaults to `http://localhost:
 cd frontend
 npm test                # vitest run (CI)
 npm run test:watch
-node scripts/check-locales.mjs    # locale key parity (not in CI)
+node scripts/check-locales.mjs    # locale key parity (runs in CI)
+node scripts/check-doc-links.mjs  # broken relative links in the docs (runs in CI)
 ```
 
 ### API tests
@@ -118,7 +119,7 @@ Rules of thumb:
 
 Keep decision logic here, not in components, and give it a `*.test.js` beside it.
 
-Friends module: `lib/social.js` (sharing settings rules), `lib/friends.js` (codes and links), `lib/crew.js` (leaderboard ranking: ties share a position, ordered only by name; people without a number are shown neutrally and never last; Consistency is a weekly metric only).
+Friends module (every string it shows is checked in all 11 locales by `lib/i18n-coverage.test.js`; mark strings stored in tables with `T('…')`): `lib/social.js` (sharing settings rules), `lib/friends.js` (codes and links), `lib/crew.js` (leaderboard ranking: ties share a position, ordered only by name; people without a number are shown neutrally and never last; Consistency is a weekly metric only).
 
 | Module | Responsibility |
 |---|---|

@@ -8,6 +8,7 @@
 Other guides in this folder:
 
 - [Self-hosting walkthrough](SELF_HOSTING.md)
+- [Friends and challenges](user/12-friends-and-challenges.md)
 - [Automation scripts (`gymme` CLI)](technical/automation.md)
 - [Building the mobile apps](MOBILE.md)
 - [Branch protection policy](BRANCH_PROTECTION.md)

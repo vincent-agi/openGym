@@ -1,19 +1,19 @@
 import { useState } from 'react'
-import { t } from '../lib/i18n.js'
+import { t, T } from '../lib/i18n.js'
 import { PERIODS, metricsFor, rankCrew, trendDisplay } from '../lib/crew.js'
 import { badgeInfo } from '../lib/badges.js'
 import { Segmented, Button } from './ui.jsx'
 
-const PERIOD_LABEL = { week: 'Week', month: 'Month' }
-const METRIC_LABEL = { consistency: 'Consistency', sessions: 'Sessions', streak: 'Streak' }
+const PERIOD_LABEL = { week: T('Week'), month: T('Month') }
+const METRIC_LABEL = { consistency: T('Consistency'), sessions: T('Sessions'), streak: T('Streak') }
 
 /** Neutral wording for people without a number: never "last", never "0". */
 const STATUS_TEXT = {
-  idle: p => (p === 'month' ? 'No session yet this month' : 'No session yet this week'),
-  noplan: () => 'Nothing planned this week',
-  stale: () => 'Not active recently',
-  pending: () => 'Waiting for their first sync',
-  private: () => 'Not shared'
+  idle: p => (p === 'month' ? T('No session yet this month') : T('No session yet this week')),
+  noplan: () => T('Nothing planned this week'),
+  stale: () => T('Not active recently'),
+  pending: () => T('Waiting for their first sync'),
+  private: () => T('Not shared')
 }
 
 /**

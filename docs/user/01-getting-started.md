@@ -1,6 +1,6 @@
 # 1. Getting started
 
-## Gymmeme
+## Open Gymme
 
 Someone (you, a friend, or your gym buddy) runs Gymme on a server and gives you a web address, for
 example `https://gym.example.com`. Open it in your phone or computer browser.

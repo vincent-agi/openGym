@@ -47,7 +47,7 @@ workout explains the number. You can also set the rule to **No automatic progres
 It is off by default. Turn it on in **Settings → During a workout → Effort per set**.
 
 **I closed the app in the middle of a workout.**
-Gymmeme and tap **Resume**. The workout is saved on that device. If you started it on a different device,
+Open Gymme and tap **Resume**. The workout is saved on that device. If you started it on a different device,
 you will not see it on this one.
 
 **I logged a workout by mistake.**
@@ -68,6 +68,31 @@ Turn the **Workout day reminder** off and on again so it re-detects your time zo
 **Where are my exercise animations?**
 On first start the server downloads about 140 MB of exercise images. If they are missing, ask the server owner
 to check it.
+
+## Friends
+
+**Can my friends see my weight, my food or my workouts?**
+No. Friends only see the short summary you choose to share (sessions, consistency against your own plan, week streak,
+and records if you allow it). Weight, measurements, food, effort, your mobility profile and exercise details are never
+shared. Everything is off until you turn on **Settings → Friends & sharing**.
+
+**How do I leave?**
+Turn off **Share with friends** to disappear from everyone's screens, or use **Leave and erase friends data** to delete
+what the friends module stores about you. Your own workouts are not touched. See
+[Friends and challenges](12-friends-and-challenges.md#leave-and-erase).
+
+**Why did my rank disappear?**
+Either you or the friend turned on **Hide my rank**, so positions are not shown, or the list is sorted on something
+that person did not share. People with no session yet, nothing planned or no recent activity are shown without a
+position instead of at the bottom.
+
+**My friend request says nobody can be added.**
+The code expired or was replaced, the handle is wrong, or the person is not sharing or blocked you. Gymme gives the same
+answer for all of these on purpose, so nobody can find out who uses the server.
+
+**I do not see Crew or the friends settings.**
+The person running your server can switch the friends module off, and it is not available in the demo or the standalone
+Android app.
 
 ## Other
 

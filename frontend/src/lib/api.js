@@ -1,4 +1,6 @@
 // Backend + WebAuthn helpers (ported from the vanilla app).
+import { DEMO } from './demo.js'
+
 export const IS_APPLE = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)
 export const IS_ANDROID = /Android/.test(navigator.userAgent)
 export const BIO = IS_APPLE ? 'Face ID / Touch ID' : IS_ANDROID ? 'fingerprint or face unlock' : 'your fingerprint, face or PIN'
@@ -6,6 +8,11 @@ export const VAULT = IS_APPLE ? 'iCloud Keychain' : IS_ANDROID ? 'Google Passwor
 export const webauthnOK = () => !!(window.PublicKeyCredential && navigator.credentials)
 
 export async function api(path, opts) {
+  // The demo has no server: the friends module is answered with made-up data (see demoSocial.js).
+  // `DEMO` is false at runtime in normal builds, so the lazy chunk is never loaded there.
+  if (DEMO && (path === '/api/config' || path.startsWith('/api/social'))) {
+    return (await import('./demoSocial.js')).demoSocialApi(path, opts)
+  }
   const r = await fetch(path, Object.assign({ headers: { 'Content-Type': 'application/json' } }, opts))
   const data = await r.json().catch(() => ({}))
   if (!r.ok) { const e = new Error(data.error || ('HTTP ' + r.status)); e.status = r.status; throw e }

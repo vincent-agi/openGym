@@ -3,6 +3,8 @@
 // The server decides who earned what; this file only says what each badge is called and why it
 // exists. There is deliberately nothing here about strength, size or coming first.
 
+import { T } from './i18n.js'
+
 /**
  * @typedef {object} BadgeInfo
  * @property {string} id
@@ -15,12 +17,12 @@
  * @type {BadgeInfo[]}
  */
 export const CATALOG = [
-  { id: 'first-week', name: 'First week', description: 'You finished your first session. Everything starts here.' },
-  { id: 'hat-trick', name: 'Hat-trick', description: 'Three sessions in a single week.' },
-  { id: 'four-in-a-row', name: 'Four in a row', description: 'A session every week for four weeks running.' },
-  { id: 'back-on-track', name: 'Back on track', description: 'You came back after a break or a missed week. That takes courage.' },
-  { id: 'team-player', name: 'Team player', description: 'You finished a co-op challenge together with your friends.' },
-  { id: 'cheerleader', name: 'Cheerleader', description: 'You sent ten cheers to your friends.' }
+  { id: 'first-week', name: T('First week'), description: T('You finished your first session. Everything starts here.') },
+  { id: 'hat-trick', name: T('Hat-trick'), description: T('Three sessions in a single week.') },
+  { id: 'four-in-a-row', name: T('Four in a row'), description: T('A session every week for four weeks running.') },
+  { id: 'back-on-track', name: T('Back on track'), description: T('You came back after a break or a missed week. That takes courage.') },
+  { id: 'team-player', name: T('Team player'), description: T('You finished a co-op challenge together with your friends.') },
+  { id: 'cheerleader', name: T('Cheerleader'), description: T('You sent ten cheers to your friends.') }
 ]
 
 /**

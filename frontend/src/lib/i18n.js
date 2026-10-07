@@ -36,6 +36,11 @@ export function t(s, ...args) {
   for (let i = 0; i < args.length; i++) v = v.replaceAll('{' + i + '}', args[i])
   return v
 }
+// Marks a string for translation without translating it now. Use it where English text is stored in a
+// table or returned from a pure helper and translated later with t(): the coverage test and
+// scripts that extract strings look for both t('…') and T('…').
+export const T = s => s
+
 // Instructions for an exercise in the current language (English steps as fallback).
 export const instrFor = ex => (instr && instr[ex.id]) || ex.st || []
 

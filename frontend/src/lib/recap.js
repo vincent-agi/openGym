@@ -5,6 +5,7 @@
 
 import { effectiveRoutineId } from './history.js'
 import { addDaysIso } from './challenges.js'
+import { T } from './i18n.js'
 
 /** Key under which the dismissal is remembered. */
 export const RECAP_DISMISS_KEY = 'gymme_recap_dismissed'
@@ -73,11 +74,11 @@ function streakOf(S, today) {
  * @returns {string} English key for `t()`.
  */
 export function recapLine({ sessions, planned }) {
-  if (planned > 0 && sessions >= planned) return 'You did everything you planned. Brilliant.'
-  if (planned > 0 && sessions === 0) return 'A new week is a fresh start. One session is all it takes.'
-  if (planned === 0 && sessions > 0) return 'You trained without a fixed plan. Great!'
-  if (sessions > 0) return 'Every session counts. Nice week.'
-  return 'Ready for a new week?'
+  if (planned > 0 && sessions >= planned) return T('You did everything you planned. Brilliant.')
+  if (planned > 0 && sessions === 0) return T('A new week is a fresh start. One session is all it takes.')
+  if (planned === 0 && sessions > 0) return T('You trained without a fixed plan. Great!')
+  if (sessions > 0) return T('Every session counts. Nice week.')
+  return T('Ready for a new week?')
 }
 
 /**

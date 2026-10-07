@@ -1,5 +1,7 @@
 // Cheers & feed — the small pieces the activity feed needs.
 
+import { T } from './i18n.js'
+
 /**
  * The only cheers that exist. Must match `CHEER_EMOJI` in `api/feed.js`; a test compares them.
  * @type {readonly string[]}
@@ -29,9 +31,9 @@ const DAY = 86_400_000
  */
 export function timeAgo(then, now) {
   const diff = Math.max(0, now - then)
-  if (diff < MIN) return { template: 'Just now', n: 0 }
-  if (diff < HOUR) return { template: '{0} min ago', n: Math.floor(diff / MIN) }
-  if (diff < DAY) return { template: '{0} h ago', n: Math.floor(diff / HOUR) }
-  if (diff < 2 * DAY) return { template: 'Yesterday', n: 1 }
-  return { template: '{0} days ago', n: Math.floor(diff / DAY) }
+  if (diff < MIN) return { template: T('Just now'), n: 0 }
+  if (diff < HOUR) return { template: T('{0} min ago'), n: Math.floor(diff / MIN) }
+  if (diff < DAY) return { template: T('{0} h ago'), n: Math.floor(diff / HOUR) }
+  if (diff < 2 * DAY) return { template: T('Yesterday'), n: 1 }
+  return { template: T('{0} days ago'), n: Math.floor(diff / DAY) }
 }

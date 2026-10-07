@@ -36,7 +36,7 @@ The Android app is a single file you **install yourself** (a "sideload"). It is 
 1. Download the **APK** from **https://opengym.duarte-santos.ch** on your phone.
 2. Open the file. Android may ask you to allow installs from your browser. That is normal for apps outside the Play
    Store. Allow it for this install.
-3. Gymmeme. There is no sign-in: you go straight in.
+3. Open Gymme. There is no sign-in: you go straight in.
 
 Because there is no server:
 

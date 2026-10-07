@@ -16,7 +16,7 @@ import { newBadges, badgeInfo } from './badges.js'
  */
 export function useSocial() {
   const user = useStore(s => s.user)
-  const usable = !!user && !DEMO && !MOBILE
+  const usable = (!!user || DEMO) && !MOBILE   // the demo is answered with made-up data (lib/demoSocial.js)
   const [state, setState] = useState({ status: usable ? 'loading' : 'unavailable', social: null })
   const [tick, setTick] = useState(0)
   const reload = useCallback(() => setTick(n => n + 1), [])

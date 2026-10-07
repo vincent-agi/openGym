@@ -11,7 +11,7 @@ This guide is for **people who train**. If you run the server, see the
 
 | If you want to… | Read |
 |---|---|
-| Gymmeme for the first time | [1. Getting started](01-getting-started.md) |
+| Open Gymme for the first time | [1. Getting started](01-getting-started.md) |
 | Build your week and your routines | [2. Plan and routines](02-plan-and-routines.md) |
 | Do a workout | [3. Working out](03-workouts.md) |
 | Understand the weight suggestions and the "1RM" | [4. Progression and 1RM](04-progression-and-1rm.md) |
@@ -22,6 +22,7 @@ This guide is for **people who train**. If you run the server, see the
 | Back up, move or share your data | [9. Your data](09-your-data.md) |
 | Put Gymme on your phone | [10. Install on your phone](10-install-on-your-phone.md) |
 | Fix a problem | [11. Questions and problems](11-faq.md) |
+| Train with friends, challenges and cheers | [12. Friends and challenges](12-friends-and-challenges.md) |
 
 ## The big picture in one minute
 

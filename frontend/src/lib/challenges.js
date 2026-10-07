@@ -1,6 +1,8 @@
 // Friendly challenges — client-side helpers: ready-made templates and display rules.
 // The server validates and owns everything that matters (see api/challenges.js).
 
+import { T } from './i18n.js'
+
 const DAY_MS = 86400000
 
 /**
@@ -28,10 +30,10 @@ export function addDaysIso(iso, days) {
 
 /** @type {Template[]} */
 export const TEMPLATES = [
-  { key: 'plan-4w', title: 'Stick to the plan', type: 'consistency', mode: 'versus', target: 3, days: 28 },
-  { key: 'sessions-4w', title: '4 weeks · 12 sessions', type: 'sessions', mode: 'versus', target: 12, days: 28 },
-  { key: 'streak-4w', title: '4 weeks in a row', type: 'streak', mode: 'versus', target: 4, days: 28 },
-  { key: 'coop-30', title: 'Co-op · 30 sessions together', type: 'sessions', mode: 'coop', target: 30, days: 28 }
+  { key: 'plan-4w', title: T('Stick to the plan'), type: 'consistency', mode: 'versus', target: 3, days: 28 },
+  { key: 'sessions-4w', title: T('4 weeks · 12 sessions'), type: 'sessions', mode: 'versus', target: 12, days: 28 },
+  { key: 'streak-4w', title: T('4 weeks in a row'), type: 'streak', mode: 'versus', target: 4, days: 28 },
+  { key: 'coop-30', title: T('Co-op · 30 sessions together'), type: 'sessions', mode: 'coop', target: 30, days: 28 }
 ]
 
 /**
@@ -51,13 +53,13 @@ export function buildDraft(template, today) {
  * Keyed by challenge type; ready for `t()`.
  */
 export const FAIRNESS = {
-  consistency: 'Fair for everyone: it counts the weeks you do the sessions you planned, whatever your level.',
-  sessions: 'Counts sessions, not weight or size, so anyone can win.',
-  activeDays: 'Counts the days you trained, not how hard.',
-  streak: 'Counts weeks in a row with a session: showing up is what matters.'
+  consistency: T('Fair for everyone: it counts the weeks you do the sessions you planned, whatever your level.'),
+  sessions: T('Counts sessions, not weight or size, so anyone can win.'),
+  activeDays: T('Counts the days you trained, not how hard.'),
+  streak: T('Counts weeks in a row with a session: showing up is what matters.')
 }
 
-const UNITS = { sessions: 'sessions', activeDays: 'active days', streak: 'weeks in a row', consistency: 'weeks on plan' }
+const UNITS = { sessions: T('sessions'), activeDays: T('active days'), streak: T('weeks in a row'), consistency: T('weeks on plan') }
 
 /**
  * What a challenge counts, as a plural phrase ready for `t()`.

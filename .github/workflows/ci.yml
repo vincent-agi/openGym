@@ -35,6 +35,10 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run test
+      - name: Locale key parity
+        run: node scripts/check-locales.mjs
+      - name: Documentation links
+        run: node scripts/check-doc-links.mjs
       - run: npm run build
 
   api:

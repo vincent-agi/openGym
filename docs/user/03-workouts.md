@@ -129,7 +129,7 @@ The **Workout complete!** screen shows:
 
 - **Wrong weight in a finished workout?** Open it from the calendar or **Stats → Recent workouts** and check it.
   You can delete a workout from its detail sheet.
-- **Closed the app in the middle?** The running workout is kept **on that device**. Gymmeme and tap **Resume**.
+- **Closed the app in the middle?** The running workout is kept **on that device**. Open Gymme and tap **Resume**.
   A workout in progress is not synced until you finish it.
 
 ## For people who train with limited mobility

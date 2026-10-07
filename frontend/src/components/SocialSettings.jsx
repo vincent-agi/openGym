@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api.js'
-import { t } from '../lib/i18n.js'
+import { t, T } from '../lib/i18n.js'
 import { useUI } from '../store/useUI.js'
 import { useStore } from '../store/useStore.js'
 import { todayISO } from '../lib/format.js'
@@ -16,13 +16,13 @@ import { confirmSheet } from '../sheets.jsx'
 import { fmtDate } from '../lib/format.js'
 
 const SHARE_OPTIONS = [
-  { key: 'sessions', title: 'Sessions', subtitle: 'How many sessions you did this week and month.' },
-  { key: 'consistency', title: 'Consistency', subtitle: 'Sessions done compared with your own plan.' },
-  { key: 'streak', title: 'Week streak', subtitle: 'Consecutive weeks with at least one session.' },
-  { key: 'prs', title: 'Personal records', subtitle: 'How many records you broke recently.' }
+  { key: 'sessions', title: T('Sessions'), subtitle: T('How many sessions you did this week and month.') },
+  { key: 'consistency', title: T('Consistency'), subtitle: T('Sessions done compared with your own plan.') },
+  { key: 'streak', title: T('Week streak'), subtitle: T('Consecutive weeks with at least one session.') },
+  { key: 'prs', title: T('Personal records'), subtitle: T('How many records you broke recently.') }
 ]
 
-const FIELD_LABEL = { sessions: 'Sessions this week', consistency: 'Consistency', streak: 'Week streak', prs: 'Personal records' }
+const FIELD_LABEL = { sessions: T('Sessions this week'), consistency: T('Consistency'), streak: T('Week streak'), prs: T('Personal records') }
 
 /**
  * Planned break: days off that the weekly plan skips, so being ill or away never lowers consistency.

@@ -4,6 +4,8 @@
 // (api/social.js) re-validates every value; these helpers only exist to give feedback before
 // a request is made and to describe, honestly, what a friend would be able to see.
 
+import { T } from './i18n.js'
+
 /** Handles are 3-20 characters of lowercase letters, digits and underscore. Mirrors the API. */
 export const HANDLE_RE = /^[a-z0-9_]{3,20}$/
 
@@ -53,7 +55,7 @@ export function normalizeHandle(raw) {
  * @returns {string | null} A message ready for `t()`, or null when the handle is fine.
  */
 export function handleError(raw) {
-  return HANDLE_RE.test(normalizeHandle(raw)) ? null : 'Use 3-20 characters: letters a-z, digits or _'
+  return HANDLE_RE.test(normalizeHandle(raw)) ? null : T('Use 3-20 characters: letters a-z, digits or _')
 }
 
 /**
@@ -65,7 +67,7 @@ export function handleError(raw) {
 export function displayNameError(raw) {
   const name = typeof raw === 'string' ? raw.trim() : ''
   if (!name || [...name].length > DISPLAY_NAME_MAX || CONTROL_CHARS.test(name)) {
-    return 'Use 1-30 characters, no special control characters'
+    return T('Use 1-30 characters, no special control characters')
   }
   return null
 }
@@ -106,23 +108,15 @@ export function sharedFields(social) {
  * Strings are English keys for `t()`.
  */
 export const NOTIFY_OPTIONS = [
-  { key: 'friendSession', title: 'A friend trained', subtitle: 'At most one a day. Friends who train close together are grouped.' },
-  { key: 'cheerReceived', title: 'Someone cheered you', subtitle: 'When a friend sends a cheer on your session.' },
-  { key: 'challengeInvite', title: 'Challenge invitations', subtitle: 'When a friend invites you to a challenge.' },
-  { key: 'challengeMilestone', title: 'Challenge milestones', subtitle: 'Halfway there, and when the target is reached.' },
-  { key: 'challengeEnded', title: 'Challenge results', subtitle: 'When a challenge you were in is over.' }
+  { key: 'friendSession', title: T('A friend trained'), subtitle: T('At most one a day. Friends who train close together are grouped.') },
+  { key: 'cheerReceived', title: T('Someone cheered you'), subtitle: T('When a friend sends a cheer on your session.') },
+  { key: 'challengeInvite', title: T('Challenge invitations'), subtitle: T('When a friend invites you to a challenge.') },
+  { key: 'challengeMilestone', title: T('Challenge milestones'), subtitle: T('Halfway there, and when the target is reached.') },
+  { key: 'challengeEnded', title: T('Challenge results'), subtitle: T('When a challenge you were in is over.') }
 ]
 
 /** Hours offered for the start and end of the quiet hours. */
 export const QUIET_HOURS = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0') + ':00')
-
-/**
- * The quiet hours as a sentence template for `t()`.
- *
- * @param {{from: string, to: string}} quiet
- * @returns {{template: string, from: string, to: string}}
- */
-export const quietLabel = quiet => ({ template: 'No notifications from {0} to {1}', from: quiet.from, to: quiet.to })
 
 /** Key under which a backup carries the user's own friends settings. */
 export const SOCIAL_BACKUP_KEY = '_social'

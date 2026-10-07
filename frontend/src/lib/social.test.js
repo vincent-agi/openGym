@@ -78,7 +78,7 @@ describe('sharedFields — what friends will see', () => {
   })
 })
 
-import { NOTIFY_OPTIONS, QUIET_HOURS, quietLabel } from './social.js'
+import { NOTIFY_OPTIONS, QUIET_HOURS } from './social.js'
 import { NOTIFY_KINDS } from '../../../api/notify-prefs.js'
 
 describe('notification preferences', () => {
@@ -96,9 +96,6 @@ describe('notification preferences', () => {
     expect(QUIET_HOURS).toHaveLength(24)
     expect(QUIET_HOURS[0]).toBe('00:00')
     expect(QUIET_HOURS[23]).toBe('23:00')
-  })
-  it('read as a sentence', () => {
-    expect(quietLabel({ from: '21:00', to: '08:00' })).toEqual({ template: 'No notifications from {0} to {1}', from: '21:00', to: '08:00' })
   })
 })
 

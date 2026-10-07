@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
-import { t } from '../lib/i18n.js'
+import { t, T } from '../lib/i18n.js'
 import { fmtDate, todayISO } from '../lib/format.js'
 import { TEMPLATES, FAIRNESS, buildDraft, unitLabel, progressLine, groupChallenges } from '../lib/challenges.js'
 import { useUI } from '../store/useUI.js'
@@ -32,7 +32,7 @@ function ChallengeDetail({ challenge: c, myHandle, close, onChanged }) {
   const live = c.status === 'upcoming' || c.status === 'active'
   const me = c.participants.find(p => p.handle === myHandle)
   const run = (path, msg) => post(path, { id: c.id }).then(() => { toast(msg); onChanged(); close() }).catch(e => toast(e.message))
-  const STATE_TEXT = { invited: 'Invited', paused: 'Paused', left: 'Left' }
+  const STATE_TEXT = { invited: T('Invited'), paused: T('Paused'), left: T('Left') }
 
   return <>
     <h3>{c.title}</h3>
