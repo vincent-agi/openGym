@@ -1,5 +1,60 @@
 # Changelog
 
+## [1.7.0](https://github.com/vincent-agi/openGym/compare/v1.6.0...v1.7.0) (2026-10-07)
+
+
+### Features
+
+* add user management scripts for openGym ([11a96b3](https://github.com/vincent-agi/openGym/commit/11a96b30b7de704f8b5aa5b6304d4d53d8bb3a54))
+* **ci:** automated container build, scan & publish pipeline to ghcr.io ([2779f58](https://github.com/vincent-agi/openGym/commit/2779f58079e9c2c1d00e626e3a1eefb670035ebb)), closes [#30](https://github.com/vincent-agi/openGym/issues/30)
+* **ci:** baseline pipeline for lint/test/build on every PR ([00b5505](https://github.com/vincent-agi/openGym/commit/00b5505883268c84801bbbec0c9f06688affd08d)), closes [#27](https://github.com/vincent-agi/openGym/issues/27)
+* **exercises:** adaptive exercise database schema & seeds ([4273d7b](https://github.com/vincent-agi/openGym/commit/4273d7b41466d2522397c842df5ffd7f51e47195))
+* **exercises:** seated/wheelchair exercise seeds with accessibility tags ([dbd5467](https://github.com/vincent-agi/openGym/commit/dbd5467ae92841c9312918e78c75be7b2f110875)), closes [#22](https://github.com/vincent-agi/openGym/issues/22)
+* **goals:** add structured dated goal tracking with progress ([75d280a](https://github.com/vincent-agi/openGym/commit/75d280aba16d793bd5d03597cc0e55ad936526be))
+* **health:** pressure relief / chair push-up reminders ([0da3fbf](https://github.com/vincent-agi/openGym/commit/0da3fbf1dd7c80bf518502c098e03763493eb4b9))
+* **health:** pressure relief / chair push-up reminders ([6b2eb89](https://github.com/vincent-agi/openGym/commit/6b2eb894740f487976870a9a0a6ec3f9eec314c1)), closes [#26](https://github.com/vincent-agi/openGym/issues/26)
+* **i18n:** translate the remaining untranslated screens into the 11 locales ([ef538f2](https://github.com/vincent-agi/openGym/commit/ef538f248069d74841b90179bb292badbbc8a82a))
+* **metrics:** add body measurements tracking beyond bodyweight ([c326722](https://github.com/vincent-agi/openGym/commit/c32672225ee8ba76c17d829d1693e05a6475a925))
+* **metrics:** subjective effort tracking with Borg RPE scale ([5e2b3bd](https://github.com/vincent-agi/openGym/commit/5e2b3bd2408219b576c3815ba0f030c484ab9bd5))
+* **metrics:** subjective effort tracking with Borg RPE scale ([01ad187](https://github.com/vincent-agi/openGym/commit/01ad1876fdfc367eafffbb56262991eefa8bf8d5)), closes [#25](https://github.com/vincent-agi/openGym/issues/25)
+* **music:** add playlist launch button to workout session ([ffa5533](https://github.com/vincent-agi/openGym/commit/ffa5533f56afebd59a9c05096f9ba5924eae4ca2))
+* **music:** build playlist URL validation/provider-detection lib ([f0c6180](https://github.com/vincent-agi/openGym/commit/f0c6180d92c5cba9094aa57ee75e3f46e3f66661))
+* **music:** i18n strings for playlist feature ([cebcaf7](https://github.com/vincent-agi/openGym/commit/cebcaf7991f29e96f5854d199a197ec48ec053bb))
+* **music:** integrate playlist URL field in routine editor ([99777ad](https://github.com/vincent-agi/openGym/commit/99777ad1a366f2052dc5e2ee5f780d2130912c11))
+* **music:** tie rest-timer end to playlist resume cue ([61e0fec](https://github.com/vincent-agi/openGym/commit/61e0fec1cf63624701e4c606ce358320930bff4a))
+* **nutrition:** add forward meal planning distinct from daily log ([c739aac](https://github.com/vincent-agi/openGym/commit/c739aac320d45721996cf5eb2e1aaccb423df7b5))
+* **nutrition:** add goal-based calorie/macro target calculator ([2cb8869](https://github.com/vincent-agi/openGym/commit/2cb8869e5c3677416ef10c242795b32edc2b4c87))
+* **nutrition:** add manual food/meal logging ([21ca3c3](https://github.com/vincent-agi/openGym/commit/21ca3c326ec1fc658dd7d1e0067752ca71d06ab4))
+* **nutrition:** add Nutrition tab to navigation ([6f2a648](https://github.com/vincent-agi/openGym/commit/6f2a6489a2fdecf0b10350cd4aae1fcef72abc49))
+* **nutrition:** add user goal and macro target schema ([986641d](https://github.com/vincent-agi/openGym/commit/986641d39f42c3677207e5aeed4424de79137d1c))
+* **nutrition:** build daily nutrition tracker view ([d5dec33](https://github.com/vincent-agi/openGym/commit/d5dec335b48817c0fc24cb3ed0f194e37810b265))
+* **nutrition:** i18n strings for nutrition module ([7d62b7a](https://github.com/vincent-agi/openGym/commit/7d62b7a5e815e1def31c7595d9773d9727776c3c))
+* **nutrition:** surface nutrition summary on Home dashboard ([19fb52d](https://github.com/vincent-agi/openGym/commit/19fb52d6e79355486193bbf5febedb0dd3fbbe6d))
+* **profile:** add mobility profile and exercise catalogue filtering ([049ee7b](https://github.com/vincent-agi/openGym/commit/049ee7b501b0608059a57fdba3032f39a8c7b0af)), closes [#21](https://github.com/vincent-agi/openGym/issues/21)
+* **profile:** mobility profile and exercise catalogue filtering ([c90432b](https://github.com/vincent-agi/openGym/commit/c90432ba09b360730f8c9490ad20f978025b96d8))
+* **release:** automated semantic versioning & changelog from conventional commits ([f48f117](https://github.com/vincent-agi/openGym/commit/f48f11787f328bb6bfc440d3de0594d968bea123)), closes [#31](https://github.com/vincent-agi/openGym/issues/31)
+* **security:** integrate SAST, secret, and dependency scanning into CI ([7756c4f](https://github.com/vincent-agi/openGym/commit/7756c4f2693510d0c75f361162c390ef59834734)), closes [#28](https://github.com/vincent-agi/openGym/issues/28)
+* **social:** cheers & friends activity feed (emoji only) ([4d4b27c](https://github.com/vincent-agi/openGym/commit/4d4b27c8ceb79d80adf83ea5e3f4a33047d5fdf8)), closes [#47](https://github.com/vincent-agi/openGym/issues/47)
+* **social:** consistency badges & weekly recap card ([4713baa](https://github.com/vincent-agi/openGym/commit/4713baa6b2292c146cfcff362ea42767d99c8ce8)), closes [#49](https://github.com/vincent-agi/openGym/issues/49)
+* **social:** Crew leaderboard (weekly & monthly, consistency-based) ([25a6f4b](https://github.com/vincent-agi/openGym/commit/25a6f4b4a3f608dc7e2c5d30987f5126710af8bc)), closes [#44](https://github.com/vincent-agi/openGym/issues/44)
+* **social:** fair & inclusive scoring (personal baseline, adaptive-profile neutral) ([bc17696](https://github.com/vincent-agi/openGym/commit/bc176968e4bf6de3edbea18dcedb63b84e6c3429)), closes [#46](https://github.com/vincent-agi/openGym/issues/46)
+* **social:** friendly challenges (versus & co-op) with join/leave lifecycle ([044a934](https://github.com/vincent-agi/openGym/commit/044a934df76897cf3a171a24e0a16c3abc5c0777)), closes [#45](https://github.com/vincent-agi/openGym/issues/45)
+* **social:** friends via invite code or link (request, accept, remove, block) ([fba96ba](https://github.com/vincent-agi/openGym/commit/fba96ba43e9788b3f6970896dfac4012b3c4ef0e)), closes [#42](https://github.com/vincent-agi/openGym/issues/42)
+* **social:** opt-in push notifications for social events (with quiet hours) ([bdb2245](https://github.com/vincent-agi/openGym/commit/bdb224526710262ba56296ef5da6131c6aa4178d)), closes [#48](https://github.com/vincent-agi/openGym/issues/48)
+* **social:** push notifications in the recipient's language (English, French) ([07bcb19](https://github.com/vincent-agi/openGym/commit/07bcb190343b1d0ccab9dbcfae52122e41a1f175))
+* **social:** server-derived shared activity summary (no raw data) ([92c9293](https://github.com/vincent-agi/openGym/commit/92c9293dbb41bd90d78afcf9b03b51fcc39b48cd)), closes [#43](https://github.com/vincent-agi/openGym/issues/43)
+* **social:** social profile & per-user sharing consent ([cdc077a](https://github.com/vincent-agi/openGym/commit/cdc077a4a6c9efc767c4fe2a7353f3f6f6a9a67d)), closes [#41](https://github.com/vincent-agi/openGym/issues/41)
+* **social:** Spanish push notifications ([ea2ae97](https://github.com/vincent-agi/openGym/commit/ea2ae97dad3f2f721ad5efdbb29899dfd28cdaf3))
+* **tracking:** asymmetric & unilateral tracking support ([1ef87f6](https://github.com/vincent-agi/openGym/commit/1ef87f68633f80ee7d1d4a818571ac9a7319f30a))
+* **tracking:** asymmetric & unilateral tracking support ([78c26ac](https://github.com/vincent-agi/openGym/commit/78c26ac66ecbc420a6c4d589fb7ae85f54b32835)), closes [#23](https://github.com/vincent-agi/openGym/issues/23)
+* **ui:** accessible touch mode & adaptive rest timer ([cbee4a5](https://github.com/vincent-agi/openGym/commit/cbee4a5ed89bc8f7fb67304192f925f84ecf257a))
+* **ui:** accessible touch mode & adaptive rest timer ([5f6563f](https://github.com/vincent-agi/openGym/commit/5f6563f40c1978822b425b172a77e5b6d6c527da)), closes [#24](https://github.com/vincent-agi/openGym/issues/24)
+
+
+### Bug Fixes
+
+* **social:** review pass over the v1.7 module ([b2ff5ac](https://github.com/vincent-agi/openGym/commit/b2ff5ac53800ceeb97c0e6102c796c5b966a39a5))
+
 ## [1.6.0](https://github.com/vincent-agi/openGym/compare/v1.5.0...v1.6.0) (2026-10-05)
 
 
