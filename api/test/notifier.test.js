@@ -148,3 +148,45 @@ test('the outbox never keeps more than what is waiting', async () => {
   assert.equal(ctx.db.socialOutbox.length, 0);
   assert.equal(ctx.db.socialPushLog.length, 1);
 });
+
+/* ---- language: the push follows the language of the recipient's app ---- */
+test('a push is written in the language the recipient uses in the app', async () => {
+  const ctx = setup();
+  const french = createNotifier({
+    db: ctx.db, saveDb() {}, now: () => ctx.clock.t,
+    sendPush: async (uid, payload) => { ctx.sent.push({ uid, ...payload }); },
+    readState: () => ({ reminder: { tz: 'UTC' }, lang: 'fr' })
+  });
+  await french.notify('r', 'cheerReceived', { name: 'Léa', emoji: '🔥' });
+  await french.flush();
+  assert.equal(ctx.sent[0].title, 'Léa a encouragé votre séance 🔥');
+});
+
+test('an unknown or missing language gets English', async () => {
+  for (const lang of [undefined, 'xx', 'de']) {
+    const ctx = setup();
+    const n = createNotifier({
+      db: ctx.db, saveDb() {}, now: () => ctx.clock.t,
+      sendPush: async (uid, payload) => { ctx.sent.push(payload); },
+      readState: () => ({ reminder: { tz: 'UTC' }, lang })
+    });
+    await n.notify('r', 'cheerReceived', { name: 'Léa', emoji: '🔥' });
+    await n.flush();
+    assert.equal(ctx.sent[0].title, 'Léa cheered your session 🔥', String(lang));
+  }
+});
+
+test('the language is read when the push is sent, so a change before delivery is honoured', async () => {
+  const ctx = setup();
+  let lang = 'en';
+  const n = createNotifier({
+    db: ctx.db, saveDb() {}, now: () => ctx.clock.t,
+    sendPush: async (uid, payload) => { ctx.sent.push(payload); },
+    readState: () => ({ reminder: { tz: 'UTC' }, lang })
+  });
+  await n.notify('r', 'friendSession', { name: 'Léa' });
+  lang = 'fr';
+  ctx.clock.t += BATCH_MS;
+  await n.flush();
+  assert.equal(ctx.sent[0].title, 'Léa a terminé une séance');
+});

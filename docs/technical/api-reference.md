@@ -196,6 +196,7 @@ Delivery rules, all enforced and tested:
 - Co-op challenges announce half-way and the target to everyone, once each; in a versus challenge each person is told
   when they reach the target. Finished challenges are announced once.
 - Wording is encouraging: no ranks, comparisons or "behind".
+- **Language:** the text follows the recipient's app language (`lang` in their synced state, read when the push is sent, so a change before delivery is honoured). English and French are written (`api/push-messages.js`); any other language receives English until its catalogue is added. To add one, add a catalogue there and its code to `PUSH_LANGS`; a test checks that every language defines every message and fills every placeholder.
 
 Pending pushes live in `db.socialOutbox` so a restart does not lose a held one; a 30-second background job delivers them.
 

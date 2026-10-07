@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SOCIAL_FILES = [
   'summary.js', 'sharing.js', 'challenges.js', 'challenge-service.js', 'friends.js', 'social.js',
-  'feed.js', 'feed-service.js', 'notifier.js', 'notify-prefs.js', 'badges.js', 'badge-service.js', 'social-module.js'
+  'feed.js', 'feed-service.js', 'notifier.js', 'notify-prefs.js', 'badges.js', 'badge-service.js', 'social-module.js', 'push-messages.js'
 ];
 
 // Fields of the synced state that belong to the user alone.

@@ -16,6 +16,7 @@ import crypto from 'node:crypto';
 import { isoInZone, ownerTz } from './summary.js';
 import { isSharing } from './social.js';
 import { inQuietHours, minutesUntilQuietEnds } from './notify-prefs.js';
+import { pushText } from './push-messages.js';
 
 /** Social pushes one recipient can get in a day. */
 export const DAILY_CAP = 3;
@@ -53,29 +54,28 @@ export function localMinutes(ms, tz) {
  */
 
 /**
- * The message for an event. Always encouraging; see the rules at the top of this file.
+ * The message for an event, in the recipient's language. Always encouraging; see the rules at the
+ * top of this file. The wording itself lives in `push-messages.js`.
  *
  * @param {'friendSession'|'cheerReceived'|'challengeInvite'|'challengeMilestone'|'challengeEnded'} kind
  * @param {object} data  Fields depend on the kind: `names`, `name`, `emoji`, `title`, `stage`.
+ * @param {unknown} [lang]  Language of the recipient's app; English when unknown or not translated yet.
  * @returns {PushMessage}
  */
-export function wording(kind, data) {
+export function wording(kind, data, lang = 'en') {
   const url = '#/crew';
+  const text = (key, vars) => pushText(lang, key, vars);
   switch (kind) {
     case 'friendSession':
-      return data.names.length > 1
-        ? { title: `${data.names.length} friends trained today`, body: 'Your crew is on a roll. Send a cheer 👏', tag: 'social-session', url }
-        : { title: `${data.names[0]} finished a session`, body: 'Send a cheer 👏', tag: 'social-session', url };
+      return { ...(data.names.length > 1 ? text('friendSessionMany', { n: data.names.length }) : text('friendSessionOne', { name: data.names[0] })), tag: 'social-session', url };
     case 'cheerReceived':
-      return { title: `${data.name} cheered your session ${data.emoji}`, body: 'Nice work 💪', tag: 'social-cheer', url };
+      return { ...text('cheerReceived', data), tag: 'social-cheer', url };
     case 'challengeInvite':
-      return { title: `${data.name} invited you to "${data.title}"`, body: 'Join whenever you are ready.', tag: 'social-invite', url };
+      return { ...text('challengeInvite', data), tag: 'social-invite', url };
     case 'challengeMilestone':
-      return data.stage === 'half'
-        ? { title: 'Halfway there!', body: `"${data.title}" is half done. Keep it going.`, tag: 'social-milestone', url }
-        : { title: 'Target reached 🎉', body: `"${data.title}": well played!`, tag: 'social-milestone', url };
+      return { ...text(data.stage === 'half' ? 'milestoneHalf' : 'milestoneTarget', data), tag: 'social-milestone', url };
     default:
-      return { title: `"${data.title}" is over`, body: 'Thanks for taking part. See the results.', tag: 'social-ended', url };
+      return { ...text('challengeEnded', data), tag: 'social-ended', url };
   }
 }
 
@@ -95,6 +95,8 @@ export function wording(kind, data) {
 export function createNotifier({ db, saveDb, sendPush, readState, now = Date.now }) {
   const userById = id => db.users.find(u => u.id === id);
   const tzOf = uid => ownerTz(readState(uid)) || 'UTC';
+  /** The language the recipient's app is set to, read at send time so a change before delivery is honoured. */
+  const langOf = uid => readState(uid)?.lang;
   const eligible = (user, kind) => !!user && isSharing(user) && !!user.social.notify?.[kind] && db.subs.some(s => s.userId === user.id);
 
   /** Moves a delivery time out of quiet hours. */
@@ -154,7 +156,7 @@ export function createNotifier({ db, saveDb, sendPush, readState, now = Date.now
       if (today.length >= DAILY_CAP || (item.kind === 'friendSession' && today.some(l => l.kind === 'friendSession'))) continue;
 
       db.socialPushLog.push({ uid: item.uid, kind: item.kind, ts: t, date: day });
-      try { await sendPush(item.uid, wording(item.kind, item.data)); } catch (e) { console.error('social push failed', e); }
+      try { await sendPush(item.uid, wording(item.kind, item.data, langOf(item.uid))); } catch (e) { console.error('social push failed', e); }
     }
     if (due.length) saveDb();
   };

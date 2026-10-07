@@ -84,7 +84,7 @@ names, weights, reps, timestamps finer than a day, or planned-break reasons. See
 | Forging scores | Progress is derived server-side; sessions dated in the future are ignored; badges are written only by the server. |
 | Leaking through stale data | Turning sharing off, an admin disabling the account, or blocking takes effect on the next request. Events and cheers expire after 30 days. |
 | Cross-site scripting through names | Handles, display names and challenge titles are length-capped, stripped of control characters and rendered only as text; a test forbids `innerHTML`/`dangerouslySetInnerHTML` in the app. |
-| Notification spam | Opt-in per kind, quiet hours in the recipient's time zone, one friend-session push and three social pushes a day. |
+| Notification spam | Opt-in per kind, quiet hours in the recipient's time zone, one friend-session push and three social pushes a day. Text in the recipient's language (English or French), always encouraging. |
 
 **Leaving.** `POST /api/social/leave` (with `{"confirm":true}`) deletes everything the module stores about the caller
 (friendships and blocks, codes, summaries, events, cheers sent and received, mutes, queued pushes, badges, challenge
