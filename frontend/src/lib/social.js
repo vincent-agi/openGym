@@ -19,6 +19,8 @@ const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/
  * @property {string}  displayName  Name shown to friends.
  * @property {{sessions: boolean, streak: boolean, consistency: boolean, prs: boolean}} share
  * @property {boolean} hideRank     Show lists without positions ("cheer-only mode").
+ * @property {{friendSession: boolean, cheerReceived: boolean, challengeInvite: boolean, challengeMilestone: boolean, challengeEnded: boolean, quiet: {from: string, to: string}}} notify
+ *   Which events may send a push notification (all off by default) and the quiet hours.
  */
 
 /** Settings of a user who never opened the module. Treat as read-only; spread to copy. */
@@ -27,7 +29,11 @@ export const EMPTY_SOCIAL = Object.freeze({
   handle: '',
   displayName: '',
   share: Object.freeze({ sessions: true, streak: true, consistency: true, prs: false }),
-  hideRank: false
+  hideRank: false,
+  notify: Object.freeze({
+    friendSession: false, cheerReceived: false, challengeInvite: false, challengeMilestone: false, challengeEnded: false,
+    quiet: Object.freeze({ from: '21:00', to: '08:00' })
+  })
 })
 
 /**
@@ -94,3 +100,26 @@ export function sharedFields(social) {
   if (!social.enabled) return []
   return FIELDS.filter(f => social.share[f.key])
 }
+
+/**
+ * The notification switches shown in Settings, in the order the API lists them.
+ * Strings are English keys for `t()`.
+ */
+export const NOTIFY_OPTIONS = [
+  { key: 'friendSession', title: 'A friend trained', subtitle: 'At most one a day. Friends who train close together are grouped.' },
+  { key: 'cheerReceived', title: 'Someone cheered you', subtitle: 'When a friend sends a cheer on your session.' },
+  { key: 'challengeInvite', title: 'Challenge invitations', subtitle: 'When a friend invites you to a challenge.' },
+  { key: 'challengeMilestone', title: 'Challenge milestones', subtitle: 'Halfway there, and when the target is reached.' },
+  { key: 'challengeEnded', title: 'Challenge results', subtitle: 'When a challenge you were in is over.' }
+]
+
+/** Hours offered for the start and end of the quiet hours. */
+export const QUIET_HOURS = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0') + ':00')
+
+/**
+ * The quiet hours as a sentence template for `t()`.
+ *
+ * @param {{from: string, to: string}} quiet
+ * @returns {{template: string, from: string, to: string}}
+ */
+export const quietLabel = quiet => ({ template: 'No notifications from {0} to {1}', from: quiet.from, to: quiet.to })

@@ -10,7 +10,7 @@ import { addDays, isoInZone } from './summary.js';
 import { isSharing, requireSharing } from './social.js';
 import { relationsOf } from './friends.js';
 import {
-  LIMITS, validateChallengeInput, collectProgress, statusOf, activeCountFor, challengeView
+  LIMITS, validateChallengeInput, collectProgress, progressOf, statusOf, activeCountFor, challengeView
 } from './challenges.js';
 
 /**
@@ -19,6 +19,8 @@ import {
  *   Updates the stored progress of every live challenge the user is in, from their saved state.
  * @property {(user: object, wasSharing: boolean) => void} onSharingChange
  *   Pauses or resumes the user's participations when they turn sharing off or back on.
+ * @property {() => Array<{title: string, uids: string[]}>} collectEnded
+ *   Challenges that finished since the last call, once each, with the people to tell.
  * @property {Record<string, Function>} routes
  */
 
@@ -30,10 +32,11 @@ import {
  * @param {(res: import('node:http').ServerResponse, code: number, body: object) => void} ctx.json
  * @param {(req: import('node:http').IncomingMessage) => Promise<any>} ctx.readBody
  * @param {(uid: string) => (object | null)} ctx.readState  Reads a user's saved state, null before the first sync.
+ * @param {(uid: string, kind: string, data: object) => Promise<boolean>} [ctx.notify]  Push notifier; the default does nothing.
  * @param {() => number} [ctx.now]
  * @returns {ChallengeService}
  */
-export function createChallengeService({ db, saveDb, readSession, json, readBody, readState, now = Date.now }) {
+export function createChallengeService({ db, saveDb, readSession, json, readBody, readState, notify = async () => false, now = Date.now }) {
   const utcToday = () => isoInZone(now(), 'UTC');
   const userById = id => db.users.find(u => u.id === id);
   const userByHandle = handle => db.users.find(u => u.social?.handle === handle);
@@ -63,6 +66,31 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
     return true;
   };
 
+  /** Tells people when a challenge passes half-way (co-op) or when someone reaches the target. Each only once. */
+  const checkMilestones = ch => {
+    const progress = db.challengeProgress[ch.id] || {};
+    const joined = ch.participants.filter(p => p.status === 'joined' && isSharing(userById(p.uid)));
+    let changed = false;
+    if (ch.mode === 'coop') {
+      const total = joined.reduce((n, p) => n + progressOf(ch.type, progress[p.uid]), 0);
+      const stage = total >= ch.target ? 'target' : total >= ch.target / 2 ? 'half' : null;
+      const marks = (ch.milestones ||= {});
+      if (stage && !marks[stage]) {
+        marks.half = true; if (stage === 'target') marks.target = true;
+        joined.forEach(p => notify(p.uid, 'challengeMilestone', { title: ch.title, stage }));
+        changed = true;
+      }
+    } else {
+      for (const p of joined) {
+        if (!p.reached && progressOf(ch.type, progress[p.uid]) >= ch.target) {
+          p.reached = true; changed = true;
+          notify(p.uid, 'challengeMilestone', { title: ch.title, stage: 'target' });
+        }
+      }
+    }
+    return changed;
+  };
+
   const recordProgress = (user, state) => {
     if (!isSharing(user)) return;
     try {
@@ -70,7 +98,10 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
       let changed = false;
       for (const ch of db.challenges) {
         const p = participantOf(ch, user.id);
-        if (p?.status === 'joined' && statusOf(ch, today) === 'active') changed = record(ch, p, state, today) || changed;
+        if (p?.status === 'joined' && statusOf(ch, today) === 'active') {
+          changed = record(ch, p, state, today) || changed;
+          changed = checkMilestones(ch) || changed;
+        }
       }
       if (changed) saveDb();
     } catch (e) { console.error('challenge progress failed for', user.id, e); }
@@ -141,6 +172,7 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
       };
       db.challenges.push(ch);
       saveDb();
+      invitees.forEach(u => notify(u.id, 'challengeInvite', { name: user.social.displayName, title: ch.title }));
       json(res, 200, { challenge: viewOf(ch) });
     },
 
@@ -189,5 +221,13 @@ export function createChallengeService({ db, saveDb, readSession, json, readBody
     }
   };
 
-  return { recordProgress, onSharingChange, routes };
+  const collectEnded = () => {
+    const today = utcToday();
+    const finished = db.challenges.filter(ch => ch.status !== 'cancelled' && !ch.endedNotified && statusOf(ch, today) === 'ended');
+    finished.forEach(ch => { ch.endedNotified = true; });
+    if (finished.length) saveDb();
+    return finished.map(ch => ({ title: ch.title, uids: ch.participants.filter(p => p.status === 'joined').map(p => p.uid) }));
+  };
+
+  return { recordProgress, onSharingChange, collectEnded, routes };
 }

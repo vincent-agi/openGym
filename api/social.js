@@ -9,6 +9,8 @@
  *   {@link createSocialRoutes} touches the request/response and the identity store.
  */
 
+import { defaultNotify, validateNotify } from './notify-prefs.js';
+
 /** Handles are 3-20 characters of lowercase letters, digits and underscore. */
 export const HANDLE_RE = /^[a-z0-9_]{3,20}$/;
 
@@ -18,7 +20,7 @@ export const DISPLAY_NAME_MAX = 30;
 /** Keys a user can individually choose to share with friends. */
 export const SHARE_KEYS = Object.freeze(['sessions', 'streak', 'consistency', 'prs']);
 
-const TOP_LEVEL_KEYS = Object.freeze(['enabled', 'handle', 'displayName', 'share', 'hideRank']);
+const TOP_LEVEL_KEYS = Object.freeze(['enabled', 'handle', 'displayName', 'share', 'hideRank', 'notify']);
 // C0/C1 control characters, which have no business in a name shown to friends.
 const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/;
 
@@ -30,6 +32,7 @@ const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/;
  * @property {{sessions: boolean, streak: boolean, consistency: boolean, prs: boolean}} share
  *   Which summary fields friends may see.
  * @property {boolean} hideRank     When true the user sees lists without positions ("cheer-only mode").
+ * @property {import('./notify-prefs.js').NotifyPrefs} notify  Which events may send a push notification, all off by default.
  */
 
 /**
@@ -43,7 +46,8 @@ export function defaultSocial() {
     handle: '',
     displayName: '',
     share: { sessions: true, streak: true, consistency: true, prs: false },
-    hideRank: false
+    hideRank: false,
+    notify: defaultNotify()
   };
 }
 
@@ -99,7 +103,7 @@ export function validateSocialUpdate(input, current, { isHandleTaken }) {
   const unknown = Object.keys(input).find(k => !TOP_LEVEL_KEYS.includes(k));
   if (unknown) return bad(`unknown field: ${unknown}`);
 
-  const next = { ...current, share: { ...current.share } };
+  const next = { ...current, share: { ...current.share }, notify: { ...current.notify, quiet: { ...current.notify.quiet } } };
 
   if ('enabled' in input) {
     if (typeof input.enabled !== 'boolean') return bad('enabled must be true or false');
@@ -130,6 +134,11 @@ export function validateSocialUpdate(input, current, { isHandleTaken }) {
       if (typeof value !== 'boolean') return bad(`share.${key} must be true or false`);
       next.share[key] = value;
     }
+  }
+  if ('notify' in input) {
+    const checked = validateNotify(input.notify, current.notify);
+    if (!checked.ok) return bad(checked.error);
+    next.notify = checked.value;
   }
 
   if (next.enabled && (!next.handle || !next.displayName)) {

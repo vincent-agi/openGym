@@ -23,29 +23,39 @@ const MINE_COUNT = 5;
  * @param {(req: import('node:http').IncomingMessage) => (object | null)} ctx.readSession
  * @param {(res: import('node:http').ServerResponse, code: number, body: object) => void} ctx.json
  * @param {(req: import('node:http').IncomingMessage) => Promise<any>} ctx.readBody
+ * @param {(uid: string, kind: string, data: object) => Promise<boolean>} [ctx.notify]  Push notifier; the default does nothing.
  * @param {() => number} [ctx.now]
- * @returns {{recordEvents: (user: object, state: object) => void, onSever: (a: string, b: string) => void, routes: Record<string, Function>}}
+ * @returns {{recordEvents: (user: object, state: object) => object[], onSever: (a: string, b: string) => void, routes: Record<string, Function>}}
  */
-export function createFeedService({ db, saveDb, readSession, json, readBody, now = Date.now }) {
+export function createFeedService({ db, saveDb, readSession, json, readBody, notify = async () => false, now = Date.now }) {
   const userById = id => db.users.find(u => u.id === id);
   const friendIds = uid => new Set(relationsOf(db.friendships, uid).friends.map(f => f.uid));
   /** An owner whose sessions friends may see. */
   const visible = u => isSharing(u) && u.social.share.sessions;
   const isMuted = (uid, mutedUid) => db.cheerMutes.some(m => m.uid === uid && m.mutedUid === mutedUid);
 
+  /**
+   * Records an event for each new completed session of a user who shares sessions.
+   *
+   * @param {object} user
+   * @param {object} state  The state just saved.
+   * @returns {object[]} The events created, so the caller can tell friends. Empty when none.
+   */
   const recordEvents = (user, state) => {
-    if (!visible(user)) return;
+    if (!visible(user)) return [];
     try {
       const t = now();
       const seen = new Set(db.socialEvents.filter(e => e.uid === user.id).map(e => e.ref));
       const fresh = newEventsFromState(state, t, state?.reminder?.tz || 'UTC', seen);
-      if (!fresh.length) return;
-      for (const f of fresh) db.socialEvents.push({ id: crypto.randomBytes(8).toString('base64url'), uid: user.id, ref: f.ref, date: f.date, kind: 'session', createdAt: t });
+      if (!fresh.length) return [];
+      const created = fresh.map(f => ({ id: crypto.randomBytes(8).toString('base64url'), uid: user.id, ref: f.ref, date: f.date, kind: 'session', createdAt: t }));
+      db.socialEvents.push(...created);
       const kept = pruneFeed(db.socialEvents, db.socialCheers, t);
       db.socialEvents = kept.events;
       db.socialCheers = kept.cheers;
       saveDb();
-    } catch (e) { console.error('feed events failed for', user.id, e); }
+      return created;
+    } catch (e) { console.error('feed events failed for', user.id, e); return []; }
   };
 
   /** Removes every cheer between two people, in both directions. Called when a friendship ends. */
@@ -104,7 +114,10 @@ export function createFeedService({ db, saveDb, readSession, json, readBody, now
       }
       const existing = db.socialCheers.find(c => c.eventId === eventId && c.from === user.id);
       if (existing) existing.emoji = emoji;
-      else db.socialCheers.push({ eventId, from: user.id, emoji, createdAt: now() });
+      else {
+        db.socialCheers.push({ eventId, from: user.id, emoji, createdAt: now() });
+        if (!isMuted(event.uid, user.id)) notify(event.uid, 'cheerReceived', { name: user.social.displayName, emoji });
+      }
       saveDb();
       json(res, 200, { ok: true });
     },

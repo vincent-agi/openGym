@@ -66,7 +66,9 @@ from clients will overwrite manual edits.
         "handle": "lea_fit",              // unique, lowercase, 3-20 of [a-z0-9_]
         "displayName": "Léa",
         "share": { "sessions": true, "streak": true, "consistency": true, "prs": false },
-        "hideRank": false
+        "hideRank": false,
+        "notify": { "friendSession": false, "cheerReceived": false, "challengeInvite": false,
+                    "challengeMilestone": false, "challengeEnded": false, "quiet": { "from": "21:00", "to": "08:00" } }
       }
     }
   ],
@@ -121,6 +123,10 @@ from clients will overwrite manual edits.
   ],                                      // `ref` is internal (dedupe) and never sent to friends
   "socialCheers": [ { "eventId": "e8Kd2Lq9", "from": "v2Lm0ePqRt7YcNaB", "emoji": "🔥", "createdAt": 1791372000000 } ],
   "cheerMutes": [ { "uid": "piYdx5GveQarq8u9", "mutedUid": "v2Lm0ePqRt7YcNaB" } ],
+  "socialOutbox": [                       // friends module: pushes waiting to be delivered (batching, quiet hours)
+    { "id": "Zk2p", "uid": "piYdx5GveQarq8u9", "kind": "friendSession", "data": { "names": ["Léa"] }, "createdAt": 1791371000000, "deliverAt": 1791371600000 }
+  ],
+  "socialPushLog": [ { "uid": "piYdx5GveQarq8u9", "kind": "cheerReceived", "ts": 1791371700000, "date": "2026-10-07" } ],  // 2 days, for the daily limits
   "subs": [                               // Web Push subscriptions
     {
       "userId": "piYdx5GveQarq8u9",

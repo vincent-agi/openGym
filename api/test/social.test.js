@@ -12,6 +12,8 @@ test('defaultSocial is fully private', () => {
   assert.equal(d.displayName, '');
   assert.equal(d.hideRank, false);
   assert.deepEqual(d.share, { sessions: true, streak: true, consistency: true, prs: false });
+  assert.equal(d.notify.friendSession, false);
+  assert.deepEqual(d.notify.quiet, { from: '21:00', to: '08:00' });
 });
 
 test('defaultSocial returns a fresh object each time', () => {
@@ -106,4 +108,13 @@ test('isSharing is true only for a user who explicitly enabled sharing', () => {
   assert.equal(isSharing({ id: 'a', social: defaultSocial() }), false);
   assert.equal(isSharing({ id: 'a', social: { ...defaultSocial(), enabled: true } }), true);
   assert.equal(isSharing(null), false);
+});
+
+test('notification preferences are validated and merged through the same update', () => {
+  const r = validateSocialUpdate({ notify: { cheerReceived: true, quiet: { from: '22:30' } } }, defaultSocial(), opts);
+  assert.equal(r.ok, true);
+  assert.equal(r.value.notify.cheerReceived, true);
+  assert.deepEqual(r.value.notify.quiet, { from: '22:30', to: '08:00' });
+  assert.equal(validateSocialUpdate({ notify: { sms: true } }, defaultSocial(), opts).ok, false);
+  assert.equal(validateSocialUpdate({ notify: { quiet: { from: 'night' } } }, defaultSocial(), opts).ok, false);
 });

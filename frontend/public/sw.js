@@ -15,14 +15,19 @@ self.addEventListener('push', e => {
     icon: 'icon-512.png',
     badge: 'icon-180.png',
     tag: data.tag || 'gymme',
+    data: { url: data.url || '' },   // hash route to open on tap, e.g. '#/crew'
     renotify: true
   }))
 })
 self.addEventListener('notificationclick', e => {
   e.notification.close()
-  e.waitUntil(self.clients.matchAll({ type: 'window' }).then(clients => {
+  const target = new URL('./' + (e.notification.data?.url || ''), self.registration.scope).href
+  e.waitUntil(self.clients.matchAll({ type: 'window' }).then(async clients => {
     const c = clients.find(c => 'focus' in c)
-    return c ? c.focus() : self.clients.openWindow('./')
+    if (!c) return self.clients.openWindow(target)
+    // Open the screen the notification is about, then bring the window forward.
+    try { await c.navigate(target) } catch { /* some browsers cannot navigate a client; focusing is still right */ }
+    return c.focus()
   }))
 })
 

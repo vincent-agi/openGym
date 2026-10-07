@@ -10,11 +10,7 @@ import {
   generateAuthenticationOptions, verifyAuthenticationResponse
 } from '@simplewebauthn/server';
 import webpush from 'web-push';
-import { createSocialRoutes } from './social.js';
-import { createFriendRoutes } from './friends.js';
-import { createSharingService } from './sharing.js';
-import { createChallengeService } from './challenge-service.js';
-import { createFeedService } from './feed-service.js';
+import { createSocialModule } from './social-module.js';
 
 const PORT = +(process.env.PORT || 3000);
 const DATA = process.env.DATA_DIR || '/data';
@@ -48,14 +44,6 @@ let db = { users: [], creds: [], subs: [], invites: [] };
 try { db = JSON.parse(fs.readFileSync(dbFile, 'utf8')); } catch {}
 db.subs = db.subs || [];
 db.invites = db.invites || [];
-db.friendships = db.friendships || [];
-db.friendCodes = db.friendCodes || [];
-db.socialSummaries = db.socialSummaries || {};
-db.challenges = db.challenges || [];
-db.challengeProgress = db.challengeProgress || {};
-db.socialEvents = db.socialEvents || [];
-db.socialCheers = db.socialCheers || [];
-db.cheerMutes = db.cheerMutes || [];
 const isAdmin = user => !!user && (user.admin === true || ADMIN_UIDS.includes(user.id));
 function saveDb() { atomicWrite(dbFile, JSON.stringify(db, null, 2)); }
 function atomicWrite(file, content) {
@@ -589,22 +577,15 @@ const routes = {
   }
 };
 
-// Friends module. `afterStateSaved` runs whenever a user's state is saved (PUT /api/data).
+// Friends & challenges module. `afterStateSaved` runs whenever a user's state is saved (PUT /api/data).
 let afterStateSaved = () => {};
+let maintainSocial = async () => {};
 if (SOCIAL_ENABLED) {
-  const services = { db, saveDb, readSession, json, readBody, readState };
-  const sharing = createSharingService(services);
-  const challenges = createChallengeService(services);
-  const feed = createFeedService(services);
-  afterStateSaved = (user, state) => { sharing.refresh(user, state); challenges.recordProgress(user, state); feed.recordEvents(user, state); };
-  const onChange = (user, wasSharing) => {
-    if (user.social?.enabled) {
-      const saved = wasSharing ? null : readState(user.id);   // nothing to summarise before the first sync
-      if (saved) sharing.refresh(user, saved);
-    } else sharing.forget(user.id);
-    challenges.onSharingChange(user, wasSharing);
-  };
-  Object.assign(routes, createSocialRoutes({ ...services, onChange }), createFriendRoutes({ ...services, onSever: feed.onSever }), sharing.routes, challenges.routes, feed.routes);
+  const social = createSocialModule({ db, saveDb, readSession, json, readBody, readState, sendPush });
+  Object.assign(routes, social.routes);
+  afterStateSaved = social.afterStateSaved;
+  maintainSocial = social.maintain;
+  if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) social.start();
 }
 
 /** The HTTP server. Exported so tests can bind it to an ephemeral port; started below only when run directly. */
@@ -622,7 +603,7 @@ export const server = http.createServer(async (req, res) => {
 
 // Test hooks: the identity store and the production cookie signer, so tests can authenticate
 // without a WebAuthn ceremony. Not used by the running server.
-export { db, saveDb, sessionCookie };
+export { db, saveDb, sessionCookie, maintainSocial as runSocialMaintenance };
 
 // `node server.js` (Docker, `npm start`) listens; importing this module (tests) does not.
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {

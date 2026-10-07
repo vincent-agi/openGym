@@ -100,7 +100,7 @@ Implemented in `api/social.js`. Unknown JSON fields are rejected with `400`.
 | Method & path | Auth | Description |
 |---|---|---|
 | `GET /api/social/me` | session | `{"social":{enabled, handle, displayName, share:{sessions, streak, consistency, prs}, hideRank}}`. A user who never opened the module gets the private defaults (`enabled:false`, empty handle). |
-| `PUT /api/social/me` | session | Partial update of the same object. `handle`: 3-20 chars `[a-z0-9_]`, stored lowercase, unique across the instance (`409` on clash). `displayName`: 1-30 chars, no control characters. `share.*`, `enabled` and `hideRank` must be booleans. `enabled:true` requires a handle and a display name (`400` otherwise); `enabled:false` always succeeds. Returns the stored settings. |
+| `PUT /api/social/me` | session | Partial update of the same object, `notify` included (see below). `handle`: 3-20 chars `[a-z0-9_]`, stored lowercase, unique across the instance (`409` on clash). `displayName`: 1-30 chars, no control characters. `share.*`, `enabled` and `hideRank` must be booleans. `enabled:true` requires a handle and a display name (`400` otherwise); `enabled:false` always succeeds. Returns the stored settings. |
 
 #### Friends
 
@@ -177,6 +177,27 @@ An **event** records only that a session was finished on a date. It is created b
 "Sessions" shared) saves their state and has a new completed session from today or yesterday, never from the client, and
 carries no routine, exercise, weight or duration. Events and their cheers are deleted after 30 days. Removing or blocking
 a friend deletes the cheers between you in both directions.
+
+#### Notifications
+
+Preferences are part of the social settings: `notify` holds `friendSession`, `cheerReceived`, `challengeInvite`,
+`challengeMilestone`, `challengeEnded` (booleans, **all off by default**) and `quiet: {from, to}` (`HH:MM`, default
+`21:00`-`08:00`, in the user's own time zone, `reminder.tz`). Implemented in `api/notifier.js`; pushes use the existing
+Web Push path and carry `{title, body, tag, url}`, where `url` is a hash route (`#/crew`) that the service worker opens when
+the notification is tapped.
+
+Delivery rules, all enforced and tested:
+
+- Nothing is sent to a user who is not sharing, has no push subscription, or did not enable that kind.
+- **Quiet hours:** a push falling inside them is held until they end; one that would be older than 12 hours by then is dropped.
+- **Limits per recipient per day:** one `friendSession` push (friends who train within 10 minutes of each other are merged
+  into one digest, "2 friends trained today") and three social pushes in total.
+- A new cheer notifies its owner once (changing the emoji does not), unless the owner muted the sender.
+- Co-op challenges announce half-way and the target to everyone, once each; in a versus challenge each person is told
+  when they reach the target. Finished challenges are announced once.
+- Wording is encouraging: no ranks, comparisons or "behind".
+
+Pending pushes live in `db.socialOutbox` so a restart does not lose a held one; a 30-second background job delivers them.
 
 Adding by exact handle does reveal that a *sharing* user with that handle exists. Treat handles as findable by anyone
 who has an account on the instance; users who want to stay unlisted should not enable sharing or should add friends by code only.

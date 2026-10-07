@@ -77,3 +77,27 @@ describe('sharedFields — what friends will see', () => {
     sharedFields(base).forEach(f => expect(f.example).toEqual(expect.any(String)))
   })
 })
+
+import { NOTIFY_OPTIONS, QUIET_HOURS, quietLabel } from './social.js'
+import { NOTIFY_KINDS } from '../../../api/notify-prefs.js'
+
+describe('notification preferences', () => {
+  it('are all off by default, with quiet hours at night', () => {
+    for (const k of NOTIFY_KINDS) expect(EMPTY_SOCIAL.notify[k]).toBe(false)
+    expect(EMPTY_SOCIAL.notify.quiet).toEqual({ from: '21:00', to: '08:00' })
+  })
+  it('offer exactly the kinds the API knows, in the same order', () => {
+    expect(NOTIFY_OPTIONS.map(o => o.key)).toEqual([...NOTIFY_KINDS])
+  })
+  it('describe every kind with a title and a subtitle', () => {
+    for (const o of NOTIFY_OPTIONS) { expect(o.title).toEqual(expect.any(String)); expect(o.subtitle).toEqual(expect.any(String)) }
+  })
+  it('offer whole-hour quiet hour choices, as HH:MM strings', () => {
+    expect(QUIET_HOURS).toHaveLength(24)
+    expect(QUIET_HOURS[0]).toBe('00:00')
+    expect(QUIET_HOURS[23]).toBe('23:00')
+  })
+  it('read as a sentence', () => {
+    expect(quietLabel({ from: '21:00', to: '08:00' })).toEqual({ template: 'No notifications from {0} to {1}', from: '21:00', to: '08:00' })
+  })
+})

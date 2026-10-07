@@ -8,9 +8,10 @@ import { todayISO } from '../lib/format.js'
 import { addDaysIso } from '../lib/challenges.js'
 import { planBreak, activeBreak, clearBreaks, MAX_BREAK_DAYS } from '../lib/breaks.js'
 import {
-  EMPTY_SOCIAL, DISPLAY_NAME_MAX, normalizeHandle, handleError, displayNameError, canEnableSharing, sharedFields
+  EMPTY_SOCIAL, DISPLAY_NAME_MAX, NOTIFY_OPTIONS, QUIET_HOURS, normalizeHandle, handleError, displayNameError, canEnableSharing, sharedFields
 } from '../lib/social.js'
-import { Section, Row, Switch, Button, TextField } from './ui.jsx'
+import { pushSupported } from '../lib/push.js'
+import { Section, Row, SelectRow, Switch, Button, TextField } from './ui.jsx'
 import { fmtDate } from '../lib/format.js'
 
 const SHARE_OPTIONS = [
@@ -113,6 +114,7 @@ export default function SocialSettings() {
   }
 
   const fields = sharedFields({ ...draft, enabled: saved.enabled })
+  const setNotify = patch => save({ notify: patch })
 
   return (
     <>
@@ -150,6 +152,21 @@ export default function SocialSettings() {
             onChange={v => { setDraft({ ...draft, hideRank: v }); save({ hideRank: v }) }} />
         </Row>
       </Section>
+
+      {saved.enabled && pushSupported() && (
+        <Section title={t('Friend notifications')}
+          footer={t('Needs notifications turned on above. All off by default, never at night, and always encouraging.')}>
+          {NOTIFY_OPTIONS.map(o => (
+            <Row key={o.key} icon="bell" iconTint="var(--orange)" title={t(o.title)} subtitle={t(o.subtitle)}>
+              <Switch checked={!!saved.notify[o.key]} disabled={busy} onChange={v => setNotify({ [o.key]: v })} />
+            </Row>
+          ))}
+          <SelectRow icon="moon" iconTint="var(--purple)" title={t('Quiet from')} value={saved.notify.quiet.from}
+            options={QUIET_HOURS.map(h => ({ value: h, label: h }))} onChange={v => setNotify({ quiet: { from: v } })} />
+          <SelectRow icon="moon" iconTint="var(--purple)" title={t('Quiet until')} value={saved.notify.quiet.to}
+            options={QUIET_HOURS.map(h => ({ value: h, label: h }))} onChange={v => setNotify({ quiet: { to: v } })} />
+        </Section>
+      )}
 
       <Section title={t('What friends will see')}>
         {saved.enabled ? (
