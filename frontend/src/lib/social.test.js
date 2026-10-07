@@ -101,3 +101,42 @@ describe('notification preferences', () => {
     expect(quietLabel({ from: '21:00', to: '08:00' })).toEqual({ template: 'No notifications from {0} to {1}', from: '21:00', to: '08:00' })
   })
 })
+
+import { exportWithSocial, stripSocialFromImport, SOCIAL_BACKUP_KEY } from './social.js'
+
+describe('backups and friends data', () => {
+  const social = {
+    enabled: true, handle: 'lea', displayName: 'Léa', hideRank: true,
+    share: { sessions: true, streak: false, consistency: true, prs: false },
+    notify: { friendSession: true, cheerReceived: false, challengeInvite: false, challengeMilestone: false, challengeEnded: false, quiet: { from: '21:00', to: '08:00' } },
+    showBadges: ['hat-trick'], earned: [{ id: 'hat-trick', date: '2026-10-01' }]
+  }
+  const state = { workouts: [], routines: [] }
+
+  it('adds the user own social settings to an export, and nothing about anyone else', () => {
+    const out = exportWithSocial(state, social)
+    expect(out[SOCIAL_BACKUP_KEY]).toEqual({
+      handle: 'lea', displayName: 'Léa', hideRank: true, share: social.share, notify: social.notify, showBadges: ['hat-trick']
+    })
+    expect(out.workouts).toBe(state.workouts)
+  })
+  it('leaves the export unchanged without social settings', () => {
+    expect(exportWithSocial(state, null)).toEqual(state)
+    expect(SOCIAL_BACKUP_KEY in exportWithSocial(state, null)).toBe(false)
+  })
+  it('does not modify the state it was given', () => {
+    exportWithSocial(state, social)
+    expect(SOCIAL_BACKUP_KEY in state).toBe(false)
+  })
+  it('drops the social block, and anything that looks like friends data, when a backup is imported', () => {
+    const file = { ...state, [SOCIAL_BACKUP_KEY]: { handle: 'x' }, friends: [{ handle: 'a' }], friendships: [1], challenges: [1], socialSummaries: {} }
+    const imported = stripSocialFromImport(file)
+    expect(imported).toEqual(state)
+    expect(SOCIAL_BACKUP_KEY in imported).toBe(false)
+  })
+  it('does not modify the file it was given', () => {
+    const file = { ...state, [SOCIAL_BACKUP_KEY]: { handle: 'x' } }
+    stripSocialFromImport(file)
+    expect(SOCIAL_BACKUP_KEY in file).toBe(true)
+  })
+})

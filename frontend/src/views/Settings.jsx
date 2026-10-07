@@ -12,6 +12,7 @@ import { wakeLockSupported } from '../lib/wakelock.js'
 import { t, LANGS, INSTR_LANGS } from '../lib/i18n.js'
 import { DEMO, REPO } from '../lib/demo.js'
 import { MOBILE, shareExport, syncReminder } from '../lib/mobile.js'
+import { exportWithSocial, stripSocialFromImport } from '../lib/social.js'
 import { loadStarterPlan, confirmSheet, importFromApp } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
 import SocialSettings from '../components/SocialSettings.jsx'
@@ -28,7 +29,9 @@ export default function Settings() {
   const wakeOK = wakeLockSupported()
 
   const doExport = async () => {
-    const json = JSON.stringify(S, null, 2)
+    // Signed-in users with the friends module on also get their own friends settings in the file.
+    const social = user && !DEMO && !MOBILE ? await api('/api/social/me').then(r => r.social).catch(() => null) : null
+    const json = JSON.stringify(exportWithSocial(S, social), null, 2)
     const name = 'gymme-backup-' + todayISO() + '.json'
     // WKWebView can't download blob URLs — the native build hands the file to the share sheet.
     if (MOBILE) {
@@ -46,7 +49,7 @@ export default function Settings() {
       try {
         const data = JSON.parse(rd.result)
         if (!data.workouts || !data.routines) throw new Error('not a Gymme backup')
-        confirmSheet({ title: t('Import backup?'), message: t('This replaces all current data with the backup file.'), confirmText: t('Import'), danger: true, onConfirm: () => { replaceState(Object.assign(JSON.parse(JSON.stringify(DEF)), data), true); toast(t('Backup imported')) } })
+        confirmSheet({ title: t('Import backup?'), message: t('This replaces all current data with the backup file.'), confirmText: t('Import'), danger: true, onConfirm: () => { replaceState(Object.assign(JSON.parse(JSON.stringify(DEF)), stripSocialFromImport(data)), true); toast(t('Backup imported')) } })
       } catch (e) { toast(t('Import failed: {0}', e.message)) }
     }
     rd.readAsText(f)

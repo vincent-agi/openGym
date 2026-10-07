@@ -201,3 +201,18 @@ export function challengeView(ch, { progress, people, isSharing: sharing, today 
   }
   return view;
 }
+
+/**
+ * Takes someone out of a challenge for good (they left the app's social side, or ended a friendship
+ * with another participant). Ownership passes to someone still in; with nobody left, it is cancelled.
+ *
+ * @param {{ownerId: string | null, status?: string, participants: Array<{uid: string, status: string}>}} ch  Mutated.
+ * @param {string} uid
+ */
+export function removeParticipant(ch, uid) {
+  ch.participants = ch.participants.filter(p => p.uid !== uid);
+  if (ch.ownerId !== uid) return;
+  const heir = ch.participants.find(p => p.status === 'joined');
+  if (heir) ch.ownerId = heir.uid;
+  else { ch.status = 'cancelled'; ch.ownerId = null; }   // nobody is left to own it, and no id must linger
+}

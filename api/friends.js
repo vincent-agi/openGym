@@ -221,11 +221,12 @@ const NOBODY = 'nobody can be added with that code or handle';
  * @param {(res: import('node:http').ServerResponse, code: number, body: object) => void} ctx.json
  * @param {(req: import('node:http').IncomingMessage) => Promise<any>} ctx.readBody
  * @param {() => number} [ctx.now]  Clock, injectable for tests.
+ * @param {(rule: string, req: object, res: object, user: object) => boolean} [ctx.guard]  Rate-limit guard; true when the action may proceed.
  * @param {(a: string, b: string) => void} [ctx.onSever]  Called when a friendship ends (removed or blocked),
  *   so anything shared between the two can be cleaned up.
  * @returns {Record<string, Function>}
  */
-export function createFriendRoutes({ db, saveDb, readSession, json, readBody, now = Date.now, onSever = () => {} }) {
+export function createFriendRoutes({ db, saveDb, readSession, json, readBody, now = Date.now, guard = () => true, onSever = () => {} }) {
   const byId = id => db.users.find(u => u.id === id);
   const byHandle = handle => db.users.find(u => u.social?.handle === String(handle || '').trim().replace(/^@/, '').toLowerCase());
   const card = (id, extra = {}) => { const u = byId(id); return { handle: u.social.handle, displayName: u.social.displayName, ...extra }; };
@@ -274,6 +275,7 @@ export function createFriendRoutes({ db, saveDb, readSession, json, readBody, no
       const user = caller(req, res);
       if (!user) return;
       const body = await readBody(req);
+      if (!guard(typeof body.code === 'string' && body.code ? 'friendCode' : 'friendRequest', req, res, user)) return;
       let target;
       if (typeof body.code === 'string' && body.code) {
         const entry = db.friendCodes.find(c => c.code === body.code.trim().toUpperCase());

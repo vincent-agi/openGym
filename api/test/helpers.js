@@ -23,7 +23,7 @@ import path from 'node:path';
  * @property {string} baseUrl  Origin of the running server, e.g. `http://127.0.0.1:41233`.
  * @property {string} dataDir  Temporary data directory used by this instance.
  * @property {(name?: string, extra?: object) => TestUser} createUser  Adds a user and returns its session cookie.
- * @property {(pathname: string, opts?: RequestOptions) => Promise<{status: number, body: any}>} request  JSON request helper.
+ * @property {(pathname: string, opts?: RequestOptions) => Promise<{status: number, body: any, headers: Headers}>} request  JSON request helper.
  * @property {() => Promise<void>} close  Stops the server and deletes the data directory.
  */
 
@@ -32,6 +32,7 @@ import path from 'node:path';
  * @property {string} [method]   HTTP verb, defaults to `GET`.
  * @property {object} [body]     JSON body, serialised for you.
  * @property {TestUser} [as]     User to authenticate as; anonymous when omitted.
+ * @property {string} [ip]       Client address, sent as `X-Real-IP` the way the bundled nginx does.
  */
 
 /**
@@ -57,13 +58,22 @@ export async function startTestServer(env = {}) {
     return { id: user.id, name, cookie: mod.sessionCookie(user).split(';')[0] };
   };
 
-  const request = async (pathname, { method = 'GET', body, as } = {}) => {
+  // Each test user gets an address of their own unless a test says otherwise, so the per-address
+  // rate limits of the social routes never make unrelated tests interfere with each other.
+  const addresses = new Map();
+  const addressOf = user => {
+    if (!addresses.has(user.id)) { const n = addresses.size + 1; addresses.set(user.id, `10.${(n >> 16) & 255}.${(n >> 8) & 255}.${n & 255}`); }
+    return addresses.get(user.id);
+  };
+
+  const request = async (pathname, { method = 'GET', body, as, ip } = {}) => {
+    ip ??= as ? addressOf(as) : undefined;
     const res = await fetch(baseUrl + pathname, {
       method,
-      headers: { 'Content-Type': 'application/json', ...(as ? { Cookie: as.cookie } : {}) },
+      headers: { 'Content-Type': 'application/json', ...(as ? { Cookie: as.cookie } : {}), ...(ip ? { 'X-Real-IP': ip } : {}) },
       body: body === undefined ? undefined : JSON.stringify(body)
     });
-    return { status: res.status, body: await res.json().catch(() => null) };
+    return { status: res.status, body: await res.json().catch(() => null), headers: res.headers };
   };
 
   const close = async () => {
@@ -73,3 +83,20 @@ export async function startTestServer(env = {}) {
 
   return { baseUrl, dataDir, createUser, request, close };
 }
+
+/**
+ * Every social route, as `[method, path]`. The authorization matrix and the "module disabled"
+ * test both walk this list, and a test fails when it differs from the routes the server registers,
+ * so a new route cannot ship without being covered.
+ *
+ * @type {Array<[string, string]>}
+ */
+export const SOCIAL_ROUTES = [
+  ['GET', '/api/social/me'], ['PUT', '/api/social/me'], ['POST', '/api/social/leave'],
+  ['POST', '/api/social/friends/code'], ['GET', '/api/social/friends'], ['POST', '/api/social/friends/request'],
+  ['POST', '/api/social/friends/respond'], ['POST', '/api/social/friends/remove'], ['POST', '/api/social/friends/block'],
+  ['POST', '/api/social/friends/unblock'], ['GET', '/api/social/friends/summary'],
+  ['GET', '/api/social/challenges'], ['GET', '/api/social/challenge'], ['POST', '/api/social/challenges'],
+  ['POST', '/api/social/challenges/join'], ['POST', '/api/social/challenges/leave'], ['POST', '/api/social/challenges/cancel'],
+  ['GET', '/api/social/feed'], ['POST', '/api/social/cheer'], ['POST', '/api/social/cheer/retract'], ['POST', '/api/social/cheer/mute']
+];

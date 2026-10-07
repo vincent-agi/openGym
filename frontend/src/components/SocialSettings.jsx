@@ -12,6 +12,7 @@ import {
 } from '../lib/social.js'
 import { pushSupported } from '../lib/push.js'
 import { Section, Row, SelectRow, Switch, Button, TextField } from './ui.jsx'
+import { confirmSheet } from '../sheets.jsx'
 import { fmtDate } from '../lib/format.js'
 
 const SHARE_OPTIONS = [
@@ -116,6 +117,20 @@ export default function SocialSettings() {
   const fields = sharedFields({ ...draft, enabled: saved.enabled })
   const setNotify = patch => save({ notify: patch })
 
+  /** Erases everything the friends module holds about you, after asking. Your own training data stays. */
+  const leave = () => confirmSheet({
+    title: t('Leave and erase friends data?'), danger: true, confirmText: t('Erase'),
+    message: t('This removes your friends, requests, challenges, cheers and badges from the server, and turns sharing off. Your own workouts are not touched. This cannot be undone.'),
+    onConfirm: async () => {
+      try {
+        await api('/api/social/leave', { method: 'POST', body: JSON.stringify({ confirm: true }) })
+        const r = await api('/api/social/me')
+        setSaved(r.social); setDraft(r.social)
+        toast(t('Your friends data was erased'))
+      } catch (e) { toast(e.message || t('Could not erase')) }
+    }
+  })
+
   return (
     <>
       <Section title={t('Friends & sharing')}
@@ -167,6 +182,11 @@ export default function SocialSettings() {
             options={QUIET_HOURS.map(h => ({ value: h, label: h }))} onChange={v => setNotify({ quiet: { to: v } })} />
         </Section>
       )}
+
+      <Section title={t('Leave')}
+        footer={t('Erases what the friends module stores about you. You can set it up again at any time.')}>
+        <Row icon="trash" iconTint="var(--red)" danger title={t('Leave and erase friends data')} onClick={leave} />
+      </Section>
 
       <Section title={t('What friends will see')}>
         {saved.enabled ? (

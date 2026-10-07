@@ -17,7 +17,7 @@ backups and host protection.
 | Session revocation | Per-account (`logout/all`), per-user disable, instance-wide (`secret` reset) | Procedures (below) |
 | Authorization | Data isolated by session uid; admin routes gated server-side | Decide who is admin |
 | Transport security | — | **TLS termination** |
-| Rate limiting / brute-force | — | **Reverse-proxy limits** |
+| Rate limiting / brute-force | Limits on the friends routes only (friend requests, code guessing, cheers, challenge creation) | **Reverse-proxy limits** for everything else |
 | Security headers (HSTS, CSP…) | — | **Reverse-proxy headers** |
 | Encryption at rest | — | Disk/volume encryption, encrypted backups |
 | Audit logging | — | Proxy access logs, host auditing |
@@ -52,6 +52,50 @@ backups and host protection.
 | T11 | Admin dashboard takeover | An admin account is a passkey profile. | Register admin profiles on hardware-backed passkeys; limit `ADMIN_UIDS` to the minimum. |
 | T12 | Push-channel abuse | `vapid.json` private key leak lets an attacker push to subscribers. | Protect `data/`; rotate by deleting `vapid.json`. |
 | T13 | Data tampering via `PUT /api/data` | A user can write anything into their own state file (their own data only). | Acceptable; the server never evaluates it. Other users' views (admin dashboard) render it as text. |
+
+## Friends module (v1.7): threat model
+
+The friends module is the only part of Gymme that lets one user's data reach another user. It is therefore built to
+share as little as possible, and tested to do so (`api/test/social-authz.test.js`, `privacy-boundaries.test.js`).
+
+**What is shared, and with whom.** A user who never opens the module shares nothing. A user who opts in shares, with
+their *accepted friends only*, a small server-computed summary (sessions, consistency against their own plan, week streak,
+active days, personal-record count, and a trend against their own past), plus the badges and a fixed emoji cheer they
+choose to send or show. Never shared: body weight, measurements, nutrition, effort ratings, the mobility profile, exercise
+names, weights, reps, timestamps finer than a day, or planned-break reasons. See [Friends module scoring](social-scoring.md).
+
+**Trust boundaries.**
+
+| Boundary | Rule |
+|---|---|
+| User ↔ server | The summary, events, progress and badges are computed **by the server** from the saved state. A client cannot submit them, and unknown fields are rejected. |
+| User ↔ friend | Friends read derived data from `db.json`, never `state-<uid>.json`. A test fails if any module reads a state file with a uid other than the caller's. |
+| User ↔ stranger | Strangers get the same refusal whether a user exists, shares, blocked them or is a duplicate (no enumeration). Handles can only be tried one at a time under a rate limit. |
+| Operator | Can read everything in `./data`, as everywhere else. The admin dashboard shows only **counts** of friends and challenges per user. |
+| Instance | `SOCIAL_ENABLED=0` removes every `/api/social/*` route (404). |
+
+**Abuse cases and mitigations.**
+
+| Abuse | Mitigation |
+|---|---|
+| Finding out who uses the instance | Friend codes (10 characters, ~49 bits, 14 days, revocable) and exact handles only; no search or listing. Identical errors for every refusal. Code guessing is limited to 20 attempts an hour per user and per address, with a wait that doubles. |
+| Harassment by repeated requests | 10 requests an hour per user and per address; block is silent and removes the friendship, the cheers and the shared challenges. |
+| Flooding with cheers or challenges | 60 cheers an hour, 10 challenge creations a day, at most 5 live challenges per person. Cheers are one of five emoji; there is no free text anywhere. |
+| Forging scores | Progress is derived server-side; sessions dated in the future are ignored; badges are written only by the server. |
+| Leaking through stale data | Turning sharing off, an admin disabling the account, or blocking takes effect on the next request. Events and cheers expire after 30 days. |
+| Cross-site scripting through names | Handles, display names and challenge titles are length-capped, stripped of control characters and rendered only as text; a test forbids `innerHTML`/`dangerouslySetInnerHTML` in the app. |
+| Notification spam | Opt-in per kind, quiet hours in the recipient's time zone, one friend-session push and three social pushes a day. |
+
+**Leaving.** `POST /api/social/leave` (with `{"confirm":true}`) deletes everything the module stores about the caller
+(friendships and blocks, codes, summaries, events, cheers sent and received, mutes, queued pushes, badges, challenge
+participation) and resets their settings to the private defaults. Challenges they owned pass to a participant who is still
+in, or are cancelled; no user id remains anywhere in `db.json` outside the account records themselves (a test searches for
+it). A block made *against* the leaving user is deleted with the rest. Their own training data is not touched. Backups
+include the user's own friends settings; importing a backup never restores friends, requests or challenges.
+
+**Limits.** Rate limits are in memory per process and per client address (taken from `X-Real-IP`, which the bundled nginx
+overwrites; the client-controlled `X-Forwarded-For` is ignored). Running behind a different proxy requires it to set
+`X-Real-IP` to the true client address, or all clients will share one budget.
 
 ## Known weaknesses (as designed)
 

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  LIMITS, validateChallengeInput, collectProgress, progressOf, statusOf, challengeView, activeCountFor
+  LIMITS, validateChallengeInput, collectProgress, progressOf, statusOf, challengeView, activeCountFor, removeParticipant
 } from '../challenges.js';
 
 const TODAY = '2026-10-07';   // Wednesday
@@ -160,4 +160,25 @@ test('collectProgress honours planned breaks when counting planned sessions per 
   const d = collectProgress(st, { from: '2026-10-05', to: '2026-10-11', today: '2026-10-11', gaps: [] });
   assert.equal(d.weeks[0].planned, 0);
   assert.equal(progressOf('consistency', d), 0);      // a break week gives no credit, and no penalty
+});
+
+test('removeParticipant deletes the person and hands the challenge to someone still in', () => {
+  const ch = { ownerId: 'a', status: 'open', participants: [{ uid: 'a', status: 'joined' }, { uid: 'b', status: 'invited' }, { uid: 'c', status: 'joined' }] };
+  removeParticipant(ch, 'a');
+  assert.deepEqual(ch.participants.map(p => p.uid), ['b', 'c']);
+  assert.equal(ch.ownerId, 'c');
+  assert.equal(ch.status, 'open');
+});
+
+test('removeParticipant cancels the challenge when nobody is left to own it', () => {
+  const ch = { ownerId: 'a', status: 'open', participants: [{ uid: 'a', status: 'joined' }, { uid: 'b', status: 'invited' }] };
+  removeParticipant(ch, 'a');
+  assert.equal(ch.status, 'cancelled');
+});
+
+test('removeParticipant leaves the owner alone when someone else goes', () => {
+  const ch = { ownerId: 'a', status: 'open', participants: [{ uid: 'a', status: 'joined' }, { uid: 'b', status: 'joined' }] };
+  removeParticipant(ch, 'b');
+  assert.equal(ch.ownerId, 'a');
+  assert.deepEqual(ch.participants.map(p => p.uid), ['a']);
 });

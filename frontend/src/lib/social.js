@@ -123,3 +123,36 @@ export const QUIET_HOURS = Array.from({ length: 24 }, (_, h) => String(h).padSta
  * @returns {{template: string, from: string, to: string}}
  */
 export const quietLabel = quiet => ({ template: 'No notifications from {0} to {1}', from: quiet.from, to: quiet.to })
+
+/** Key under which a backup carries the user's own friends settings. */
+export const SOCIAL_BACKUP_KEY = '_social'
+
+/**
+ * Adds the user's own friends settings to a backup, so setting up Gymme again takes seconds.
+ * Only settings the user chose; never friends, summaries, cheers or challenges.
+ *
+ * @param {object} state  The app state to export; not modified.
+ * @param {SocialSettings | null | undefined} social  From `GET /api/social/me`.
+ * @returns {object}
+ */
+export function exportWithSocial(state, social) {
+  if (!social) return state
+  const { handle, displayName, hideRank, share, notify, showBadges } = social
+  return { ...state, [SOCIAL_BACKUP_KEY]: { handle, displayName, hideRank, share, notify, showBadges } }
+}
+
+/** Fields a hand-edited or foreign file might carry that must never reach the app state. */
+const FRIENDS_FIELDS = ['friends', 'friendships', 'friendCodes', 'challenges', 'challengeProgress', 'socialSummaries', 'socialEvents', 'socialCheers']
+
+/**
+ * Prepares an imported backup: the friends block and anything that looks like friends data is
+ * dropped. Friendships belong to the server and to two people, so a file can never restore them.
+ *
+ * @param {object} data  The parsed backup; not modified.
+ * @returns {object}
+ */
+export function stripSocialFromImport(data) {
+  const clean = { ...data }
+  for (const key of [SOCIAL_BACKUP_KEY, ...FRIENDS_FIELDS]) delete clean[key]
+  return clean
+}

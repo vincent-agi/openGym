@@ -206,3 +206,30 @@ test('when the owner leaves, the challenge passes to someone still in, or ends i
   await post('challenges/leave', friend, { id: challenge.id });
   assert.equal((await getOne(friend, challenge.id)).body.challenge.status, 'cancelled');
 });
+
+test('blocking or removing someone takes you out of the challenges you share, for good', async () => {
+  const [owner, friend] = await crew(2);
+  const { challenge } = (await create(owner, [friend])).body;
+  await post('challenges/join', friend, { id: challenge.id });
+
+  await post('friends/block', friend, { handle: owner.handle });             // the friend blocks the owner
+  const list = (await getAll(friend)).body.challenges;
+  assert.ok(!list.some(c => c.id === challenge.id));                          // the blocker is out
+  assert.equal((await getOne(friend, challenge.id)).status, 404);
+  const ch = db.challenges.find(c => c.id === challenge.id);
+  assert.ok(!ch.participants.some(p => p.uid === friend.id));
+  assert.ok(!(db.challengeProgress[challenge.id] || {})[friend.id]);
+  assert.equal((await getOne(owner, challenge.id)).body.challenge.participants.length, 1);
+});
+
+test('when the one who ends a friendship owns the challenge, it passes to someone who stays', async () => {
+  const [owner, f1, f2] = await crew(3);
+  await befriend(f1, f2);
+  const { challenge } = (await create(owner, [f1, f2])).body;
+  await post('challenges/join', f1, { id: challenge.id });
+  await post('challenges/join', f2, { id: challenge.id });
+  await post('friends/remove', owner, { handle: f1.handle });
+  const ch = db.challenges.find(c => c.id === challenge.id);
+  assert.notEqual(ch.ownerId, owner.id);
+  assert.ok([f1.id, f2.id].includes(ch.ownerId));
+});

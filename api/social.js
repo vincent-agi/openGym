@@ -84,13 +84,14 @@ export function normalizeHandle(raw) {
 
 /**
  * Whether a user is currently visible to friends. The only gate every friend-facing
- * endpoint must use, so disabling sharing takes effect on the next request.
+ * endpoint must use, so disabling sharing (or an admin disabling the account) takes effect on
+ * the next request.
  *
- * @param {{social?: SocialSettings} | null | undefined} user
+ * @param {{social?: SocialSettings, disabled?: boolean} | null | undefined} user
  * @returns {boolean}
  */
 export function isSharing(user) {
-  return !!user?.social?.enabled;
+  return !!user?.social?.enabled && !user.disabled;
 }
 
 /**

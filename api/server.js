@@ -506,7 +506,8 @@ const routes = {
         lastWorkout: last ? last.d : null,
         lastSync: S._ts || null,
         hasPush: db.subs.some(s => s.userId === u.id),
-        live: livePresence(u.id)
+        live: livePresence(u.id),
+        social: socialCounts(u.id)       // counts only, never who or what
       };
     });
     json(res, 200, { users, invite_only: INVITE_ONLY, now: Date.now() });
@@ -580,11 +581,13 @@ const routes = {
 // Friends & challenges module. `afterStateSaved` runs whenever a user's state is saved (PUT /api/data).
 let afterStateSaved = () => {};
 let maintainSocial = async () => {};
+let socialCounts = () => ({ enabled: false, friends: 0, challenges: 0 });
 if (SOCIAL_ENABLED) {
   const social = createSocialModule({ db, saveDb, readSession, json, readBody, readState, sendPush });
   Object.assign(routes, social.routes);
   afterStateSaved = social.afterStateSaved;
   maintainSocial = social.maintain;
+  socialCounts = social.countsFor;
   if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) social.start();
 }
 
@@ -603,7 +606,10 @@ export const server = http.createServer(async (req, res) => {
 
 // Test hooks: the identity store and the production cookie signer, so tests can authenticate
 // without a WebAuthn ceremony. Not used by the running server.
-export { db, saveDb, sessionCookie, maintainSocial as runSocialMaintenance };
+/** Keys of every social route registered, for tests that must cover all of them. */
+const socialRouteKeys = () => Object.keys(routes).filter(k => k.includes(' /api/social/'));
+
+export { db, saveDb, sessionCookie, maintainSocial as runSocialMaintenance, socialRouteKeys };
 
 // `node server.js` (Docker, `npm start`) listens; importing this module (tests) does not.
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {

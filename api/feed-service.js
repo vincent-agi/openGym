@@ -24,11 +24,12 @@ const MINE_COUNT = 5;
  * @param {(res: import('node:http').ServerResponse, code: number, body: object) => void} ctx.json
  * @param {(req: import('node:http').IncomingMessage) => Promise<any>} ctx.readBody
  * @param {(uid: string, kind: string, data: object) => Promise<boolean>} [ctx.notify]  Push notifier; the default does nothing.
+ * @param {(rule: string, req: object, res: object, user: object) => boolean} [ctx.guard]  Rate-limit guard.
  * @param {(sender: object) => void} [ctx.onNewCheer]  Called when someone sends a cheer for the first time on an event.
  * @param {() => number} [ctx.now]
  * @returns {{recordEvents: (user: object, state: object) => object[], onSever: (a: string, b: string) => void, routes: Record<string, Function>}}
  */
-export function createFeedService({ db, saveDb, readSession, json, readBody, notify = async () => false, onNewCheer = () => {}, now = Date.now }) {
+export function createFeedService({ db, saveDb, readSession, json, readBody, notify = async () => false, onNewCheer = () => {}, guard = () => true, now = Date.now }) {
   const userById = id => db.users.find(u => u.id === id);
   const friendIds = uid => new Set(relationsOf(db.friendships, uid).friends.map(f => f.uid));
   /** An owner whose sessions friends may see. */
@@ -105,7 +106,7 @@ export function createFeedService({ db, saveDb, readSession, json, readBody, not
 
     'POST /api/social/cheer': async (req, res) => {
       const user = requireSharing(readSession, json, req, res);
-      if (!user) return;
+      if (!user || !guard('cheer', req, res, user)) return;
       const checked = validateCheer(await readBody(req));
       if (!checked.ok) return json(res, 400, { error: 'send an event id and one of the cheer emoji' });
       const { eventId, emoji } = checked.value;

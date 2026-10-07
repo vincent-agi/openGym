@@ -218,6 +218,16 @@ returns `earned` and `showBadges`; clients cannot write `earned` (it is rejected
 `PUT /api/social/me {showBadges:[id…]}` chooses which earned badges friends see; none by default. Friends receive them as
 `badges:[{id, date}]` on the summary rows, limited to earned and chosen ones.
 
+#### Limits, leaving
+
+Rate limits apply to these routes only, per signed-in user **and** per client address: `friends/request` with a handle 10 an
+hour; `friends/request` with a code 20 an hour, then the wait doubles on every further attempt (60 s, 120 s, … up to an
+hour); `cheer` 60 an hour; `challenges` (create) 10 a day. Refusals are `429 {"error":…}` with a `Retry-After` header.
+
+| Method & path | Description |
+|---|---|
+| `POST /api/social/leave` | Session only (sharing may be off). Body must be `{"confirm":true}`, else `400`. Erases everything the friends module stores about the caller and resets their settings to the private defaults; see the [security guide](security.md#friends-module-v17-threat-model). |
+
 Adding by exact handle does reveal that a *sharing* user with that handle exists. Treat handles as findable by anyone
 who has an account on the instance; users who want to stay unlisted should not enable sharing or should add friends by code only.
 

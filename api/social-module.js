@@ -12,6 +12,8 @@ import { createChallengeService } from './challenge-service.js';
 import { createFeedService } from './feed-service.js';
 import { createNotifier } from './notifier.js';
 import { createBadgeService } from './badge-service.js';
+import { eraseSocialFootprint } from './social-erase.js';
+import { createLimiter, createGuard } from './rate-limit.js';
 
 /**
  * @param {object} ctx
@@ -27,7 +29,8 @@ import { createBadgeService } from './badge-service.js';
  *   routes: Record<string, Function>,
  *   afterStateSaved: (user: object, state: object) => void,
  *   maintain: () => Promise<void>,
- *   start: () => void
+ *   start: () => void,
+ *   countsFor: (uid: string) => {enabled: boolean, friends: number, challenges: number}
  * }}
  */
 export function createSocialModule({ db, saveDb, readSession, json, readBody, readState, sendPush, now = Date.now }) {
@@ -38,7 +41,8 @@ export function createSocialModule({ db, saveDb, readSession, json, readBody, re
 
   const notifier = createNotifier({ db, saveDb, sendPush, readState, now });
   const badges = createBadgeService({ db, saveDb, now });
-  const base = { db, saveDb, readSession, json, readBody, readState, notify: notifier.notify, onNewCheer: badges.onCheerSent, now };
+  const guard = createGuard({ limiter: createLimiter({ now }), json });
+  const base = { db, saveDb, readSession, json, readBody, readState, notify: notifier.notify, onNewCheer: badges.onCheerSent, guard, now };
   const sharing = createSharingService(base);
   const challenges = createChallengeService(base);
   const feed = createFeedService(base);
@@ -65,9 +69,25 @@ export function createSocialModule({ db, saveDb, readSession, json, readBody, re
     challenges.onSharingChange(user, wasSharing);
   };
 
+  /** A friendship ended (removed or blocked): clean up what the two shared. */
+  const onSever = (actor, other) => { feed.onSever(actor, other); challenges.onSever(actor, other); };
+
   const routes = {
+    /**
+     * "Leave": erases everything the friends module stored about the caller. Needs `{confirm: true}`
+     * so it cannot be triggered by accident, and works whether or not sharing is currently on.
+     */
+    'POST /api/social/leave': async (req, res) => {
+      const user = readSession(req);
+      if (!user) return json(res, 401, { error: 'not signed in' });
+      if ((await readBody(req)).confirm !== true) return json(res, 400, { error: 'send {"confirm": true} to erase your friends data' });
+      challenges.eraseUser(user.id, user.social?.handle || '');
+      eraseSocialFootprint(db, user.id);
+      saveDb();
+      json(res, 200, { ok: true });
+    },
     ...createSocialRoutes({ ...base, onChange }),
-    ...createFriendRoutes({ ...base, onSever: feed.onSever }),
+    ...createFriendRoutes({ ...base, onSever }),
     ...sharing.routes, ...challenges.routes, ...feed.routes
   };
 
@@ -80,7 +100,19 @@ export function createSocialModule({ db, saveDb, readSession, json, readBody, re
     await notifier.flush();
   };
 
+  /**
+   * Social figures for the admin dashboard: counts only, never who or what.
+   *
+   * @param {string} uid
+   * @returns {{enabled: boolean, friends: number, challenges: number}}
+   */
+  const countsFor = uid => ({
+    enabled: !!db.users.find(u => u.id === uid)?.social?.enabled,
+    friends: relationsOf(db.friendships, uid).friends.length,
+    challenges: db.challenges.filter(c => c.participants.some(p => p.uid === uid && p.status === 'joined')).length
+  });
+
   const start = () => { setInterval(() => { maintain().catch(e => console.error('social maintenance failed', e)); }, 30000).unref(); };
 
-  return { routes, afterStateSaved, maintain, start };
+  return { routes, afterStateSaved, maintain, start, countsFor };
 }
