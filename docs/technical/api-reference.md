@@ -138,6 +138,29 @@ Its keys are a fixed whitelist (a test fails if one is added unreviewed):
 "Today" is computed in the owner's `reminder.tz` (UTC when unset), so a week boundary does not move for people abroad.
 Body weight, measurements, nutrition, effort ratings, the mobility profile, exercise names, weights and reps are never read.
 
+#### Challenges
+
+Friendly goals over 7-90 days, for 2-12 people. Implemented in `api/challenges.js` (rules) and `api/challenge-service.js`
+(storage and routes). Every route needs a session and sharing. Only participants can see a challenge; everyone else, and
+every other failure, gets `404 not found`.
+
+| Method & path | Description |
+|---|---|
+| `POST /api/social/challenges` | Body `{title, type, mode, target, startDate, endDate, invite:[handle…]}`. `type`: `sessions`, `activeDays`, `streak` (longest run of consecutive weeks with a session) or `consistency` (weeks fully inside the window where the planned number of sessions was reached). `mode`: `versus` (ranked) or `coop` (one shared bar). `target` is a whole number of those units, 1-365. `startDate` is today or later; `endDate` inclusive. Only **accepted friends who are sharing** can be invited (`400` with one message for every other case). `409` when the owner is already in 5 live challenges. Returns `{challenge}`. |
+| `GET /api/social/challenges` | `{challenges:[…]}`: those where the caller is joined or invited. |
+| `GET /api/social/challenge?id=<id>` | `{challenge}` for one challenge (any participant, including people who left). Query parameter rather than a path segment because the router matches exact paths. |
+| `POST /api/social/challenges/join` | Body `{id}`. For an invited person, or one who left while it is still running (`409` at 5 live challenges). They count from the day they join. |
+| `POST /api/social/challenges/leave` | Body `{id}`. If the owner leaves, ownership passes to someone still in; if nobody is, the challenge is cancelled. |
+| `POST /api/social/challenges/cancel` | Body `{id}`. Owner only. |
+
+A challenge view is `{id, title, type, mode, target, startDate, endDate, status, participants:[{handle, displayName, state, current, pct, position}]}`
+plus `{total, pct, done}` for co-op. `status` is `upcoming`, `active`, `ended` or `cancelled`; `state` is `joined`, `paused`
+(the person stopped sharing: not counted until they resume, and the days spent paused never count), `invited` or `left`.
+Ties share a position; co-op has no individual positions. An ended challenge is frozen the first time it is read afterwards.
+
+Progress is recomputed on the server from each person's own saved state (`PUT /api/data`), including their full history, so
+nothing a client sends can change it.
+
 Adding by exact handle does reveal that a *sharing* user with that handle exists. Treat handles as findable by anyone
 who has an account on the instance; users who want to stay unlisted should not enable sharing or should add friends by code only.
 

@@ -10,6 +10,7 @@ import { confirmSheet } from '../sheets.jsx'
 import { addFriendSheet, sendFriendRequest } from '../components/FriendSheets.jsx'
 import { Button } from '../components/ui.jsx'
 import CrewBoard from '../components/CrewBoard.jsx'
+import ChallengesCard from '../components/ChallengesCard.jsx'
 
 const post = (path, body) => api('/api/social/friends/' + path, { method: 'POST', body: JSON.stringify(body) })
 
@@ -73,6 +74,8 @@ export default function Crew() {
   else if (!data) body = <div className="muted">{t('Loading…')}</div>
   else body = <>
     {board.data && <CrewBoard data={board.data} hideRank={!!social.hideRank} onRefresh={board.reload} onAdd={() => addFriendSheet(() => { load(); board.reload() })} />}
+
+    {board.data && <ChallengesCard myHandle={social.handle} friends={data.friends} />}
 
     {data.incoming.length > 0 && (
       <div className="card">

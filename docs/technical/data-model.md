@@ -101,6 +101,21 @@ from clients will overwrite manual edits.
                 "streakWeeks": 4, "activeDays": ["2026-10-05", "2026-10-07"], "lastActiveDate": "2026-10-07", "prCount": 1 }
     }
   },
+  "challenges": [                         // friends module
+    {
+      "id": "Hq3u8WnC1aE", "ownerId": "piYdx5GveQarq8u9", "title": "Autumn push",
+      "type": "sessions", "mode": "versus", "target": 12,        // see the API reference for types and modes
+      "startDate": "2026-10-07", "endDate": "2026-11-03", "status": "open",  // "cancelled" when the owner cancels
+      "participants": [
+        { "uid": "piYdx5GveQarq8u9", "status": "joined", "joinedDate": "2026-10-07", "gaps": [] },
+        { "uid": "v2Lm0ePqRt7YcNaB", "status": "invited" }       // "joined" | "invited" | "left"; paused people carry "pausedFrom"
+      ],
+      "final": null                                              // frozen view, written the first time an ended challenge is read
+    }
+  ],
+  "challengeProgress": {                  // challenge id -> user id -> derived progress, never client-supplied
+    "Hq3u8WnC1aE": { "piYdx5GveQarq8u9": { "sessions": 3, "days": ["2026-10-07"], "weeks": [] } }
+  },
   "subs": [                               // Web Push subscriptions
     {
       "userId": "piYdx5GveQarq8u9",

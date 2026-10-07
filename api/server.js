@@ -13,6 +13,7 @@ import webpush from 'web-push';
 import { createSocialRoutes } from './social.js';
 import { createFriendRoutes } from './friends.js';
 import { createSharingService } from './sharing.js';
+import { createChallengeService } from './challenge-service.js';
 
 const PORT = +(process.env.PORT || 3000);
 const DATA = process.env.DATA_DIR || '/data';
@@ -49,6 +50,8 @@ db.invites = db.invites || [];
 db.friendships = db.friendships || [];
 db.friendCodes = db.friendCodes || [];
 db.socialSummaries = db.socialSummaries || {};
+db.challenges = db.challenges || [];
+db.challengeProgress = db.challengeProgress || {};
 const isAdmin = user => !!user && (user.admin === true || ADMIN_UIDS.includes(user.id));
 function saveDb() { atomicWrite(dbFile, JSON.stringify(db, null, 2)); }
 function atomicWrite(file, content) {
@@ -414,7 +417,7 @@ const routes = {
     if (!body.state || typeof body.state !== 'object') return json(res, 400, { error: 'state required' });
     delete body.state.active;              // in-progress workouts stay device-local
     atomicWrite(stateFile(user.id), JSON.stringify(body.state));
-    sharing.refresh(user, body.state);
+    afterStateSaved(user, body.state);
     json(res, 200, { ok: true, ts: body.state._ts || null });
   },
 
@@ -582,19 +585,21 @@ const routes = {
   }
 };
 
-// Friends module. `sharing.refresh` is called whenever a user's state is saved.
-let sharing = { refresh() {}, forget() {}, routes: {} };
+// Friends module. `afterStateSaved` runs whenever a user's state is saved (PUT /api/data).
+let afterStateSaved = () => {};
 if (SOCIAL_ENABLED) {
-  const services = { db, saveDb, readSession, json, readBody };
-  sharing = createSharingService(services);
+  const services = { db, saveDb, readSession, json, readBody, readState };
+  const sharing = createSharingService(services);
+  const challenges = createChallengeService(services);
+  afterStateSaved = (user, state) => { sharing.refresh(user, state); challenges.recordProgress(user, state); };
   const onChange = (user, wasSharing) => {
     if (user.social?.enabled) {
       const saved = wasSharing ? null : readState(user.id);   // nothing to summarise before the first sync
       if (saved) sharing.refresh(user, saved);
-    }
-    else sharing.forget(user.id);
+    } else sharing.forget(user.id);
+    challenges.onSharingChange(user, wasSharing);
   };
-  Object.assign(routes, createSocialRoutes({ ...services, onChange }), createFriendRoutes(services), sharing.routes);
+  Object.assign(routes, createSocialRoutes({ ...services, onChange }), createFriendRoutes(services), sharing.routes, challenges.routes);
 }
 
 /** The HTTP server. Exported so tests can bind it to an ephemeral port; started below only when run directly. */

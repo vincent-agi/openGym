@@ -66,16 +66,28 @@ export function isoInZone(ms, tz) {
   }
 }
 
-/** Routine planned for a day: a valid override wins over the weekly plan. Mirrors the app. */
-function plannedRoutine(state, iso) {
+/**
+ * Routine planned for a day: a valid override wins over the weekly plan. Mirrors the app.
+ *
+ * @param {object} state
+ * @param {string} iso
+ * @returns {string | null}
+ */
+export function plannedRoutine(state, iso) {
   const override = state.dayPlan?.[iso];
   if (override === 'rest') return null;
   if (override && state.routines?.some(r => r.id === override)) return override;
   return state.week?.[utcNoon(iso).getUTCDay()] || null;
 }
 
-/** A workout counts as a session when it has a valid date not after `today` and one completed set. */
-function isSession(w, today) {
+/**
+ * A workout counts as a session when it has a valid date not after `today` and one completed set.
+ *
+ * @param {any} w
+ * @param {string} today  ISO date.
+ * @returns {boolean}
+ */
+export function isSession(w, today) {
   return !!w && typeof w.d === 'string' && ISO_DAY.test(w.d) && w.d <= today
     && Array.isArray(w.entries) && w.entries.some(e => Array.isArray(e?.sets) && e.sets.some(s => s?.done));
 }
