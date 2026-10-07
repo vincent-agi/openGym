@@ -53,9 +53,10 @@ jobs:
       - run: npm ci
       - name: Syntax check
         run: node --check server.js
+      - name: Unit & route tests
+        run: npm test
       - name: Boot smoke
-        # GAP: api/ has no automated test suite yet — this only proves the server starts and
-        # answers HTTP. Replace with real tests when a test-suite issue lands.
+        # Complements the route tests: proves `node server.js` itself starts and answers HTTP.
         run: |
           DATA_DIR="$(mktemp -d)" PORT=3999 node server.js &
           pid=$!

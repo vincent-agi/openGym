@@ -135,4 +135,4 @@ To exercise authenticated endpoints, copy the `gymsid` cookie value from a brows
 4. Persist with `atomicWrite` (state files) or mutate `db` then `saveDb()` (identity data).
 5. Respond with `json(res, status, obj)`.
 6. Update this page and `SECURITY.md` if the endpoint is reachable without a session or exposes other users' data.
-7. Add a case to the CI boot smoke test if you can; the API has no automated test suite yet.
+7. Add a route test in `api/test/` (see [Development → API tests](development.md#api-tests)).

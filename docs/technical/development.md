@@ -70,7 +70,21 @@ npm run test:watch
 node scripts/check-locales.mjs    # locale key parity (not in CI)
 ```
 
-The API has no test suite; CI only does `node --check` and a boot smoke test.
+### API tests
+
+```bash
+cd api
+npm ci
+npm test                # node --test test/  (Node built-ins only, no extra dependency)
+```
+
+Tests live in `api/test/*.test.js` and run each file in its own process. `test/helpers.js` exposes
+`startTestServer()`: it boots the real `server.js` on an ephemeral port with a throw-away `DATA_DIR`, and
+`createUser()` writes a user straight into the identity store and returns a session cookie signed by the production
+code (no WebAuthn ceremony). Use `request(path, { method, body, as })` to call routes as a given user.
+
+`server.js` only listens when it is the entry point (`node server.js`); importing it, as the tests do, does not.
+CI runs `npm test` in the `API (syntax + boot smoke)` job, followed by the boot smoke test.
 
 ## Frontend architecture
 

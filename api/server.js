@@ -4,6 +4,7 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   generateRegistrationOptions, verifyRegistrationResponse,
   generateAuthenticationOptions, verifyAuthenticationResponse
@@ -572,7 +573,8 @@ const routes = {
   }
 };
 
-http.createServer(async (req, res) => {
+/** The HTTP server. Exported so tests can bind it to an ephemeral port; started below only when run directly. */
+export const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   const key = req.method + ' ' + url.pathname;
   const handler = routes[key];
@@ -582,4 +584,13 @@ http.createServer(async (req, res) => {
     console.error(key, e);
     if (!res.headersSent) json(res, 500, { error: 'server error' });
   }
-}).listen(PORT, () => console.log(`gym-api on :${PORT} (rpID=${RP_ID}, origin=${ORIGIN})`));
+});
+
+// Test hooks: the identity store and the production cookie signer, so tests can authenticate
+// without a WebAuthn ceremony. Not used by the running server.
+export { db, saveDb, sessionCookie };
+
+// `node server.js` (Docker, `npm start`) listens; importing this module (tests) does not.
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  server.listen(PORT, () => console.log(`gym-api on :${PORT} (rpID=${RP_ID}, origin=${ORIGIN})`));
+}
