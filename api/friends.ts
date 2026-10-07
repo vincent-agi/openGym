@@ -10,7 +10,7 @@
  * - **Blocks are silent.** The blocked party never learns they were blocked.
  */
 import crypto from 'node:crypto';
-import { isSharing, requireSharing } from './social.js';
+import { isSharing, requireSharing } from './social.ts';
 
 /** Letters and digits without the look-alikes `0 O 1 I L`, so a code survives being read aloud. */
 export const FRIEND_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';

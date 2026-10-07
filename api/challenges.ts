@@ -7,8 +7,8 @@
  * derived on the server from a user's own saved state, never accepted from a client.
  */
 import { CHALLENGE_LIMITS, CHALLENGE_TYPES, CHALLENGE_MODES } from '../shared/constants.ts';
-import { addDays, mondayOf, isSession, isPlanned } from './summary.js';
-import { isSharing, normalizeHandle } from './social.js';
+import { addDays, mondayOf, isSession, isPlanned } from './summary.ts';
+import { isSharing, normalizeHandle } from './social.ts';
 
 import crypto from 'node:crypto';
 

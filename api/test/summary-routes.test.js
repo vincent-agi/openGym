@@ -1,9 +1,9 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startTestServer } from './helpers.js';
-import { SUMMARY_KEYS } from '../summary.js';
+import { startTestServer } from './helpers.ts';
+import { SUMMARY_KEYS } from '../summary.ts';
 
-/** @type {import('./helpers.js').TestServer} */
+/** @type {import('./helpers.ts').TestServer} */
 let app;
 let seq = 0;
 

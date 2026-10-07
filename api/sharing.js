@@ -5,9 +5,9 @@
  * friend sees always come from {@link computeSummary} and never from client input. Only users
  * who opted in are ever summarised; turning sharing off deletes the stored summary.
  */
-import { computeSummary, filterSummary, ownerTz } from './summary.js';
-import { isSharing, requireSharing } from './social.js';
-import { relationsOf } from './friends.js';
+import { computeSummary, filterSummary, ownerTz } from './summary.ts';
+import { isSharing, requireSharing } from './social.ts';
+import { relationsOf } from './friends.ts';
 
 /** A summary not refreshed for this long is flagged `stale` to friends. */
 export const STALE_AFTER_MS = 14 * 86400000;
@@ -17,7 +17,7 @@ const REFRESH_EVERY_MS = 6 * 3600000;
 
 /**
  * @typedef {object} StoredSummary
- * @property {import('./summary.js').Summary} data
+ * @property {import('./summary.ts').Summary} data
  * @property {number} updatedAt  Epoch ms of the last refresh.
  */
 

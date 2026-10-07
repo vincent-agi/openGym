@@ -6,12 +6,12 @@
  * ({@link ChallengeService.recordProgress}); a client can never submit it.
  */
 import crypto from 'node:crypto';
-import { addDays, isoInZone, ownerTz, sessionLimit } from './summary.js';
-import { isSharing, requireSharing } from './social.js';
-import { relationsOf } from './friends.js';
+import { addDays, isoInZone, ownerTz, sessionLimit } from './summary.ts';
+import { isSharing, requireSharing } from './social.ts';
+import { relationsOf } from './friends.ts';
 import {
   LIMITS, validateChallengeInput, collectProgress, progressOf, statusOf, activeCountFor, challengeView, removeParticipant, isStale
-} from './challenges.js';
+} from './challenges.ts';
 
 /**
  * @typedef {object} ChallengeService

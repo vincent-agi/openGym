@@ -1,6 +1,6 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startTestServer } from './helpers.js';
+import { startTestServer } from './helpers.ts';
 import { createNotifier } from '../notifier.js';
 import { defaultNotify } from '../notify-prefs.ts';
 
@@ -9,7 +9,7 @@ import { defaultNotify } from '../notify-prefs.ts';
  * saving their training or changing their settings, and must never take the server down.
  */
 
-/** @type {import('./helpers.js').TestServer} */
+/** @type {import('./helpers.ts').TestServer} */
 let app;
 let db;
 

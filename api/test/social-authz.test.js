@@ -1,6 +1,6 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startTestServer, SOCIAL_ROUTES } from './helpers.js';
+import { startTestServer, SOCIAL_ROUTES } from './helpers.ts';
 
 /**
  * Authorization matrix of the social module.
@@ -9,7 +9,7 @@ import { startTestServer, SOCIAL_ROUTES } from './helpers.js';
  * everything A has: they must get nothing, and the *same* nothing, whatever their relationship.
  */
 
-/** @type {import('./helpers.js').TestServer} */
+/** @type {import('./helpers.ts').TestServer} */
 let app;
 let mod;
 let seq = 0;

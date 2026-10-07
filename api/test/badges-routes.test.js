@@ -1,8 +1,8 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startTestServer } from './helpers.js';
+import { startTestServer } from './helpers.ts';
 
-/** @type {import('./helpers.js').TestServer} */
+/** @type {import('./helpers.ts').TestServer} */
 let app;
 let mod;
 let seq = 0;

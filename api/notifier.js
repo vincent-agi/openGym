@@ -13,8 +13,8 @@
  * Pushes go through a small persistent outbox (`db.socialOutbox`) so deferrals survive a restart.
  */
 import crypto from 'node:crypto';
-import { isoInZone, ownerTz } from './summary.js';
-import { isSharing } from './social.js';
+import { isoInZone, ownerTz } from './summary.ts';
+import { isSharing } from './social.ts';
 import { inQuietHours, minutesUntilQuietEnds } from './notify-prefs.ts';
 import { pushText } from './push-messages.ts';
 

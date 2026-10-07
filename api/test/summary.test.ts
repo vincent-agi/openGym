@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SUMMARY_KEYS, computeSummary, filterSummary, isoInZone, mondayOf, addDays } from '../summary.js';
+import { SUMMARY_KEYS, computeSummary, filterSummary, isoInZone, mondayOf, addDays } from '../summary.ts';
 
 // Wednesday 7 Oct 2026, 10:00 UTC. Weeks start on Monday: this week is 2026-10-05 .. 2026-10-11.
 const NOW = Date.parse('2026-10-07T10:00:00Z');
@@ -237,7 +237,7 @@ test('the numbers do not move with weight lifted, reps, effort, duration, body d
 });
 
 /* ---- time zones: a person east of Greenwich is already "tomorrow" in UTC ---- */
-import { ownerTz } from '../summary.js';
+import { ownerTz } from '../summary.ts';
 import { newEventsFromState } from '../feed.ts';
 
 test('ownerTz reads the zone the app stamped on the state, or the reminder one, or nothing', () => {

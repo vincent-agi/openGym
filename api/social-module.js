@@ -5,14 +5,14 @@
  * Services stay independent of one another; the only place that knows how a saved workout becomes
  * a summary, a challenge update, a feed event and a push notification is {@link createSocialModule}.
  */
-import { createSocialRoutes } from './social.js';
-import { createFriendRoutes, relationsOf, pruneFriendCodes } from './friends.js';
+import { createSocialRoutes } from './social.ts';
+import { createFriendRoutes, relationsOf, pruneFriendCodes } from './friends.ts';
 import { createSharingService } from './sharing.js';
 import { createChallengeService } from './challenge-service.js';
 import { createFeedService } from './feed-service.js';
 import { createNotifier } from './notifier.js';
 import { createBadgeService } from './badge-service.js';
-import { eraseSocialFootprint } from './social-erase.js';
+import { eraseSocialFootprint } from './social-erase.ts';
 import { createLimiter, createGuard } from './rate-limit.ts';
 import { emptySocialCollections } from './types.ts';
 

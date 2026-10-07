@@ -5,9 +5,9 @@
  * post one for somebody else; friends only ever receive a date, a name and emoji.
  */
 import crypto from 'node:crypto';
-import { isSharing, requireSharing } from './social.js';
-import { ownerTz } from './summary.js';
-import { relationsOf } from './friends.js';
+import { isSharing, requireSharing } from './social.ts';
+import { ownerTz } from './summary.ts';
+import { relationsOf } from './friends.ts';
 import { validateCheer, newEventsFromState, pruneFeed, countCheers } from './feed.ts';
 
 /** Events returned per page of the feed. */

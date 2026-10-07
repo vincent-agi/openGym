@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultSocial, normalizeHandle, validateSocialUpdate, isSharing } from '../social.js';
+import { defaultSocial, normalizeHandle, validateSocialUpdate, isSharing } from '../social.ts';
 
 const taken = new Set(['marc']);
 const opts = { isHandleTaken: h => taken.has(h) };

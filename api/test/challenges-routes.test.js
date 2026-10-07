@@ -1,9 +1,9 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startTestServer } from './helpers.js';
-import { LIMITS } from '../challenges.js';
+import { startTestServer } from './helpers.ts';
+import { LIMITS } from '../challenges.ts';
 
-/** @type {import('./helpers.js').TestServer} */
+/** @type {import('./helpers.ts').TestServer} */
 let app;
 let db;
 let seq = 0;

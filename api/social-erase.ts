@@ -5,7 +5,7 @@
  * Challenge participation is handled separately (it needs ownership handover); this file removes
  * the rest, and resets the user's settings to the private defaults.
  */
-import { defaultSocial } from './social.js';
+import { defaultSocial } from './social.ts';
 
 /**
  * Deletes every social record that mentions a user.

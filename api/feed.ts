@@ -12,7 +12,7 @@
 import { CHEER_EMOJI } from '../shared/constants.ts';
 import type { CheerEmoji } from '../shared/constants.ts';
 import type { StateDoc } from './types.ts';
-import { addDays, isoInZone, isSession, sessionLimit } from './summary.js';
+import { addDays, isoInZone, isSession, sessionLimit } from './summary.ts';
 
 // The only cheers that exist. They live in shared/constants.ts, read by the frontend too.
 export { CHEER_EMOJI };

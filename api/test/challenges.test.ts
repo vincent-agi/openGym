@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   LIMITS, validateChallengeInput, collectProgress, progressOf, statusOf, challengeView, activeCountFor, removeParticipant, isStale
-} from '../challenges.js';
+} from '../challenges.ts';
 
 const TODAY = '2026-10-07';   // Wednesday
 const ok = input => validateChallengeInput(input, { today: TODAY });

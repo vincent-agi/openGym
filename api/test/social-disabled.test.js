@@ -1,8 +1,8 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { startTestServer, SOCIAL_ROUTES } from './helpers.js';
+import { startTestServer, SOCIAL_ROUTES } from './helpers.ts';
 
-/** @type {import('./helpers.js').TestServer} */
+/** @type {import('./helpers.ts').TestServer} */
 let app;
 
 before(async () => { app = await startTestServer({ SOCIAL_ENABLED: '0' }); });

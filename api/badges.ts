@@ -15,7 +15,7 @@ import type { Earned } from '../shared/social.ts';
 import type { StateDoc } from './types.ts';
 
 export type { Earned };
-import { addDays, mondayOf, isoInZone, isSession, breaksOf, sessionLimit } from './summary.js';
+import { addDays, mondayOf, isoInZone, isSession, breaksOf, sessionLimit } from './summary.ts';
 
 // Every badge that exists lives in shared/constants.ts; names and descriptions are in the frontend.
 export { BADGES };

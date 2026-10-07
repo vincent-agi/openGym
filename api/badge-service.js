@@ -2,8 +2,8 @@
  * Keeps each sharing user's earned badges up to date. The rules live in `badges.js`; this file
  * decides when to run them and stores the result in the user's social record.
  */
-import { isSharing } from './social.js';
-import { ownerTz } from './summary.js';
+import { isSharing } from './social.ts';
+import { ownerTz } from './summary.ts';
 import { evaluateBadges, mergeEarned } from './badges.ts';
 
 /**

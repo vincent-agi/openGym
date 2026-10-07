@@ -1,6 +1,6 @@
 import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
-import { startTestServer } from './helpers.js'
+import { startTestServer } from './helpers.ts'
 import { IDENTITY_KEYS, SOCIAL_KEYS, emptySocialCollections } from '../types.ts'
 import type { Db } from '../types.ts'
 

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   FRIEND_CODE_ALPHABET, FRIEND_CODE_LENGTH, generateFriendCode, isCodeUsable,
   sendRequest, respondToRequest, removeFriend, blockUser, unblockUser, relationsOf, pruneFriendCodes
-} from '../friends.js';
+} from '../friends.ts';
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');
 const make = () => [];
