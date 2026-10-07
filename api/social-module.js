@@ -14,6 +14,7 @@ import { createNotifier } from './notifier.js';
 import { createBadgeService } from './badge-service.js';
 import { eraseSocialFootprint } from './social-erase.js';
 import { createLimiter, createGuard } from './rate-limit.js';
+import { emptySocialCollections } from './types.ts';
 
 /**
  * @param {object} ctx
@@ -34,10 +35,7 @@ import { createLimiter, createGuard } from './rate-limit.js';
  * }}
  */
 export function createSocialModule({ db, saveDb, readSession, json, readBody, readState, sendPush, now = Date.now }) {
-  for (const [key, empty] of Object.entries({
-    friendships: [], friendCodes: [], socialSummaries: {}, challenges: [], challengeProgress: {},
-    socialEvents: [], socialCheers: [], cheerMutes: [], socialOutbox: [], socialPushLog: []
-  })) db[key] ||= empty;
+  for (const [key, empty] of Object.entries(emptySocialCollections())) db[key] ||= empty;
 
   const notifier = createNotifier({ db, saveDb, sendPush, readState, now });
   const badges = createBadgeService({ db, saveDb, now });

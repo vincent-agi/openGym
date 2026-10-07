@@ -20,6 +20,8 @@ data/
 
 Anything else in the folder is ignored by the API.
 
+The shape of `db.json` is written as TypeScript types in [`api/types.ts`](../../api/types.ts) (`Db`, `User`, `Friendship`, `Challenge`…), and a test (`api/test/types.test.ts`) checks the collection names against the database the server builds. The saved state (`state-<uid>.json`) is deliberately typed as an *open* document there: the server stores what the app sends, so every reader narrows before use.
+
 ### Sensitivity
 
 | File | Contains | Compromise impact |
