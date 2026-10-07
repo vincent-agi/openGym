@@ -6,4 +6,4 @@ deliberately light: a few sentences, plus *Considered options* and *Consequences
 
 | ADR | Decision | Status |
 |---|---|---|
-| [0001](0001-migrate-to-typescript.md) | Migrate the codebase to TypeScript, and run the API from source | proposed |
+| [0001](0001-migrate-to-typescript.md) | Migrate the codebase to TypeScript, and run the API from source | accepted |

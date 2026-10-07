@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 ---
 
 # Migrate the codebase to TypeScript, and run the API from source
@@ -30,8 +30,9 @@ Tracking: milestone *v1.8 - TypeScript Migration* (issues #52 to #70).
    sides must agree on (`CHEER_EMOJI`, `SUMMARY_KEYS`, `BADGES`, `NOTIFY_KINDS`, limits). It replaces the five test files that
    import `../../../api/*.js` today. It is a plain directory imported by relative path, **not** an npm workspace.
 6. **Hand-written validators stay**, now typed. No runtime schema library (zod and the like) in this migration.
-7. **Large data stays data.** `exercises-data` (about 900 KB) is annotated `Exercise[]`, never `as const`; locales are
-   `Record<string, string>`. Message keys are not typed: they are English sentences used at hundreds of call sites.
+7. **Large data stays data.** `exercises-data` (about 900 KB) is annotated `Exercise[]` rather than frozen with `as const`: the
+   annotation keeps the arrays mutable and the fields plain `string`, which is what the 40 call sites expect (`as const` makes everything
+   `readonly` and literal, and every consumer would need to accept that). Locales are `Record<string, string>`. Message keys are not typed: they are English sentences used at hundreds of call sites.
 
 ## Considered options
 
@@ -50,10 +51,22 @@ Tracking: milestone *v1.8 - TypeScript Migration* (issues #52 to #70).
 
 ## Consequences
 
-- Contributors need Node >= 22.18 (`engines` in `api/package.json`; the Docker images already comply).
+- Contributors and self-hosters running without Docker need Node >= 22.18.0 (`engines` in `api/package.json`; the Docker images already comply).
 - The API image is built from the repository root, because it now needs `shared/`. `docker-compose.yml`, the publish workflow
   and the Dependabot Docker entry change with it.
 - Every doc that cites `server.js`, `*.jsx` or a line number is updated; `SECURITY.md` references symbols rather than lines.
 - `git blame` is polluted by the renames; the rename-only commits go into `.git-blame-ignore-revs`.
 - Open feature branches conflict with renames. The migration is ordered leaf-first and in small pull requests to keep that window short.
-- `tsc --noEmit` over `exercises-data` must stay under a stated time budget; if it does not, that file is typed through a `.d.ts` and the data moves to JSON.
+- `tsc --noEmit` over `exercises-data` must stay under a stated time budget (30 s on the CI runner, see *Verification*); if it does not, that file is typed through a `.d.ts` and the data moves to JSON.
+
+## Verification
+
+Checked before acceptance (issue #52), on the images that ship:
+
+| Claim | Result |
+|---|---|
+| Node runs `.ts` with no flag and no warning | **`node:22.18-alpine` (22.18.0) and `node:22-alpine` (22.23.3): yes.** `node:22.17-alpine`: no (`ERR_UNKNOWN_FILE_EXTENSION`). **The floor is Node 22.18.0.** Tested with `import type`, `satisfies` and a relative `./x.ts` import. |
+| `tsc --noEmit` cost of the 895 KB catalogue | **0.45 s** for the 1,334-entry file annotated `Exercise[]` under `strict` (TypeScript 5.9.3). `as const satisfies readonly Exercise[]` is the same (0.47 s): the choice in decision 7 is about the shape of the type, not speed. The 30 s budget is not at risk. |
+| Vite and Vitest handle `.tsx` / `.test.ts` next to `.jsx` / `.test.js` | Yes: `vite build` bundles a typed `.tsx` component and a `.ts` import, and a `.test.ts` runs in Vitest, with no `tsconfig.json` present. |
+
+The catalogue has 14 fields (9 required, 5 optional: `img`, `gif` and the accessibility fields on the 10 seeded entries), which is the `Exercise` interface to write in the data issue.

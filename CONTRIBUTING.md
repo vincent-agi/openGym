@@ -104,3 +104,7 @@ about login/passkeys, include your `RP_ID`/`ORIGIN` (not the `data/` contents) â
 issues are an origin mismatch.
 
 By contributing you agree your work is licensed under the project's [GNU AGPL v3.0](LICENSE).
+
+## Architecture decisions
+
+Decisions that are hard to reverse are recorded in [`docs/adr/`](docs/adr/README.md) (for example the move to TypeScript). Read them before proposing a change in the same area, and add one when your change qualifies.
