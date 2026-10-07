@@ -8,7 +8,7 @@ let app;
 let db;
 let seq = 0;
 
-before(async () => { app = await startTestServer(); db = (await import('../server.js')).db; });
+before(async () => { app = await startTestServer(); db = (await import('../server.ts')).db; });
 after(async () => { await app.close(); });
 
 const iso = offset => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
@@ -242,7 +242,7 @@ test('maintenance freezes a finished challenge even if nobody opens it', async (
   const ch = db.challenges.find(c => c.id === challenge.id);
   ch.startDate = iso(-10); ch.endDate = iso(-1);
   assert.equal(ch.final, undefined);
-  await (await import('../server.js')).runSocialMaintenance();
+  await (await import('../server.ts')).runSocialMaintenance();
   assert.ok(ch.final);
   assert.equal(ch.final.status, 'ended');
 });
@@ -254,7 +254,7 @@ test('maintenance forgets challenges, their progress and expired friend codes af
   ch.startDate = iso(-200); ch.endDate = iso(-120);
   db.challengeProgress[ch.id] = { [owner.id]: { sessions: 1, days: [], weeks: [] } };
   db.friendCodes.push({ code: 'STALECODE1', uid: owner.id, createdAt: 1, expiresAt: Date.now() - 3 * 86400000 });
-  await (await import('../server.js')).runSocialMaintenance();
+  await (await import('../server.ts')).runSocialMaintenance();
   assert.ok(!db.challenges.some(c => c.id === challenge.id));
   assert.equal(db.challengeProgress[challenge.id], undefined);
   assert.ok(!db.friendCodes.some(c => c.code === 'STALECODE1'));

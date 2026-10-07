@@ -7,11 +7,11 @@
  */
 import { createSocialRoutes } from './social.ts';
 import { createFriendRoutes, relationsOf, pruneFriendCodes } from './friends.ts';
-import { createSharingService } from './sharing.js';
-import { createChallengeService } from './challenge-service.js';
-import { createFeedService } from './feed-service.js';
-import { createNotifier } from './notifier.js';
-import { createBadgeService } from './badge-service.js';
+import { createSharingService } from './sharing.ts';
+import { createChallengeService } from './challenge-service.ts';
+import { createFeedService } from './feed-service.ts';
+import { createNotifier } from './notifier.ts';
+import { createBadgeService } from './badge-service.ts';
 import { eraseSocialFootprint } from './social-erase.ts';
 import { createLimiter, createGuard } from './rate-limit.ts';
 import { emptySocialCollections } from './types.ts';

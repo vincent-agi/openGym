@@ -15,7 +15,7 @@ let db: Db
 before(async () => {
   app = await startTestServer()
   // server.js is still JavaScript, so its `db` is inferred from the literal; it becomes `Db` once the entry point is converted.
-  db = (await import('../server.js')).db as unknown as Db
+  db = (await import('../server.ts')).db as unknown as Db
 })
 after(async () => { await app.close() })
 

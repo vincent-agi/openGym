@@ -1,7 +1,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startTestServer } from './helpers.ts';
-import { createNotifier } from '../notifier.js';
+import { createNotifier } from '../notifier.ts';
 import { defaultNotify } from '../notify-prefs.ts';
 
 /**
@@ -13,7 +13,7 @@ import { defaultNotify } from '../notify-prefs.ts';
 let app;
 let db;
 
-before(async () => { app = await startTestServer(); db = (await import('../server.js')).db; });
+before(async () => { app = await startTestServer(); db = (await import('../server.ts')).db; });
 after(async () => { await app.close(); });
 
 const session = d => ({ id: 'w' + d, d, entries: [{ id: 'x', sets: [{ done: true }] }] });

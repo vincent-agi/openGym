@@ -74,7 +74,7 @@ export async function startTestServer(env: Record<string, string> = {}): Promise
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gymme-api-test-'));
   Object.assign(process.env, { DATA_DIR: dataDir, ORIGIN: 'http://localhost:8080', RP_ID: 'localhost' }, env);
 
-  const mod = (await import('../server.js')) as unknown as ServerModule;
+  const mod = (await import('../server.ts')) as unknown as ServerModule;
   await new Promise<void>(resolve => mod.server.listen(0, '127.0.0.1', resolve));
   const baseUrl = `http://127.0.0.1:${(mod.server.address() as AddressInfo).port}`;
 

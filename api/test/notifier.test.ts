@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createNotifier, wording, localMinutes, DAILY_CAP, BATCH_MS, MAX_DEFER_MS } from '../notifier.js';
+import { createNotifier, wording, localMinutes, DAILY_CAP, BATCH_MS, MAX_DEFER_MS } from '../notifier.ts';
 import { defaultNotify } from '../notify-prefs.ts';
 
 const at = iso => Date.parse(iso);

@@ -104,7 +104,7 @@ test('turning sharing off removes the summary at once, turning it on rebuilds it
 
   await app.request('/api/social/me', { method: 'PUT', as: a, body: { enabled: false } });
   assert.deepEqual((await feed(b)).body.friends, []);
-  const mod = await import('../server.js');
+  const mod = await import('../server.ts');
   assert.equal(mod.db.socialSummaries[a.id], undefined);
 
   await app.request('/api/social/me', { method: 'PUT', as: a, body: { enabled: true } });
@@ -117,7 +117,7 @@ test('a summary older than 14 days is flagged stale', async () => {
   const b = await sharingUser('stale_b');
   await befriend(a, b);
   await save(a, { workouts: [session(today())] });
-  const mod = await import('../server.js');
+  const mod = await import('../server.ts');
   mod.db.socialSummaries[a.id].updatedAt = Date.now() - 15 * 86400000;
   assert.equal((await feed(b)).body.friends[0].stale, true);
 });
@@ -125,7 +125,7 @@ test('a summary older than 14 days is flagged stale', async () => {
 test('users who never share are never summarised', async () => {
   const quiet = app.createUser('never');
   await save(quiet, { workouts: [session(today())] });
-  const mod = await import('../server.js');
+  const mod = await import('../server.ts');
   assert.equal(mod.db.socialSummaries[quiet.id], undefined);
 });
 

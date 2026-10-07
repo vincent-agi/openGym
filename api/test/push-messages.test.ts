@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PUSH_LANGS, normalizeLang, pushText, MESSAGE_KEYS } from '../push-messages.ts';
-import { wording } from '../notifier.js';
+import { wording } from '../notifier.ts';
 import { NOTIFY_KINDS } from '../notify-prefs.ts';
 import type { MessageKey } from '../push-messages.ts';
 

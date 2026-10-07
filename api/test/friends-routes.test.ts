@@ -101,7 +101,7 @@ test('an expired code is refused', async () => {
   const lea = await sharingUser('exp');
   const other = await sharingUser('expfriend');
   const { body } = await post('code', lea, {});
-  const mod = await import('../server.js');
+  const mod = await import('../server.ts');
   mod.db.friendCodes.find(c => c.code === body.code).expiresAt = Date.now() - 1000;
   assert.equal((await post('request', other, { code: body.code })).status, 404);
 });

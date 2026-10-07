@@ -22,6 +22,6 @@ test('every social route answers 404 when the instance disabled the module', asy
 });
 
 test('no social route is registered at all', async () => {
-  const mod = await import('../server.js');
+  const mod = await import('../server.ts');
   assert.deepEqual(mod.socialRouteKeys(), []);
 });

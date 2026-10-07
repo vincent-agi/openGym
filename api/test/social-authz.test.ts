@@ -14,7 +14,7 @@ let app;
 let mod;
 let seq = 0;
 
-before(async () => { app = await startTestServer(); mod = await import('../server.js'); });
+before(async () => { app = await startTestServer(); mod = await import('../server.ts'); });
 after(async () => { await app.close(); });
 
 const today = () => new Date().toISOString().slice(0, 10);

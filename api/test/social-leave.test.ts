@@ -7,7 +7,7 @@ let app;
 let db;
 let seq = 0;
 
-before(async () => { app = await startTestServer(); db = (await import('../server.js')).db; });
+before(async () => { app = await startTestServer(); db = (await import('../server.ts')).db; });
 after(async () => { await app.close(); });
 
 const today = () => new Date().toISOString().slice(0, 10);
