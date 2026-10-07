@@ -4,3 +4,6 @@
 # chore(ts): rename api/notify-prefs.js api/push-messages.js api/badges.js api/rate-limit.js api/feed.js api/test/notify-prefs.test.js api/test/push-messages.test.js api/test/badges.test.js api/test/rate-limit.test.js api/test/feed.test.js
 7959386e90c8169e1a4b2c25c07eb927f8a5492a
 95d0306ed6fc2f62abcf6586bdbe0a2956dc09b1
+# chore(ts): rename api/summary.js api/challenges.js api/friends.js api/social.js api/social-erase.js api/test/summary.test.js api/test/challenges.test.js api/test/friends.test.js api/test/social.test.js api/test/privacy-boundaries.test.js api/test/helpers.js
+914e78be6439c18310b048aa27466c413adea8d0
+f99efc913f2fa5b10423aa73711a247ed7eaef28
