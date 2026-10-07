@@ -27,7 +27,7 @@ printf '#!/bin/sh\nif [ "$1" = compose ] && [ "$2" = version ]; then exit 0; fi\
 chmod +x "$SB/bin/docker"
 real_sb="$(cd "$SB" && pwd -P)"
 out="$(PATH="$SB/bin:$PATH" "$BASH" -c 'cd /tmp; . "$0"; compose_cmd up -d api' "$LIB")"
-assert_contains "cwd=$real_sb" "$out" "compose runs from OPENGYM_ROOT"
+assert_contains "cwd=$real_sb" "$out" "compose runs from GYMME_ROOT"
 assert_contains "args=compose up -d api" "$out" "args forwarded"
 
 # daemon_up

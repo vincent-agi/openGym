@@ -13,7 +13,7 @@ _here="${BASH_SOURCE[0]%/*}/.."
 
 usage() {
   cat <<'USAGE'
-Usage: opengym prune [--dry-run] [--yes] [--images]
+Usage: gymme prune [--dry-run] [--yes] [--images]
 
 Lists, then removes:
   - data/*.tmp older than 1 hour (interrupted atomic writes; fresh ones are writes in flight)
@@ -51,11 +51,11 @@ case "$LOG_MAX_KB" in '' | *[!0-9]*) die_usage "LOG_MAX_KB must be a number of K
 TMP_FILES=() BACKUP_FILES=() OLD_DIRS=()
 ROTATE_LOG=0
 
-while IFS= read -r f; do [ -n "$f" ] && TMP_FILES+=("$f"); done < <(find "$OPENGYM_ROOT/data" -maxdepth 1 -type f -name '*.tmp' -mmin +60 2>/dev/null)
+while IFS= read -r f; do [ -n "$f" ] && TMP_FILES+=("$f"); done < <(find "$GYMME_ROOT/data" -maxdepth 1 -type f -name '*.tmp' -mmin +60 2>/dev/null)
 if [ "$BACKUP_KEEP_DAYS" -gt 0 ] && [ -d "$BACKUP_DIR" ]; then
-  while IFS= read -r f; do [ -n "$f" ] && BACKUP_FILES+=("$f"); done < <(find "$BACKUP_DIR" -maxdepth 1 -type f -name 'opengym-*' -mtime +"$BACKUP_KEEP_DAYS" 2>/dev/null)
+  while IFS= read -r f; do [ -n "$f" ] && BACKUP_FILES+=("$f"); done < <(find "$BACKUP_DIR" -maxdepth 1 -type f -name 'gymme-*' -mtime +"$BACKUP_KEEP_DAYS" 2>/dev/null)
 fi
-while IFS= read -r d; do [ -n "$d" ] && OLD_DIRS+=("$d"); done < <(find "$OPENGYM_ROOT" -maxdepth 1 -type d \( -name 'data.broken.*' -o -name 'data.bak.*' \) -mtime +30 2>/dev/null)
+while IFS= read -r d; do [ -n "$d" ] && OLD_DIRS+=("$d"); done < <(find "$GYMME_ROOT" -maxdepth 1 -type d \( -name 'data.broken.*' -o -name 'data.bak.*' \) -mtime +30 2>/dev/null)
 if [ -f "$LOG_FILE" ] && [ "$(( $(wc -c <"$LOG_FILE" | tr -d ' ') / 1024 ))" -ge "$LOG_MAX_KB" ]; then ROTATE_LOG=1; fi
 
 size_of() { du -sk "$1" 2>/dev/null | cut -f1; }
@@ -96,7 +96,7 @@ if [ "$DRY_RUN" = 1 ]; then
   info "dry-run: nothing was removed"
   exit 0
 fi
-if [ "$ASSUME_YES" != 1 ] && [ ! -t 0 ] && [ "${OPENGYM_FORCE_TTY:-}" != 1 ]; then
+if [ "$ASSUME_YES" != 1 ] && [ ! -t 0 ] && [ "${GYMME_FORCE_TTY:-}" != 1 ]; then
   info "Report only (no terminal). Run again with --yes to delete."
   exit 0
 fi
@@ -111,7 +111,7 @@ if [ "${#BACKUP_FILES[@]}" -gt 0 ]; then
 fi
 if [ "${#OLD_DIRS[@]}" -gt 0 ]; then
   for d in "${OLD_DIRS[@]}"; do
-    case "$d" in "$OPENGYM_ROOT"/data.broken.* | "$OPENGYM_ROOT"/data.bak.*) rm -rf "$d" && removed=$((removed + 1)) ;; esac
+    case "$d" in "$GYMME_ROOT"/data.broken.* | "$GYMME_ROOT"/data.bak.*) rm -rf "$d" && removed=$((removed + 1)) ;; esac
   done
 fi
 if [ "$ROTATE_LOG" = 1 ]; then

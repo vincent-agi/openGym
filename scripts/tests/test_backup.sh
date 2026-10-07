@@ -2,8 +2,8 @@
 set -u
 # shellcheck source=helpers.sh
 . "$(dirname "$0")/helpers.sh"
-OG="$REPO_ROOT/scripts/opengym"
-export OPENGYM_QUIET=0
+OG="$REPO_ROOT/scripts/gymme"
+export GYMME_QUIET=0
 
 setup() {
   new_sandbox
@@ -12,12 +12,12 @@ setup() {
   printf 'sessionsecret' >"$SB/data/secret"
   echo '{}' >"$SB/data/stray.json.tmp"
   mkdir -p "$SB/media/img" && echo img >"$SB/media/img/x.jpg"
-  export LOG_FILE="$SB/logs/opengym.log"
-  export OPENGYM_NOW=1700000000
+  export LOG_FILE="$SB/logs/gymme.log"
+  export GYMME_NOW=1700000000
 }
 archive_of() {
   local f
-  for f in "$SB"/backups/opengym-*.tgz "$SB"/backups/opengym-*.tgz.age; do
+  for f in "$SB"/backups/gymme-*.tgz "$SB"/backups/gymme-*.tgz.age; do
     [ -e "$f" ] && { echo "$f"; return 0; }
   done
   return 0
@@ -44,11 +44,11 @@ assert_contains "$want" "$(cat "$A.sha256")" "checksum matches the archive"
 assert_contains "$(basename "$A")" "$(cat "$A.sha256")" "checksum names the archive"
 mkdir "$SB/x" && tar xzf "$A" -C "$SB/x"
 assert_eq "$(cat "$SB/data/db.json")" "$(cat "$SB/x/data/db.json")" "db.json round-trips"
-assert_eq "1700000000" "$(cat "$SB/.opengym-state/last-backup")" "last backup recorded"
+assert_eq "1700000000" "$(cat "$SB/.gymme-state/last-backup")" "last backup recorded"
 
 # unique names for backups in the same second
 "$OG" backup --no-consistent >/dev/null 2>&1
-assert_eq 2 "$(ls "$SB"/backups/opengym-*.tgz | wc -l | tr -d ' ')" "two backups, two files"
+assert_eq 2 "$(ls "$SB"/backups/gymme-*.tgz | wc -l | tr -d ' ')" "two backups, two files"
 
 # ---------- consistent mode
 setup
@@ -100,22 +100,22 @@ assert_contains "age" "$T_OUT" "message mentions age"
 # ---------- retention
 setup
 mkdir -p "$SB/backups"
-for f in opengym-2020-01-01-000000.tgz opengym-2020-01-01-000000.tgz.sha256 opengym-2020-01-01-000000.tgz.age; do
+for f in gymme-2020-01-01-000000.tgz gymme-2020-01-01-000000.tgz.sha256 gymme-2020-01-01-000000.tgz.age; do
   : >"$SB/backups/$f"; touch -t 202001010000 "$SB/backups/$f"
 done
-: >"$SB/backups/opengym-recent.tgz"
+: >"$SB/backups/gymme-recent.tgz"
 : >"$SB/backups/notes.txt"; touch -t 202001010000 "$SB/backups/notes.txt"
 "$OG" backup --no-consistent >/dev/null 2>&1
-assert_no_file "$SB/backups/opengym-2020-01-01-000000.tgz" "old archive pruned"
-assert_no_file "$SB/backups/opengym-2020-01-01-000000.tgz.sha256" "old checksum pruned"
-assert_no_file "$SB/backups/opengym-2020-01-01-000000.tgz.age" "old encrypted archive pruned"
-assert_file "$SB/backups/opengym-recent.tgz" "recent archive kept"
+assert_no_file "$SB/backups/gymme-2020-01-01-000000.tgz" "old archive pruned"
+assert_no_file "$SB/backups/gymme-2020-01-01-000000.tgz.sha256" "old checksum pruned"
+assert_no_file "$SB/backups/gymme-2020-01-01-000000.tgz.age" "old encrypted archive pruned"
+assert_file "$SB/backups/gymme-recent.tgz" "recent archive kept"
 assert_file "$SB/backups/notes.txt" "unrelated files untouched"
 assert_file "$(archive_of)" "new archive kept"
 setup
-mkdir -p "$SB/backups"; : >"$SB/backups/opengym-2020-01-01-000000.tgz"; touch -t 202001010000 "$SB/backups/opengym-2020-01-01-000000.tgz"
+mkdir -p "$SB/backups"; : >"$SB/backups/gymme-2020-01-01-000000.tgz"; touch -t 202001010000 "$SB/backups/gymme-2020-01-01-000000.tgz"
 BACKUP_KEEP_DAYS=0 "$OG" backup --no-consistent >/dev/null 2>&1
-assert_file "$SB/backups/opengym-2020-01-01-000000.tgz" "BACKUP_KEEP_DAYS=0 disables pruning"
+assert_file "$SB/backups/gymme-2020-01-01-000000.tgz" "BACKUP_KEEP_DAYS=0 disables pruning"
 
 # ---------- off-host hook
 setup
@@ -138,7 +138,7 @@ assert_no_file "$SB/backups" "dry run writes nothing"
 assert_contains "would" "$T_OUT" "dry run explains the plan"
 setup
 assert_exit 0 "custom --out" -- "$OG" backup --no-consistent --out "$SB/elsewhere"
-assert_eq 1 "$(ls "$SB"/elsewhere/opengym-*.tgz | wc -l | tr -d ' ')" "archive in custom dir"
+assert_eq 1 "$(ls "$SB"/elsewhere/gymme-*.tgz | wc -l | tr -d ' ')" "archive in custom dir"
 assert_exit 2 "unknown option" -- "$OG" backup --bogus
 assert_exit 0 "--help" -- "$OG" backup --help
 

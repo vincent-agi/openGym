@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# opengym common helpers. Source it; do not execute it.
+# gymme common helpers. Source it; do not execute it.
 # bash 3.2 compatible (macOS default): no mapfile, no associative arrays, no readlink -f.
 
 set -euo pipefail
@@ -20,17 +20,17 @@ resolve_symlinks() { # path
   printf '%s/%s\n' "$(cd "$(dirname "$p")" && pwd)" "$(basename "$p")"
 }
 
-if [ -z "${OPENGYM_ROOT:-}" ]; then
+if [ -z "${GYMME_ROOT:-}" ]; then
   _og_self="$(resolve_symlinks "${BASH_SOURCE[0]}")"
-  OPENGYM_ROOT="$(cd "$(dirname "$_og_self")/../.." && pwd)"
+  GYMME_ROOT="$(cd "$(dirname "$_og_self")/../.." && pwd)"
   unset _og_self
 fi
-export OPENGYM_ROOT
+export GYMME_ROOT
 
 # --- colours ----------------------------------------------------------------
 
 C_RED='' C_YELLOW='' C_GREEN='' C_DIM='' C_RESET=''
-if { [ -t 2 ] || [ "${OPENGYM_FORCE_TTY:-}" = 1 ]; } && [ -z "${NO_COLOR:-}" ]; then
+if { [ -t 2 ] || [ "${GYMME_FORCE_TTY:-}" = 1 ]; } && [ -z "${NO_COLOR:-}" ]; then
   C_RED=$'\033[31m' C_YELLOW=$'\033[33m' C_GREEN=$'\033[32m' C_DIM=$'\033[2m' C_RESET=$'\033[0m'
 fi
 
@@ -72,10 +72,10 @@ file_mode() { # path
 secure_umask() { umask 077; }
 
 # Ask a yes/no question. ASSUME_YES=1 answers yes; no TTY answers no.
-# OPENGYM_FORCE_TTY=1 is a test hook that lets stdin act as the terminal.
+# GYMME_FORCE_TTY=1 is a test hook that lets stdin act as the terminal.
 confirm() { # question
   [ "${ASSUME_YES:-}" = 1 ] && return 0
-  if [ ! -t 0 ] && [ "${OPENGYM_FORCE_TTY:-}" != 1 ]; then
+  if [ ! -t 0 ] && [ "${GYMME_FORCE_TTY:-}" != 1 ]; then
     return 1
   fi
   local reply=''

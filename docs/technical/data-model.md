@@ -1,6 +1,6 @@
 # Data model and storage
 
-openGym has **no database server**. Persistence is a directory of JSON files (`DATA_DIR`, `/data` in the container,
+Gymme has **no database server**. Persistence is a directory of JSON files (`DATA_DIR`, `/data` in the container,
 `./data` on the host). This page is the reference for database administrators: layout, schemas, consistency
 guarantees, and how to inspect or repair data safely.
 

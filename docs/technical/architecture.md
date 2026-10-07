@@ -48,7 +48,7 @@ One codebase, three builds, selected at build time by Vite env flags:
 |---|---|---|---|---|
 | **Self-hosted web** (default) | none | `api` service | Server JSON + browser `localStorage` | The product. |
 | **Demo** | `VITE_DEMO=1` | none | Browser only, seeded example data | GitHub Pages demo. Seed generator is imported dynamically so it never ships in the normal bundle. |
-| **Mobile** | `VITE_MOBILE=1` (+ `VITE_IMG_BASE`, `VITE_GIF_BASE`) | none | Capacitor file `opengym-state.json` mirrored from `localStorage` | Android APK / iOS app. Media from jsDelivr, pinned to a dataset commit. |
+| **Mobile** | `VITE_MOBILE=1` (+ `VITE_IMG_BASE`, `VITE_GIF_BASE`) | none | Capacitor file `gymme-state.json` mirrored from `localStorage` | Android APK / iOS app. Media from jsDelivr, pinned to a dataset commit. |
 
 ## Frontend
 

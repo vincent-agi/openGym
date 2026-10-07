@@ -9,9 +9,9 @@ al() { "$BASH" -c '. "$0"; alert "$@"' "$LIB" "$@"; }
 alc() { "$BASH" -c '. "$0"; alert_clear "$@"' "$LIB" "$@"; }
 reset_env() {
   new_sandbox
-  unset DISPLAY WAYLAND_DISPLAY SSH_CONNECTION OPENGYM_NOW MOCK_READ_STDIN OSTYPE
-  export LOG_FILE="$SB/logs/opengym.log"
-  export OPENGYM_QUIET=1
+  unset DISPLAY WAYLAND_DISPLAY SSH_CONNECTION GYMME_NOW MOCK_READ_STDIN OSTYPE
+  export LOG_FILE="$SB/logs/gymme.log"
+  export GYMME_QUIET=1
   export ALERT_DESKTOP=off
 }
 # PATH that has the usual tools but neither sendmail nor mail.
@@ -105,7 +105,7 @@ al crit m1 "Backup missing" "no backup for 3 days"
 assert_eq 1 "$(mock_calls sendmail)" "sendmail used"
 mailbody="$(cat "$MOCK_LOG.stdin")"
 assert_contains "To: ops@example.com" "$mailbody" "mail To header"
-assert_contains "Subject: [openGym][CRIT] Backup missing" "$mailbody" "mail subject"
+assert_contains "Subject: [Gymme][CRIT] Backup missing" "$mailbody" "mail subject"
 assert_contains "no backup for 3 days" "$mailbody" "mail body"
 
 reset_env
@@ -117,15 +117,15 @@ assert_eq 1 "$(grep -c 'no mail' "$LOG_FILE")" "missing mailer warned exactly on
 # --- cooldown
 reset_env
 export ALERT_WEBHOOK_URL="https://hooks.example/x" ALERT_COOLDOWN=3600
-export OPENGYM_NOW=1000000
+export GYMME_NOW=1000000
 al warn same "T" "M"
 al warn same "T" "M"
 assert_eq 1 "$(mock_calls curl)" "same key muted within cooldown"
 al warn other "T" "M"
 assert_eq 2 "$(mock_calls curl)" "different key not muted"
-OPENGYM_NOW=1003599 al warn same "T" "M"
+GYMME_NOW=1003599 al warn same "T" "M"
 assert_eq 2 "$(mock_calls curl)" "still muted just before expiry"
-OPENGYM_NOW=1003600 al warn same "T" "M"
+GYMME_NOW=1003600 al warn same "T" "M"
 assert_eq 3 "$(mock_calls curl)" "fires again after cooldown"
 al info same-info "T" "M"
 al info same-info "T" "M"
@@ -134,18 +134,18 @@ export ALERT_COOLDOWN=0
 al warn zero "T" "M"
 al warn zero "T" "M"
 assert_eq 7 "$(mock_calls curl)" "cooldown 0 disables muting"
-assert_contains "same" "$(ls "$SB/.opengym-state/alerts")" "state file per key"
+assert_contains "same" "$(ls "$SB/.gymme-state/alerts")" "state file per key"
 al warn 'weird/key name!' "T" "M"
-assert_file "$SB/.opengym-state/alerts/weird_key_name_" "key sanitised for the filesystem"
+assert_file "$SB/.gymme-state/alerts/weird_key_name_" "key sanitised for the filesystem"
 
 # --- recovery
 reset_env
-export ALERT_WEBHOOK_URL="https://hooks.example/x" ALERT_COOLDOWN=3600 OPENGYM_NOW=2000000
+export ALERT_WEBHOOK_URL="https://hooks.example/x" ALERT_COOLDOWN=3600 GYMME_NOW=2000000
 al crit api-down "API down" "no answer"
 assert_eq 1 "$(mock_calls curl)" "initial alert sent"
 alc api-down "API is back"
 assert_eq 2 "$(mock_calls curl)" "recovery sends one alert"
-assert_no_file "$SB/.opengym-state/alerts/api-down" "state removed after recovery"
+assert_no_file "$SB/.gymme-state/alerts/api-down" "state removed after recovery"
 alc api-down "API is back"
 assert_eq 2 "$(mock_calls curl)" "second clear sends nothing"
 alc never-raised "nope"

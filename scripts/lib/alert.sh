@@ -10,8 +10,8 @@
 # shellcheck source=log.sh
 . "${BASH_SOURCE[0]%/*}/log.sh"
 
-_alert_state_dir() { printf '%s/.opengym-state/alerts' "$OPENGYM_ROOT"; }
-_alert_now() { printf '%s' "${OPENGYM_NOW:-$(date +%s)}"; }
+_alert_state_dir() { printf '%s/.gymme-state/alerts' "$GYMME_ROOT"; }
+_alert_now() { printf '%s' "${GYMME_NOW:-$(date +%s)}"; }
 _alert_key() { printf '%s' "$1" | tr -c 'A-Za-z0-9_.\n-' '_'; }
 
 json_escape() { # text
@@ -65,7 +65,7 @@ _alert_email() { # level title message
   [ -n "${ALERT_EMAIL_TO:-}" ] || return 0
   local subject lvl dir marker
   lvl="$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')"
-  subject="[openGym][$lvl] $2"
+  subject="[Gymme][$lvl] $2"
   dir="$(_alert_state_dir)"
   marker="$dir/.nomailer"
   if command -v sendmail >/dev/null 2>&1; then

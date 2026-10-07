@@ -66,7 +66,7 @@ chk_docker() {
     report OK docker "Docker daemon is running"
     DOCKER_OK=1
   else
-    report FAIL docker "Docker is not running" "Start Docker (Docker Desktop, or: sudo systemctl start docker), then: opengym start"
+    report FAIL docker "Docker is not running" "Start Docker (Docker Desktop, or: sudo systemctl start docker), then: gymme start"
     DOCKER_OK=0
   fi
 }
@@ -81,12 +81,12 @@ chk_services() {
       n="$(svc_restart_count "$svc")"
       case "$n" in '' | *[!0-9]*) n=0 ;; esac
       if [ "$n" -ge 3 ]; then
-        report WARN "svc-$svc" "$svc is running but restarted $n times" "Crash loop? Run: opengym logs $svc --errors"
+        report WARN "svc-$svc" "$svc is running but restarted $n times" "Crash loop? Run: gymme logs $svc --errors"
       else
         report OK "svc-$svc" "$svc is running"
       fi
     else
-      report FAIL "svc-$svc" "$svc is not running" "Run: opengym start, then: opengym logs $svc --errors"
+      report FAIL "svc-$svc" "$svc is not running" "Run: gymme start, then: gymme logs $svc --errors"
     fi
   done
 }
@@ -97,17 +97,17 @@ chk_http() {
   if curl -fsS --max-time 5 -o /dev/null "$BASE_URL/" >/dev/null 2>&1; then
     report OK front-door "$BASE_URL/ answers"
   else
-    report FAIL front-door "$BASE_URL/ does not answer" "nginx (web) is down or WEB_PORT differs: opengym logs web; check WEB_PORT in .env"
+    report FAIL front-door "$BASE_URL/ does not answer" "nginx (web) is down or WEB_PORT differs: gymme logs web; check WEB_PORT in .env"
   fi
   if body="$(fetch_health)" && [ "$(printf '%s' "$body" | jq -r '.ok' 2>/dev/null)" = true ]; then
     report OK api-health "API answers ($(printf '%s' "$body" | jq -r '.users // "?"') users)"
   else
-    report FAIL api-health "the API does not answer at $BASE_URL/api/health" "502/504 usually means the api container is down: opengym logs api --errors (see operations.md Troubleshooting)"
+    report FAIL api-health "the API does not answer at $BASE_URL/api/health" "502/504 usually means the api container is down: gymme logs api --errors (see operations.md Troubleshooting)"
   fi
 }
 
 chk_data() {
-  local dir="$OPENGYM_ROOT/data" f mode n
+  local dir="$GYMME_ROOT/data" f mode n
   if [ -d "$dir" ] && [ -w "$dir" ]; then
     report OK data-dir "data/ exists and is writable"
   else
@@ -115,9 +115,9 @@ chk_data() {
     return 0
   fi
   if [ ! -f "$dir/db.json" ]; then
-    report FAIL db-json "data/db.json is missing" "Nobody can sign in. Restore a backup: opengym restore <archive>"
+    report FAIL db-json "data/db.json is missing" "Nobody can sign in. Restore a backup: gymme restore <archive>"
   elif ! json_valid "$dir/db.json"; then
-    report FAIL db-json "data/db.json is not valid JSON" "Stop the API and restore it: opengym restore <archive> (see data-model.md Integrity)"
+    report FAIL db-json "data/db.json is not valid JSON" "Stop the API and restore it: gymme restore <archive> (see data-model.md Integrity)"
   else
     report OK db-json "db.json is valid ($(user_count "$dir") users)"
   fi
@@ -141,7 +141,7 @@ chk_data() {
   done
   n="$(find "$dir" -maxdepth 1 -name '*.tmp' -mmin +60 2>/dev/null | wc -l | tr -d ' ')"
   if [ "$n" -gt 0 ]; then
-    report WARN tmp "$n stray *.tmp file(s) older than 1 h in data/" "An interrupted write; harmless but untidy: opengym prune"
+    report WARN tmp "$n stray *.tmp file(s) older than 1 h in data/" "An interrupted write; harmless but untidy: gymme prune"
   else
     report OK tmp "no stray *.tmp files"
   fi
@@ -162,9 +162,9 @@ chk_data() {
 }
 
 chk_env() {
-  local env="$OPENGYM_ROOT/.env" rp origin host
+  local env="$GYMME_ROOT/.env" rp origin host
   if [ ! -f "$env" ]; then
-    report FAIL env ".env is missing" "Run: opengym install (RP_ID and ORIGIN must be restored exactly or every passkey fails)"
+    report FAIL env ".env is missing" "Run: gymme install (RP_ID and ORIGIN must be restored exactly or every passkey fails)"
     return 0
   fi
   rp="$(env_value "$env" RP_ID)"
@@ -198,7 +198,7 @@ chk_env() {
 
 chk_media() {
   local f found=0
-  for f in "$OPENGYM_ROOT"/media/img/*; do [ -e "$f" ] && { found=1; break; }; done
+  for f in "$GYMME_ROOT"/media/img/*; do [ -e "$f" ] && { found=1; break; }; done
   if [ "$found" = 1 ]; then
     report OK media "exercise media present"
   else
@@ -212,30 +212,30 @@ _disk_report() { # id label path
   pct="$(disk_used_pct "$3")"
   pct="${pct:-0}"
   if [ "$pct" -ge "$DISK_CRIT_PCT" ]; then
-    report FAIL "$1" "$2 disk ${pct}% used (critical at ${DISK_CRIT_PCT}%)" "A full disk makes every write fail: free space (opengym prune, docker system prune, move backups off the host)"
+    report FAIL "$1" "$2 disk ${pct}% used (critical at ${DISK_CRIT_PCT}%)" "A full disk makes every write fail: free space (gymme prune, docker system prune, move backups off the host)"
   elif [ "$pct" -ge "$DISK_WARN_PCT" ]; then
-    report WARN "$1" "$2 disk ${pct}% used (warning at ${DISK_WARN_PCT}%)" "Free space soon: opengym prune, rotate Docker logs, move backups off the host"
+    report WARN "$1" "$2 disk ${pct}% used (warning at ${DISK_WARN_PCT}%)" "Free space soon: gymme prune, rotate Docker logs, move backups off the host"
   else
     report OK "$1" "$2 disk ${pct}% used"
   fi
 }
 
 chk_disk() {
-  _disk_report disk-data data "$OPENGYM_ROOT/data"
+  _disk_report disk-data data "$GYMME_ROOT/data"
   _disk_report disk-backups backups "$BACKUP_DIR"
 }
 
 chk_backup() {
   local now last age
-  now="${OPENGYM_NOW:-$(date +%s)}"
+  now="${GYMME_NOW:-$(date +%s)}"
   last="$(last_backup_epoch)"
   if [ "$last" -eq 0 ]; then
-    report WARN backup "no backup recorded yet" "Run: opengym backup, then schedule it: opengym schedule install"
+    report WARN backup "no backup recorded yet" "Run: gymme backup, then schedule it: gymme schedule install"
     return 0
   fi
   age=$((now - last))
   if [ "$age" -gt $((BACKUP_MAX_AGE_HOURS * 3600)) ]; then
-    report WARN backup "last backup is $(human_age "$age") (limit ${BACKUP_MAX_AGE_HOURS} h)" "Run: opengym backup; check the cron job: opengym schedule show"
+    report WARN backup "last backup is $(human_age "$age") (limit ${BACKUP_MAX_AGE_HOURS} h)" "Run: gymme backup; check the cron job: gymme schedule show"
   else
     report OK backup "last backup $(human_age "$age")"
   fi

@@ -9,10 +9,10 @@ _here="${BASH_SOURCE[0]%/*}/.."
 
 usage() {
   cat <<'USAGE'
-Usage: opengym install [--rp-id HOST] [--origin URL] [--yes]
+Usage: gymme install [--rp-id HOST] [--origin URL] [--yes]
 
 Checks Docker, Compose, jq, curl and tar, creates .env from .env.example, then data/ and backups/.
-It never starts the stack (run `opengym start`) and never overwrites an existing .env.
+It never starts the stack (run `gymme start`) and never overwrites an existing .env.
 
   --rp-id HOST   passkey relying-party id: the domain users type, no scheme or port (default: localhost)
   --origin URL   full public address, e.g. https://gym.example.com (default: http://localhost:8080)
@@ -49,8 +49,8 @@ require_cmd jq
 require_cmd curl
 require_cmd tar
 
-ENV_FILE="$OPENGYM_ROOT/.env"
-EXAMPLE="$OPENGYM_ROOT/.env.example"
+ENV_FILE="$GYMME_ROOT/.env"
+EXAMPLE="$GYMME_ROOT/.env.example"
 
 valid_rp_id() { case "$1" in '' | *[!A-Za-z0-9.-]* | .* | -* | *. | *-) return 1 ;; *) return 0 ;; esac; }
 valid_origin() {
@@ -74,7 +74,7 @@ ask() { # prompt default -> stdout
   read -r reply || true
   printf '%s' "${reply:-$2}"
 }
-interactive() { [ "$ASSUME_YES" != 1 ] && { [ -t 0 ] || [ "${OPENGYM_FORCE_TTY:-}" = 1 ]; }; }
+interactive() { [ "$ASSUME_YES" != 1 ] && { [ -t 0 ] || [ "${GYMME_FORCE_TTY:-}" = 1 ]; }; }
 
 if [ -f "$ENV_FILE" ]; then
   cur_rp="$(sed -n 's/^RP_ID=//p' "$ENV_FILE" | tail -n 1)"
@@ -119,18 +119,18 @@ else
 fi
 
 # 2. directories
-mkdir -p "$OPENGYM_ROOT/data"
-(umask 077 && mkdir -p "$OPENGYM_ROOT/backups")
-chmod 700 "$OPENGYM_ROOT/backups" 2>/dev/null || true
+mkdir -p "$GYMME_ROOT/data"
+(umask 077 && mkdir -p "$GYMME_ROOT/backups")
+chmod 700 "$GYMME_ROOT/backups" 2>/dev/null || true
 ok "data/ and backups/ are ready"
 
 cat >&2 <<NEXT
 
 Next:
-  1. opengym start                 first start downloads ~140 MB of exercise media
-  2. Daily backup (03:15) and a watchdog every 15 minutes: opengym schedule install
+  1. gymme start                 first start downloads ~140 MB of exercise media
+  2. Daily backup (03:15) and a watchdog every 15 minutes: gymme schedule install
      (or by hand, with: crontab -e)
-       15 3 * * * cd "$OPENGYM_ROOT" && scripts/opengym backup --quiet >/dev/null
-  3. Optional settings (alerts, retention, encryption): cp opengym.conf.example opengym.conf
+       15 3 * * * cd "$GYMME_ROOT" && scripts/gymme backup --quiet >/dev/null
+  3. Optional settings (alerts, retention, encryption): cp gymme.conf.example gymme.conf
 Remember: RP_ID and ORIGIN are bound to your users' passkeys; do not change them later.
 NEXT

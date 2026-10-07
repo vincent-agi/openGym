@@ -13,9 +13,9 @@ _here="${BASH_SOURCE[0]%/*}/.."
 
 usage() {
   cat <<'USAGE'
-Usage: opengym backup [--consistent | --no-consistent] [--quiet] [--dry-run] [--out DIR]
+Usage: gymme backup [--consistent | --no-consistent] [--quiet] [--dry-run] [--out DIR]
 
-Archives ./data and .env (never media/ or *.tmp) into BACKUP_DIR as opengym-YYYY-MM-DD-HHMMSS.tgz,
+Archives ./data and .env (never media/ or *.tmp) into BACKUP_DIR as gymme-YYYY-MM-DD-HHMMSS.tgz,
 mode 0600, with a .sha256 file. The archive path is printed on stdout.
 
   --consistent      stop the API for a few seconds so db.json and state files are one snapshot (default when run by hand)
@@ -25,7 +25,7 @@ mode 0600, with a .sha256 file. The archive path is printed on stdout.
   --out DIR         write the archive to DIR instead of BACKUP_DIR (no pruning there)
   -h, --help        this help
 
-Settings (opengym.conf): BACKUP_DIR, BACKUP_KEEP_DAYS (0 = never prune), BACKUP_ENCRYPT_TO (age recipient),
+Settings (gymme.conf): BACKUP_DIR, BACKUP_KEEP_DAYS (0 = never prune), BACKUP_ENCRYPT_TO (age recipient),
 BACKUP_OFFHOST_CMD (run with the archive path as $1).
 Exit code: 0 OK · 1 failed · 10 archive written but the off-host hook failed.
 USAGE
@@ -51,7 +51,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 load_config
-[ "$QUIET" = 1 ] && export OPENGYM_QUIET=1
+[ "$QUIET" = 1 ] && export GYMME_QUIET=1
 secure_umask
 
 ENCRYPT=0
@@ -63,11 +63,11 @@ require_cmd tar
 
 fail() {
   log_error "backup failed: $*"
-  alert crit backup-failed "openGym backup failed" "$*"
+  alert crit backup-failed "Gymme backup failed" "$*"
   exit 1
 }
 
-[ -f "$OPENGYM_ROOT/data/db.json" ] || fail "no data to back up ($OPENGYM_ROOT/data/db.json is missing)"
+[ -f "$GYMME_ROOT/data/db.json" ] || fail "no data to back up ($GYMME_ROOT/data/db.json is missing)"
 
 DEST="${OUT:-$BACKUP_DIR}"
 if [ "$CONSISTENT" = auto ]; then
@@ -87,10 +87,10 @@ fi
 STAMP="$(date +%Y-%m-%d-%H%M%S)"
 EXT=tgz
 [ "$ENCRYPT" = 1 ] && EXT=tgz.age
-ARCHIVE="$DEST/opengym-$STAMP.$EXT"
+ARCHIVE="$DEST/gymme-$STAMP.$EXT"
 n=1
 while [ -e "$ARCHIVE" ]; do
-  ARCHIVE="$DEST/opengym-$STAMP-$n.$EXT"
+  ARCHIVE="$DEST/gymme-$STAMP-$n.$EXT"
   n=$((n + 1))
 done
 
@@ -107,13 +107,13 @@ fi
 
 (umask 077 && mkdir -p "$DEST") || fail "cannot create $DEST"
 chmod 700 "$DEST" 2>/dev/null || true
-PARTIAL="$DEST/.opengym-partial.$$"
+PARTIAL="$DEST/.gymme-partial.$$"
 STOPPED=0
 cleanup() {
   local rc=$?
   trap - EXIT
   if [ "$STOPPED" = 1 ]; then
-    compose_cmd start api >/dev/null 2>&1 || log_error "could not restart the api: run: opengym start"
+    compose_cmd start api >/dev/null 2>&1 || log_error "could not restart the api: run: gymme start"
   fi
   rm -f "$PARTIAL" "$PARTIAL.age" "$PARTIAL.list"
   exit "$rc"
@@ -126,15 +126,15 @@ if [ "$CONSISTENT" = 1 ]; then
 fi
 
 FILES=(data)
-[ -f "$OPENGYM_ROOT/.env" ] && FILES+=(.env)
+[ -f "$GYMME_ROOT/.env" ] && FILES+=(.env)
 rc=0
-COPYFILE_DISABLE=1 tar czf "$PARTIAL" --exclude='*.tmp' -C "$OPENGYM_ROOT" "${FILES[@]}" 2>/dev/null || rc=$?
+COPYFILE_DISABLE=1 tar czf "$PARTIAL" --exclude='*.tmp' -C "$GYMME_ROOT" "${FILES[@]}" 2>/dev/null || rc=$?
 # tar exit 1 = "some files changed while reading" (live backup): acceptable. Anything higher is a failure.
 [ "$rc" -le 1 ] || fail "tar failed (exit $rc)"
 [ "$rc" -eq 0 ] || log_warn "some files changed while being archived (live backup)"
 
 if [ "$STOPPED" = 1 ]; then
-  compose_cmd start api >/dev/null 2>&1 || log_error "could not restart the api: run: opengym start"
+  compose_cmd start api >/dev/null 2>&1 || log_error "could not restart the api: run: gymme start"
   STOPPED=0
 fi
 
@@ -159,7 +159,7 @@ if [ -z "$OUT" ] && [ "$BACKUP_KEEP_DAYS" -gt 0 ]; then
   while IFS= read -r old; do
     [ -n "$old" ] || continue
     rm -f "$old" && log_info "pruned old backup: $(basename "$old")"
-  done < <(find "$DEST" -maxdepth 1 -type f -name 'opengym-*' -mtime +"$BACKUP_KEEP_DAYS" 2>/dev/null)
+  done < <(find "$DEST" -maxdepth 1 -type f -name 'gymme-*' -mtime +"$BACKUP_KEEP_DAYS" 2>/dev/null)
 fi
 
 record_backup
@@ -168,12 +168,12 @@ alert_clear backup-failed "Backup works again"
 
 EXIT=0
 if [ -n "$BACKUP_OFFHOST_CMD" ]; then
-  if sh -c "$BACKUP_OFFHOST_CMD \"\$1\"" opengym-offhost "$ARCHIVE" >/dev/null 2>&1; then
+  if sh -c "$BACKUP_OFFHOST_CMD \"\$1\"" gymme-offhost "$ARCHIVE" >/dev/null 2>&1; then
     log_info "off-host copy done"
     alert_clear backup-offhost "Off-host copy works again"
   else
     log_warn "off-host command failed: $BACKUP_OFFHOST_CMD"
-    alert warn backup-offhost "openGym off-host copy failed" "BACKUP_OFFHOST_CMD failed for $(basename "$ARCHIVE"); the local archive is fine."
+    alert warn backup-offhost "Gymme off-host copy failed" "BACKUP_OFFHOST_CMD failed for $(basename "$ARCHIVE"); the local archive is fine."
     EXIT=10
   fi
 fi

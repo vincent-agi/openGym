@@ -3,7 +3,7 @@
 The **Nutrition** tab helps you track calories and macros (protein, carbs, fat). It is simple on purpose:
 you type in what you eat. There is no food database or barcode scanner.
 
-> openGym gives **rough estimates for general fitness**. It is not medical or dietitian advice. If you have a
+> Gymme gives **rough estimates for general fitness**. It is not medical or dietitian advice. If you have a
 > health condition, ask a professional.
 
 ## Set your targets (first time)
@@ -13,7 +13,7 @@ you type in what you eat. There is no food database or barcode scanner.
 3. Choose your **Activity level**: Sedentary, Lightly active, Moderately active, Active or Very active.
 4. Tap **Set targets**.
 
-openGym works out a daily **calorie** and **macro** target from your **latest logged body weight**. So log your
+Gymme works out a daily **calorie** and **macro** target from your **latest logged body weight**. So log your
 weight first. Without one, no targets can be made.
 
 How it estimates (so nothing is a surprise):

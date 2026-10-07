@@ -1,10 +1,10 @@
 # 10. Install on your phone
 
-There are two ways to have openGym on your phone. Pick the one that fits you.
+There are two ways to have Gymme on your phone. Pick the one that fits you.
 
 | | **Web app** (add to home screen) | **Standalone app** (Android) |
 |---|---|---|
-| Needs a server | Yes — your openGym address | **No** |
+| Needs a server | Yes — your Gymme address | **No** |
 | Account / sign-in | Passkey profile | None — the phone is the account |
 | Sync between devices | Yes | **No** |
 | Where data lives | On the server | On the phone only |
@@ -17,12 +17,12 @@ There are two ways to have openGym on your phone. Pick the one that fits you.
 You get a full-screen app icon, offline support for the app screens, and sync.
 
 **iPhone / iPad (Safari)**
-1. Open your openGym address in **Safari**.
+1. Open your Gymme address in **Safari**.
 2. Tap **Share**.
 3. Tap **Add to Home Screen**.
 
 **Android (Chrome)**
-1. Open your openGym address in **Chrome**.
+1. Open your Gymme address in **Chrome**.
 2. Tap the **⋮** menu.
 3. Tap **Add to Home screen**.
 
@@ -36,7 +36,7 @@ The Android app is a single file you **install yourself** (a "sideload"). It is 
 1. Download the **APK** from **https://opengym.duarte-santos.ch** on your phone.
 2. Open the file. Android may ask you to allow installs from your browser. That is normal for apps outside the Play
    Store. Allow it for this install.
-3. Open openGym. There is no sign-in: you go straight in.
+3. Gymmeme. There is no sign-in: you go straight in.
 
 Because there is no server:
 

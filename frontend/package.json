@@ -1,5 +1,6 @@
 {
-  "name": "opengym-frontend",
+  "name": "gymme-frontend",
+  "author": "Viny",
   "private": true,
   "version": "1.6.0",
   "type": "module",

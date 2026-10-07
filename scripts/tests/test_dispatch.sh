@@ -7,13 +7,13 @@ set -u
 mk_tree() {
   new_sandbox
   mkdir -p "$SB/scripts/user" "$SB/scripts/ops" "$SB/scripts/stats"
-  cp "$REPO_ROOT/scripts/opengym" "$SB/scripts/opengym"
+  cp "$REPO_ROOT/scripts/gymme" "$SB/scripts/gymme"
   cp -R "$REPO_ROOT/scripts/lib" "$SB/scripts/lib"
   printf '#!/usr/bin/env bash\n# desc: say hello\necho "hello args=$*"\n' >"$SB/scripts/user/hello.sh"
   printf '#!/usr/bin/env bash\n# desc: always critical\nexit 20\n' >"$SB/scripts/ops/boom.sh"
   printf '#!/usr/bin/env bash\n# desc: last one\n:\n' >"$SB/scripts/user/zeta.sh"
   printf '#!/usr/bin/env bash\n# desc: first one\n:\n' >"$SB/scripts/user/alpha.sh"
-  OG="$SB/scripts/opengym"
+  OG="$SB/scripts/gymme"
 }
 
 mk_tree
@@ -46,23 +46,23 @@ assert_exit 2 "unknown command exits 2" -- "$OG" hell
 assert_contains "unknown command: hell" "$T_OUT" "names the unknown command"
 assert_contains "hello" "$T_OUT" "suggests prefix match"
 assert_exit 2 "unknown without suggestion exits 2" -- "$OG" qqqq
-assert_contains "opengym help" "$T_OUT" "points to help"
+assert_contains "gymme help" "$T_OUT" "points to help"
 
 # version
 printf '{".":"1.2.3"}\n' >"$SB/.release-please-manifest.json"
 assert_exit 0 "--version exits 0" -- "$OG" --version
-assert_eq "opengym 1.2.3" "$T_OUT" "version from release-please manifest"
+assert_eq "gymme 1.2.3" "$T_OUT" "version from release-please manifest"
 rm "$SB/.release-please-manifest.json"
 assert_exit 0 "--version without manifest exits 0" -- "$OG" --version
-assert_eq "opengym unknown" "$T_OUT" "version falls back to unknown"
+assert_eq "gymme unknown" "$T_OUT" "version falls back to unknown"
 
 # symlink invocation (absolute and relative)
 mkdir -p "$SB/elsewhere"
-ln -s "$OG" "$SB/elsewhere/opengym"
-assert_exit 0 "absolute symlink" -- "$SB/elsewhere/opengym" hello
+ln -s "$OG" "$SB/elsewhere/gymme"
+assert_exit 0 "absolute symlink" -- "$SB/elsewhere/gymme" hello
 assert_contains "hello args=" "$T_OUT" "found scripts via symlink"
 mkdir -p "$SB/rel"
-ln -s ../scripts/opengym "$SB/rel/og"
+ln -s ../scripts/gymme "$SB/rel/og"
 assert_exit 0 "relative symlink" -- "$SB/rel/og" hello
 
 # works from another cwd
@@ -83,6 +83,6 @@ assert_exit 1 "help --check flags missing desc" -- "$OG" help --check
 assert_contains "nodesc" "$T_OUT" "names the offending script"
 
 # real repo: every shipped command has a description
-assert_exit 0 "real tree passes help --check" -- "$REPO_ROOT/scripts/opengym" help --check
+assert_exit 0 "real tree passes help --check" -- "$REPO_ROOT/scripts/gymme" help --check
 
 t_summary

@@ -85,12 +85,12 @@ env_value() { # file key
   printf '%s' "$val"
 }
 
-_state_dir() { printf '%s/.opengym-state' "$OPENGYM_ROOT"; }
+_state_dir() { printf '%s/.gymme-state' "$GYMME_ROOT"; }
 
 record_backup() {
   local d
   d="$(_state_dir)"
-  (umask 077 && mkdir -p "$d" && printf '%s\n' "${OPENGYM_NOW:-$(date +%s)}" >"$d/last-backup")
+  (umask 077 && mkdir -p "$d" && printf '%s\n' "${GYMME_NOW:-$(date +%s)}" >"$d/last-backup")
 }
 
 # Epoch of the last successful backup, 0 when none was recorded.

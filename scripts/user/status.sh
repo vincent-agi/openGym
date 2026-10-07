@@ -11,7 +11,7 @@ _here="${BASH_SOURCE[0]%/*}/.."
 
 usage() {
   cat <<'USAGE'
-Usage: opengym status [--json]
+Usage: gymme status [--json]
 
 Prints services, API health, user count, last backup age and disk use, then a verdict.
 Exit code: 0 OK · 10 attention (e.g. no recent backup, disk filling) · 20 problem (stack down, API not answering).
@@ -44,8 +44,8 @@ add_issue() { # level message
 
 api_up=false web_up=false health_ok=false users=null
 if daemon_up; then
-  svc_running api && api_up=true || add_issue 20 "api is not running (try: opengym start)"
-  svc_running web && web_up=true || add_issue 20 "web is not running (try: opengym start)"
+  svc_running api && api_up=true || add_issue 20 "api is not running (try: gymme start)"
+  svc_running web && web_up=true || add_issue 20 "web is not running (try: gymme start)"
   if body="$(fetch_health)" && [ -n "$body" ]; then
     health_ok=true
     users="$(printf '%s' "$body" | jq -r '.users // "null"' 2>/dev/null || echo null)"
@@ -56,11 +56,11 @@ else
   add_issue 20 "Docker is not running"
 fi
 
-now="${OPENGYM_NOW:-$(date +%s)}"
+now="${GYMME_NOW:-$(date +%s)}"
 last="$(last_backup_epoch)"
 age=null
 if [ "$last" -eq 0 ]; then
-  add_issue 10 "no backup recorded yet (run: opengym backup)"
+  add_issue 10 "no backup recorded yet (run: gymme backup)"
 else
   age=$((now - last))
   if [ "$age" -gt $((BACKUP_MAX_AGE_HOURS * 3600)) ]; then
@@ -68,11 +68,11 @@ else
   fi
 fi
 
-data="$OPENGYM_ROOT/data"
-[ -d "$data" ] || data="$OPENGYM_ROOT"
+data="$GYMME_ROOT/data"
+[ -d "$data" ] || data="$GYMME_ROOT"
 pct="$(disk_used_pct "$data")"
 pct="${pct:-0}"
-data_kb="$(du -sk "$OPENGYM_ROOT/data" 2>/dev/null | cut -f1 || true)"
+data_kb="$(du -sk "$GYMME_ROOT/data" 2>/dev/null | cut -f1 || true)"
 data_bytes=$(( ${data_kb:-0} * 1024 ))
 if [ "$pct" -ge "$DISK_CRIT_PCT" ]; then
   add_issue 20 "disk ${pct}% used (critical threshold ${DISK_CRIT_PCT}%)"
@@ -105,7 +105,7 @@ if [ "$JSON" = 1 ]; then
 fi
 
 row() { printf '  %-13s %s\n' "$1" "$2"; }
-echo "openGym status"
+echo "Gymme status"
 row services "api $($api_up && echo running || echo DOWN) · web $($web_up && echo running || echo DOWN)"
 if [ "$health_ok" = true ]; then
   row health "ok ($users users)"

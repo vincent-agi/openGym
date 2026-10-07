@@ -34,7 +34,7 @@ A front-and-back body diagram that is shaded by how much work each muscle got. C
 - **by hard sets** (sets close to failure — needs the effort column turned on),
 - **by time trained**.
 
-openGym also lists the muscles you **have not trained** in that period, so you can fix gaps. Tap a muscle to
+Gymme also lists the muscles you **have not trained** in that period, so you can fix gaps. Tap a muscle to
 see more. While you build a routine, it previews which muscles that routine hits. After a workout, it shows what
 you just trained. Pick a male or female figure in [Settings](08-settings.md).
 

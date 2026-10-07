@@ -9,7 +9,7 @@ _here="${BASH_SOURCE[0]%/*}/.."
 
 usage() {
   cat <<'USAGE'
-Usage: opengym doctor [--json]
+Usage: gymme doctor [--json]
 
 Runs every check (Docker, containers, front door, API, data files and permissions, .env consistency, media, stray temp
 files, state file sizes, disk, backup age, TLS certificate) and prints OK / WARN / FAIL with the fix for each problem.
@@ -37,7 +37,7 @@ run_shared_checks
 if [ "$JSON" = 1 ]; then
   render_json
 else
-  echo "openGym doctor"
+  echo "Gymme doctor"
   render_text
   echo
   case "$LEVEL" in

@@ -51,4 +51,4 @@ the PR (`gh pr merge --auto --squash`) after review. Don't weaken the status-che
 - Create a fine-grained PAT (Contents + Pull requests: write) as repo secret `RELEASE_PLEASE_TOKEN`:
   PRs opened by the default `GITHUB_TOKEN` don't trigger CI, so the release PR would never get its
   required checks.
-- Make GHCR packages `opengym-api` / `opengym-web` public so `docker compose pull` works anonymously.
+- Make GHCR packages `gymme-api` / `gymme-web` public so `docker compose pull` works anonymously.

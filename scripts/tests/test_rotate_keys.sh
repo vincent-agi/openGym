@@ -2,9 +2,9 @@
 set -u
 # shellcheck source=helpers.sh
 . "$(dirname "$0")/helpers.sh"
-OG="$REPO_ROOT/scripts/opengym"
+OG="$REPO_ROOT/scripts/gymme"
 export WAIT_SLEEP=0
-export OPENGYM_QUIET=0
+export GYMME_QUIET=0
 
 # fake docker whose API "restart" regenerates the key files, like the real API does at start
 fake_docker() {
@@ -28,10 +28,10 @@ setup() {
   printf 'RP_ID=localhost\nORIGIN=http://localhost:8080\n' >"$SB/.env"
   printf 'oldsecret' >"$SB/data/secret"; chmod 600 "$SB/data/secret"
   printf '{"publicKey":"old"}' >"$SB/data/vapid.json"; chmod 600 "$SB/data/vapid.json"
-  export LOG_FILE="$SB/logs/opengym.log" MOCK_OUT_CURL='{"ok":true,"users":2}'
+  export LOG_FILE="$SB/logs/gymme.log" MOCK_OUT_CURL='{"ok":true,"users":2}'
   fake_docker
 }
-backups_n() { local n=0 f; for f in "$SB"/backups/opengym-*.tgz; do [ -e "$f" ] && n=$((n + 1)); done; echo "$n"; }
+backups_n() { local n=0 f; for f in "$SB"/backups/gymme-*.tgz; do [ -e "$f" ] && n=$((n + 1)); done; echo "$n"; }
 
 # ---------- session
 setup
@@ -39,7 +39,7 @@ assert_exit 0 "rotate session" -- "$OG" rotate-keys session --yes
 assert_eq "newsecret" "$(cat "$SB/data/secret")" "secret regenerated"
 assert_eq "600" "$("$BASH" -c '. "$0"; file_mode "$1"' "$REPO_ROOT/scripts/lib/common.sh" "$SB/data/secret")" "new secret mode 0600"
 assert_eq "1" "$(backups_n)" "backup taken first"
-A="$(ls "$SB"/backups/opengym-*.tgz)"
+A="$(ls "$SB"/backups/gymme-*.tgz)"
 assert_contains "oldsecret" "$(tar xzOf "$A" data/secret)" "the backup holds the old key"
 assert_contains "compose restart api" "$(cat "$MOCK_LOG")" "api restarted"
 assert_contains "api/health" "$(cat "$MOCK_LOG")" "health checked"
@@ -62,7 +62,7 @@ assert_eq 0 "$(mock_calls 'compose restart')" "dry run restarts nothing"
 assert_exit 1 "no TTY and no --yes aborts" -- "$OG" rotate-keys session
 assert_contains "aborted" "$T_OUT" "says aborted"
 assert_eq "oldsecret" "$(cat "$SB/data/secret")" "abort changes nothing"
-assert_exit 0 "answering yes on a terminal" -- env OPENGYM_FORCE_TTY=1 "$BASH" -c 'echo y | "$0" rotate-keys session' "$OG"
+assert_exit 0 "answering yes on a terminal" -- env GYMME_FORCE_TTY=1 "$BASH" -c 'echo y | "$0" rotate-keys session' "$OG"
 assert_eq "newsecret" "$(cat "$SB/data/secret")" "rotated after a yes"
 
 setup
@@ -74,7 +74,7 @@ assert_eq 0 "$(mock_calls 'compose restart')" "no restart when the backup fails"
 setup; rm "$SB/bin/docker"
 assert_exit 0 "docker down still rotates the file" -- env MOCK_EXIT_DOCKER_INFO=1 "$OG" rotate-keys session --yes
 assert_no_file "$SB/data/secret" "old key removed"
-assert_contains "opengym start" "$T_OUT" "tells how to start"
+assert_contains "gymme start" "$T_OUT" "tells how to start"
 setup
 assert_exit 1 "API never comes back" -- env MOCK_EXIT_CURL=22 "$OG" rotate-keys session --yes
 assert_contains "does not answer" "$T_OUT" "says the API does not answer"

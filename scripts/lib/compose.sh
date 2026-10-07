@@ -20,7 +20,7 @@ compose_detect() {
 # Run compose from the repo root so relative paths in docker-compose.yml resolve.
 compose_cmd() {
   compose_detect
-  (cd "$OPENGYM_ROOT" && "${OG_COMPOSE[@]}" "$@")
+  (cd "$GYMME_ROOT" && "${OG_COMPOSE[@]}" "$@")
 }
 
 daemon_up() { docker info >/dev/null 2>&1; }

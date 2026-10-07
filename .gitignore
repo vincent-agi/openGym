@@ -3,9 +3,9 @@ data/secret
 data/vapid.json
 **/dist/***
 **/node_modules/***
-# opengym CLI local state
-opengym.conf
+# gymme CLI local state
+gymme.conf
 backups/
 logs/
 reports/
-.opengym-state/
+.gymme-state/

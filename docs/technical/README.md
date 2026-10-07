@@ -1,9 +1,9 @@
-# openGym technical documentation
+# Gymme technical documentation
 
-For people who **build, deploy, secure and operate** openGym: developers, DevSecOps engineers, system
+For people who **build, deploy, secure and operate** Gymme: developers, DevSecOps engineers, system
 administrators and database administrators.
 
-If you use openGym to train, read the [user guide](../user/README.md) instead.
+If you use Gymme to train, read the [user guide](../user/README.md) instead.
 
 > Scope: this documentation describes release **1.5.0** (`api/package.json`, `frontend/package.json`).
 > Line numbers are deliberately not quoted; file and function names are.
@@ -30,7 +30,7 @@ If you use openGym to train, read the [user guide](../user/README.md) instead.
 7. [Security](security.md) — threat model, hardening checklist, secrets, incident response.
 8. [CI/CD and releases](ci-cd.md) — workflows, release-please, image publishing, supply-chain checks.
 9. [Development guide](development.md) — local setup, code layout, state management, i18n, tests, mobile builds.
-10. [Automation scripts](automation.md) — the `opengym` CLI: maintenance, monitoring, alerts and reporting scripts, conventions, configuration.
+10. [Automation scripts](automation.md) — the `gymme` CLI: maintenance, monitoring, alerts and reporting scripts, conventions, configuration.
 
 ## Existing documents
 

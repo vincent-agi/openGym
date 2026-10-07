@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# opengym configuration. Precedence: environment > opengym.conf > .env > defaults.
+# gymme configuration. Precedence: environment > gymme.conf > .env > defaults.
 # Files are PARSED, never sourced: a value like $(cmd) stays a literal string.
 
 # shellcheck source=common.sh
@@ -7,7 +7,7 @@
 
 # Keys the API already uses; the only ones read from .env.
 OG_API_KEYS="RP_ID ORIGIN WEB_PORT ADMIN_UIDS INVITE_ONLY"
-# Script settings; they live in opengym.conf so the API never sees them.
+# Script settings; they live in gymme.conf so the API never sees them.
 OG_SCRIPT_KEYS="BACKUP_DIR BACKUP_KEEP_DAYS BACKUP_MAX_AGE_HOURS BACKUP_ENCRYPT_TO BACKUP_OFFHOST_CMD BASE_URL \
 ALERT_WEBHOOK_URL ALERT_EMAIL_TO ALERT_DESKTOP ALERT_COOLDOWN DISK_WARN_PCT DISK_CRIT_PCT \
 STATE_WARN_KB LOG_FILE"
@@ -42,15 +42,15 @@ _cfg_parse() {
 _cfg_abs() {
   case "$1" in
     /*) printf '%s' "$1" ;;
-    ./*) printf '%s/%s' "$OPENGYM_ROOT" "${1#./}" ;;
-    *) printf '%s/%s' "$OPENGYM_ROOT" "$1" ;;
+    ./*) printf '%s/%s' "$GYMME_ROOT" "${1#./}" ;;
+    *) printf '%s/%s' "$GYMME_ROOT" "$1" ;;
   esac
 }
 
 load_config() {
   local k cur c e
-  _cfg_parse "$OPENGYM_ROOT/.env" "$OG_API_KEYS" _DOTENV_
-  _cfg_parse "$OPENGYM_ROOT/opengym.conf" "$OG_API_KEYS $OG_SCRIPT_KEYS" _CONF_
+  _cfg_parse "$GYMME_ROOT/.env" "$OG_API_KEYS" _DOTENV_
+  _cfg_parse "$GYMME_ROOT/gymme.conf" "$OG_API_KEYS $OG_SCRIPT_KEYS" _CONF_
 
   for k in $OG_API_KEYS $OG_SCRIPT_KEYS; do
     cur="${!k:-}"
@@ -73,7 +73,7 @@ load_config() {
   : "${ALERT_DESKTOP:=auto}"
   : "${BASE_URL:=http://127.0.0.1:${WEB_PORT}}"
   [ -n "$BACKUP_DIR" ] || BACKUP_DIR="backups"
-  [ -n "$LOG_FILE" ] || LOG_FILE="logs/opengym.log"
+  [ -n "$LOG_FILE" ] || LOG_FILE="logs/gymme.log"
   BACKUP_DIR="$(_cfg_abs "$BACKUP_DIR")"
   LOG_FILE="$(_cfg_abs "$LOG_FILE")"
 

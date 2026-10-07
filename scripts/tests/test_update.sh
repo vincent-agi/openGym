@@ -2,9 +2,9 @@
 set -u
 # shellcheck source=helpers.sh
 . "$(dirname "$0")/helpers.sh"
-OG="$REPO_ROOT/scripts/opengym"
+OG="$REPO_ROOT/scripts/gymme"
 export WAIT_SLEEP=0
-export OPENGYM_QUIET=0
+export GYMME_QUIET=0
 G() { git -C "$SB" "$@"; }
 
 # setup [upstream]: instance with data + a git checkout; with "upstream", origin has one newer commit
@@ -12,9 +12,9 @@ setup() {
   new_sandbox
   use_fixture data_ok
   printf 'RP_ID=localhost\nORIGIN=http://localhost:8080\n' >"$SB/.env"
-  export LOG_FILE="$SB/logs/opengym.log"
+  export LOG_FILE="$SB/logs/gymme.log"
   export MOCK_OUT_CURL='{"ok":true,"users":2}'
-  export OPENGYM_NOW=1700000000
+  export GYMME_NOW=1700000000
   git init -q -b main "$SB" 2>/dev/null || { git init -q "$SB"; G checkout -q -b main; }
   G config user.email t@t.t; G config user.name t
   printf '# Changelog\n\n## 1.0.0\n- first\n' >"$SB/CHANGELOG.md"
@@ -30,7 +30,7 @@ setup() {
   fi
   : >"$MOCK_LOG"
 }
-backups_count() { local n=0 f; for f in "$SB"/backups/opengym-*.tgz*; do [ -e "$f" ] && case "$f" in *.sha256) ;; *) n=$((n + 1)) ;; esac; done; echo "$n"; }
+backups_count() { local n=0 f; for f in "$SB"/backups/gymme-*.tgz*; do [ -e "$f" ] && case "$f" in *.sha256) ;; *) n=$((n + 1)) ;; esac; done; echo "$n"; }
 
 # ---------- happy path
 setup upstream
@@ -42,7 +42,7 @@ log="$(cat "$MOCK_LOG")"
 assert_contains "compose pull" "$log" "images pulled"
 assert_contains "compose up -d" "$log" "stack recreated"
 assert_contains "api/health" "$log" "health checked"
-assert_contains "OLD=$OLD_SHA" "OLD=$(grep '^git=' "$SB/.opengym-state/pre-update" | cut -d= -f2)" "previous commit recorded for rollback"
+assert_contains "OLD=$OLD_SHA" "OLD=$(grep '^git=' "$SB/.gymme-state/pre-update" | cut -d= -f2)" "previous commit recorded for rollback"
 assert_contains "updated" "$T_OUT" "success message"
 
 # ---------- already up to date

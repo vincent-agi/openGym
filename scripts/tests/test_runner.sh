@@ -12,7 +12,7 @@ assert_contains "boom" "$T_OUT" "T_OUT holds output"
 
 new_sandbox
 assert_file "$SB/data" "sandbox has data dir"
-assert_eq "$SB" "$OPENGYM_ROOT" "OPENGYM_ROOT points at sandbox"
+assert_eq "$SB" "$GYMME_ROOT" "GYMME_ROOT points at sandbox"
 docker compose version >/dev/null
 assert_eq 1 "$(mock_calls 'docker compose version')" "mock logs calls"
 MOCK_EXIT_DOCKER_INFO=1 docker info >/dev/null 2>&1; rc=$?

@@ -4,14 +4,14 @@
 
 Tap **Start** in the bottom bar (or the **Today** card on Home).
 
-- If today has a routine, openGym starts it. You may see a **Start workout** screen first, showing *Today's plan*
+- If today has a routine, Gymme starts it. You may see a **Start workout** screen first, showing *Today's plan*
   and **Other routines** you can pick instead.
 - For a free session, choose **Freestyle workout (pick as you go)** and add exercises as you go.
 - If a workout is already running, the button says **Resume** and takes you back to it.
 
 ### The quick check-in
 
-Before the workout starts, openGym asks for your body weight so your weight curve stays honest.
+Before the workout starts, Gymme asks for your body weight so your weight curve stays honest.
 Set it with the slider or type it, then tap **Save & start workout**.
 
 Not today? Tap **Start without weighing in**, or **Choose a different workout**.
@@ -55,11 +55,11 @@ After you tick a set, a bar shows the countdown.
 The rest length is set in [Settings](08-settings.md) (60 to 180 seconds). If push notifications are on, you also get an
 alert when the rest is over — even if the app is closed or your screen is off.
 
-If your routine has a playlist, openGym can offer to resume the music when rest ends (switch off in Settings).
+If your routine has a playlist, Gymme can offer to resume the music when rest ends (switch off in Settings).
 
 ### After the last set of an exercise
 
-openGym asks **"Confirm the weight you worked with"**. Your highest weight becomes the starting point next time.
+Gymme asks **"Confirm the weight you worked with"**. Your highest weight becomes the starting point next time.
 It tells you if you beat your **previous best** ("new record!"). Skipped for bodyweight exercises, which have
 no weight to confirm.
 
@@ -114,8 +114,8 @@ Effort is for your information. It does **not** change your progression or your 
 
 ## Finish a workout
 
-When you tick the last set, openGym offers **Finish workout** or **Continue workout** (to add more).
-You can also tap **Finish** at any time. If sets are still unticked, openGym asks you to confirm.
+When you tick the last set, Gymme offers **Finish workout** or **Continue workout** (to add more).
+You can also tap **Finish** at any time. If sets are still unticked, Gymme asks you to confirm.
 
 The **Workout complete!** screen shows:
 
@@ -129,7 +129,7 @@ The **Workout complete!** screen shows:
 
 - **Wrong weight in a finished workout?** Open it from the calendar or **Stats → Recent workouts** and check it.
   You can delete a workout from its detail sheet.
-- **Closed the app in the middle?** The running workout is kept **on that device**. Open openGym and tap **Resume**.
+- **Closed the app in the middle?** The running workout is kept **on that device**. Gymmeme and tap **Resume**.
   A workout in progress is not synced until you finish it.
 
 ## For people who train with limited mobility

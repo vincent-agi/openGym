@@ -1,6 +1,6 @@
 # Configuration
 
-openGym is configured with environment variables, loaded from `.env` next to `docker-compose.yml`
+Gymme is configured with environment variables, loaded from `.env` next to `docker-compose.yml`
 (`env_file: .env` on the `api` service; `WEB_PORT` is also read by Compose itself for variable substitution).
 `.env` is git-ignored; `.env.example` is the template.
 
@@ -18,7 +18,7 @@ openGym is configured with environment variables, loaded from `.env` next to `do
 | Variable | Default | Description |
 |---|---|---|
 | `WEB_PORT` | `8080` | Host port published for the `web` container (`${WEB_PORT:-8080}:80`). |
-| `RP_NAME` | `openGym` | Display name shown in the passkey prompt. |
+| `RP_NAME` | `Gymme` | Display name shown in the passkey prompt. |
 | `ADMIN_UIDS` | *(empty)* | Comma-separated user ids that get the admin dashboard and `/api/admin/*`. Ids are in `data/db.json` → `users[].id`. A user can also be an admin via `"admin": true` in `db.json`. Empty means **no admin**. |
 | `INVITE_ONLY` | *(off)* | `1`, `true`, `yes` or `on` (case-insensitive) requires a valid invite code to register. Existing accounts are unaffected. |
 | `SESSION_DAYS` | `90` | Lifetime of **newly issued** session cookies, in days (minimum 1). Existing cookies keep the lifetime they were issued with. |
@@ -40,7 +40,7 @@ openGym is configured with environment variables, loaded from `.env` next to `do
 RP_ID=gym.example.com
 ORIGIN=https://gym.example.com
 WEB_PORT=8080              # bind behind your reverse proxy; see deployment.md
-RP_NAME=openGym
+RP_NAME=Gymme
 INVITE_ONLY=1
 ADMIN_UIDS=piYdx5GveQarq8u9
 SESSION_DAYS=30

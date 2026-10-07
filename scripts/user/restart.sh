@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# desc: Restart openGym (or one service) and wait for health
+# desc: Restart Gymme (or one service) and wait for health
 set -euo pipefail
 _here="${BASH_SOURCE[0]%/*}/.."
 # shellcheck source=../lib/config.sh
@@ -9,7 +9,7 @@ _here="${BASH_SOURCE[0]%/*}/.."
 
 usage() {
   cat <<'USAGE'
-Usage: opengym restart [--no-wait] [--timeout SECONDS] [service...]
+Usage: gymme restart [--no-wait] [--timeout SECONDS] [service...]
 
   --no-wait          do not wait for the health check
   --timeout SECONDS  health wait limit (default 120)
@@ -34,7 +34,7 @@ done
 case "$TIMEOUT" in '' | *[!0-9]*) die_usage "--timeout needs a number of seconds" ;; esac
 
 load_config
-daemon_up || die "Docker is not running. Start Docker, then run: opengym start"
+daemon_up || die "Docker is not running. Start Docker, then run: gymme start"
 if [ "${#SERVICES[@]}" -gt 0 ]; then
   compose_cmd restart "${SERVICES[@]}" || die "docker compose restart failed"
 else
@@ -42,6 +42,6 @@ else
 fi
 if [ "$WAIT" = 1 ]; then
   wait_health "$BASE_URL/api/health" "$TIMEOUT" ||
-    die "openGym did not answer at $BASE_URL within ${TIMEOUT}s. Check: opengym logs"
+    die "Gymme did not answer at $BASE_URL within ${TIMEOUT}s. Check: gymme logs"
 fi
-ok "openGym restarted"
+ok "Gymme restarted"

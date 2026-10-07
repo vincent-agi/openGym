@@ -2,14 +2,14 @@
 set -u
 # shellcheck source=helpers.sh
 . "$(dirname "$0")/helpers.sh"
-OG="$REPO_ROOT/scripts/opengym"
+OG="$REPO_ROOT/scripts/gymme"
 
 new_sandbox
-export OPENGYM_ROOT="$REPO_ROOT"
+export GYMME_ROOT="$REPO_ROOT"
 want="$("$OG" --version | cut -d' ' -f2)"
 
 MOCK_OUT_DOCKER_COMPOSE_VERSION="v2.29.0" MOCK_OUT_CURL="curl 8.4.0 (mock)" assert_exit 0 "version command runs" -- "$OG" version
-assert_contains "$want" "$T_OUT" "shows opengym version"
+assert_contains "$want" "$T_OUT" "shows gymme version"
 assert_contains "v2.29.0" "$T_OUT" "shows docker compose version"
 assert_contains "curl 8.4.0" "$T_OUT" "shows curl version"
 assert_contains "jq" "$T_OUT" "shows jq line"

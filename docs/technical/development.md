@@ -172,7 +172,7 @@ See [API reference](api-reference.md#writing-a-new-endpoint). Principles that ke
 ## Mobile app (Capacitor)
 
 The mobile flavour is the same bundle built with `VITE_MOBILE=1` and wrapped by Capacitor (`appId`
-`ch.duartesantos.opengym`, `webDir: dist`). Full instructions are in [`docs/MOBILE.md`](../MOBILE.md); the essentials:
+`app.viny.gymme`, `webDir: dist`). Full instructions are in [`docs/MOBILE.md`](../MOBILE.md); the essentials:
 
 ```bash
 cd frontend
@@ -182,7 +182,7 @@ npx cap open android            # Android Studio (Java 21)
 npx cap open ios                # Xcode 15+ (Mac, CocoaPods)
 ```
 
-- State is mirrored to `opengym-state.json` in the app's private directory on every change (iOS may evict WebView
+- State is mirrored to `gymme-state.json` in the app's private directory on every change (iOS may evict WebView
   storage); backups use the OS share sheet.
 - Reminders are native local notifications scheduled from the weekly plan (`lib/mobile.js` → `syncReminder`).
 - After `build:mobile`, `frontend/dist` holds the **mobile** bundle. Run a plain `npm run build` again before deploying

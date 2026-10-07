@@ -14,7 +14,7 @@ The **Week schedule** lists Monday to Sunday.
 1. Tap a day.
 2. Pick a routine, or pick **Rest day**.
 
-That is your *weekly plan*. openGym uses it to decide what **Start** does on each day and what shows on the
+That is your *weekly plan*. Gymme uses it to decide what **Start** does on each day and what shows on the
 Home screen.
 
 ## Routines
@@ -46,7 +46,7 @@ Tap an exercise in a routine to change how it is done:
 | **Sets**, **Reps**, **Weight** | The plan for this exercise. |
 | **Time** instead of **Reps** | For planks, hangs, wall sits and carries. You log seconds, not reps. You can still add weight. |
 | **Bodyweight** | The exercise uses only your body. No weight column; you just log reps. Turn on a belt weight to log **Added** weight. |
-| **Reps per side** | For lunges and one-arm rows. You log the total; openGym shows "8 per side". The reps step by two so both sides stay even. |
+| **Reps per side** | For lunges and one-arm rows. You log the total; Gymme shows "8 per side". The reps step by two so both sides stay even. |
 | **Cardio** | For cardio exercises you set **Intervals**, **Minutes** and **Speed (km/h)**. |
 | **Progression → Rule** | How the weight should change over time. See [Progression and 1RM](04-progression-and-1rm.md). |
 

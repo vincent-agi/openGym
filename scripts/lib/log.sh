@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# Levelled logging: timestamped line to LOG_FILE, plain line to stderr (silenced by OPENGYM_QUIET=1).
+# Levelled logging: timestamped line to LOG_FILE, plain line to stderr (silenced by GYMME_QUIET=1).
 # Secrets are redacted before anything is written or printed.
 
 # shellcheck source=common.sh
@@ -14,7 +14,7 @@ _log() { # level message...
   local level="$1" msg file dir
   shift
   msg="$(redact "$*")"
-  file="${LOG_FILE:-$OPENGYM_ROOT/logs/opengym.log}"
+  file="${LOG_FILE:-$GYMME_ROOT/logs/gymme.log}"
   dir="$(dirname "$file")"
   if [ ! -d "$dir" ]; then
     (umask 077 && mkdir -p "$dir") || true
@@ -24,7 +24,7 @@ _log() { # level message...
     (umask 077 && : >"$file") 2>/dev/null || true
   fi
   printf '%s %s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$level" "$msg" >>"$file" 2>/dev/null || true
-  [ "${OPENGYM_QUIET:-}" = 1 ] && return 0
+  [ "${GYMME_QUIET:-}" = 1 ] && return 0
   case "$level" in
     WARN) printf '%swarning:%s %s\n' "$C_YELLOW" "$C_RESET" "$msg" >&2 ;;
     ERROR) printf '%serror:%s %s\n' "$C_RED" "$C_RESET" "$msg" >&2 ;;
@@ -35,4 +35,4 @@ _log() { # level message...
 log_info() { _log INFO "$@"; }
 log_warn() { _log WARN "$@"; }
 log_error() { _log ERROR "$@"; }
-log_debug() { [ "${OPENGYM_DEBUG:-}" = 1 ] && _log DEBUG "$@"; return 0; }
+log_debug() { [ "${GYMME_DEBUG:-}" = 1 ] && _log DEBUG "$@"; return 0; }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# desc: One line shown by `opengym help` (copy this file to scripts/<suite>/<name>.sh)
+# desc: One line shown by `gymme help` (copy this file to scripts/<suite>/<name>.sh)
 #
-# Standard skeleton for every opengym command. Conventions (see docs/technical/automation.md):
+# Standard skeleton for every gymme command. Conventions (see docs/technical/automation.md):
 #   exit codes   0 OK · 1 error · 2 usage · 10 degraded/warning · 20 critical
 #   flags        --help  --dry-run (any destructive action)  --yes (skip confirmation)  --json (machine output)
 #   idempotent, `umask 077` for anything that may hold user data, never log secrets.
@@ -17,7 +17,7 @@ _here="${BASH_SOURCE[0]%/*}"
 
 usage() {
   cat <<'USAGE'
-Usage: opengym <command> [options]
+Usage: gymme <command> [options]
 
 Options:
   --dry-run   show what would change, change nothing

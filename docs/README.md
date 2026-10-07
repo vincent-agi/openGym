@@ -1,4 +1,4 @@
-# openGym documentation
+# Gymme documentation
 
 | Audience | Start here |
 |---|---|
@@ -8,7 +8,7 @@
 Other guides in this folder:
 
 - [Self-hosting walkthrough](SELF_HOSTING.md)
-- [Automation scripts (`opengym` CLI)](technical/automation.md)
+- [Automation scripts (`gymme` CLI)](technical/automation.md)
 - [Building the mobile apps](MOBILE.md)
 - [Branch protection policy](BRANCH_PROTECTION.md)
 

@@ -2,7 +2,7 @@
 set -u
 # shellcheck source=helpers.sh
 . "$(dirname "$0")/helpers.sh"
-OG="$REPO_ROOT/scripts/opengym"
+OG="$REPO_ROOT/scripts/gymme"
 
 new_sandbox
 LINES='api-1  | gym-api on :3000 (rpID=localhost, origin=http://localhost:8080)

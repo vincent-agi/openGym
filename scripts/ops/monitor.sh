@@ -11,12 +11,12 @@ _here="${BASH_SOURCE[0]%/*}/.."
 
 usage() {
   cat <<'USAGE'
-Usage: opengym monitor [--quiet] [--verbose] [--json] [--accept-users]
+Usage: gymme monitor [--quiet] [--verbose] [--json] [--accept-users]
 
 Runs the same checks as `doctor` plus: a fall in the user count (the signature of a db.json reset), container restarts since the
 last run, and a spike of push failures. Prints only what is wrong. Each problem raises an alert (log, webhook, desktop, email as
 configured) muted for ALERT_COOLDOWN; a recovery notice is sent when it clears.
-Exit code: 0 healthy · 10 warnings · 20 failures. Suggested cron: every 15 minutes (`opengym schedule install`).
+Exit code: 0 healthy · 10 warnings · 20 failures. Suggested cron: every 15 minutes (`gymme schedule install`).
 
   --quiet         print nothing (alerts and the log still happen)
   --verbose       also print the checks that are OK
@@ -42,7 +42,7 @@ done
 load_config
 require_cmd jq
 secure_umask
-STATE="$OPENGYM_ROOT/.opengym-state"
+STATE="$GYMME_ROOT/.gymme-state"
 (umask 077 && mkdir -p "$STATE")
 PUSH_FAIL_WARN=20
 
@@ -60,7 +60,7 @@ cur_users=''
 if [ "$DOCKER_OK" = 1 ] && body="$(fetch_health)"; then
   cur_users="$(printf '%s' "$body" | jq -r '.users // empty' 2>/dev/null || true)"
 fi
-[ -n "$cur_users" ] || cur_users="$(user_count "$OPENGYM_ROOT/data")"
+[ -n "$cur_users" ] || cur_users="$(user_count "$GYMME_ROOT/data")"
 case "$cur_users" in '' | *[!0-9]*) cur_users='' ;; esac
 if [ -n "$cur_users" ]; then
   mark="$(read_state users)"
@@ -68,7 +68,7 @@ if [ -n "$cur_users" ]; then
     write_state users "$cur_users"
     report OK users "$cur_users users (reference ${mark:-new})"
   else
-    report FAIL users "the user count fell from $mark to $cur_users" "Signature of a db.json reset: stop the API and restore db.json (operations.md Troubleshooting). If it is deliberate: opengym monitor --accept-users"
+    report FAIL users "the user count fell from $mark to $cur_users" "Signature of a db.json reset: stop the API and restore db.json (operations.md Troubleshooting). If it is deliberate: gymme monitor --accept-users"
   fi
 fi
 
@@ -81,7 +81,7 @@ if [ "$DOCKER_OK" = 1 ]; then
     prev_n="$(read_state "restarts-$svc")"
     write_state "restarts-$svc" "$now_n"
     if [ -n "$prev_n" ] && [ "$now_n" -gt "$prev_n" ]; then
-      report WARN "restarts-$svc" "$svc restarted $((now_n - prev_n)) time(s) since the last check" "Look for a crash: opengym logs $svc --errors"
+      report WARN "restarts-$svc" "$svc restarted $((now_n - prev_n)) time(s) since the last check" "Look for a crash: gymme logs $svc --errors"
     else
       report OK "restarts-$svc" "no new restarts of $svc"
     fi
@@ -93,7 +93,7 @@ if [ "$DOCKER_OK" = 1 ] && [ "$API_UP" = 1 ]; then
   fails="$(compose_cmd logs api --since 1h 2>/dev/null | grep -c 'push send failed' || true)"
   case "$fails" in '' | *[!0-9]*) fails=0 ;; esac
   if [ "$fails" -ge "$PUSH_FAIL_WARN" ]; then
-    report WARN push "$fails push failures in the last hour" "Stale subscriptions or a bad VAPID subject: opengym logs api --errors; set VAPID_SUBJECT=mailto:you@example.com"
+    report WARN push "$fails push failures in the last hour" "Stale subscriptions or a bad VAPID subject: gymme logs api --errors; set VAPID_SUBJECT=mailto:you@example.com"
   else
     report OK push "push delivery looks normal ($fails failures in the last hour)"
   fi
@@ -112,13 +112,13 @@ elif [ "$QUIET" = 0 ]; then
 fi
 
 # --- alerts
-export OPENGYM_QUIET=1
+export GYMME_QUIET=1
 for ((i = 0; i < RES_N; i++)); do
   key="mon-${RES_ID[i]}"
   case "${RES_STATUS[i]}" in
-    FAIL) alert crit "$key" "openGym: ${RES_ID[i]}" "${RES_MSG[i]}. ${RES_HINT[i]}" ;;
-    WARN) alert warn "$key" "openGym: ${RES_ID[i]}" "${RES_MSG[i]}. ${RES_HINT[i]}" ;;
-    *) alert_clear "$key" "openGym recovered: ${RES_ID[i]}" ;;
+    FAIL) alert crit "$key" "Gymme: ${RES_ID[i]}" "${RES_MSG[i]}. ${RES_HINT[i]}" ;;
+    WARN) alert warn "$key" "Gymme: ${RES_ID[i]}" "${RES_MSG[i]}. ${RES_HINT[i]}" ;;
+    *) alert_clear "$key" "Gymme recovered: ${RES_ID[i]}" ;;
   esac
 done
 

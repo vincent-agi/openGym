@@ -2,7 +2,7 @@
 set -u
 # shellcheck source=helpers.sh
 . "$(dirname "$0")/helpers.sh"
-OG="$REPO_ROOT/scripts/opengym"
+OG="$REPO_ROOT/scripts/gymme"
 DATA="$REPO_ROOT/scripts/lib/data.sh"
 HEALTH='{"ok":true,"users":2}'
 STARTUP='api-1  | gym-api on :3000 (rpID=localhost, origin=http://localhost:8080)'
@@ -15,14 +15,14 @@ setup() {
   printf 'sessionsecret' >"$SB/data/secret"; chmod 600 "$SB/data/secret"
   printf '{"publicKey":"p","privateKey":"k"}' >"$SB/data/vapid.json"; chmod 600 "$SB/data/vapid.json"
   mkdir -p "$SB/media/img" && echo img >"$SB/media/img/x.jpg"
-  export OPENGYM_NOW=1000000
-  OPENGYM_NOW=$((1000000 - 3600)) "$BASH" -c '. "$0"; record_backup' "$DATA"
+  export GYMME_NOW=1000000
+  GYMME_NOW=$((1000000 - 3600)) "$BASH" -c '. "$0"; record_backup' "$DATA"
   export MOCK_OUT_DOCKER_COMPOSE_PS=abc123 MOCK_OUT_DOCKER_INSPECT=0
   export MOCK_OUT_CURL="$HEALTH"
   export MOCK_OUT_DOCKER_COMPOSE_LOGS="$STARTUP"
   export DISK_WARN_PCT=98 DISK_CRIT_PCT=100
   export ALERT_WEBHOOK_URL=https://hooks.example/x ALERT_COOLDOWN=3600 ALERT_DESKTOP=off MOCK_READ_STDIN=1
-  export LOG_FILE="$SB/logs/opengym.log"
+  export LOG_FILE="$SB/logs/gymme.log"
   rm -f "$SB/bin/curl"
 }
 # run monitor --json (alerts go to the mocks)
@@ -51,8 +51,8 @@ setup
 assert_exit 0 "healthy monitor exits 0" -- "$OG" monitor
 assert_eq "" "$T_OUT" "silent when healthy"
 assert_eq 0 "$(posts)" "no alert when healthy"
-assert_eq "2" "$(cat "$SB/.opengym-state/users")" "user count reference recorded"
-assert_eq "0" "$(cat "$SB/.opengym-state/restarts-api")" "restart baseline recorded"
+assert_eq "2" "$(cat "$SB/.gymme-state/users")" "user count reference recorded"
+assert_eq "0" "$(cat "$SB/.gymme-state/restarts-api")" "restart baseline recorded"
 assert_exit 0 "--verbose prints OK lines" -- "$OG" monitor --verbose
 assert_contains "[OK  ] docker" "$T_OUT" "verbose shows OK checks"
 run
@@ -89,25 +89,25 @@ export MOCK_OUT_DOCKER_INSPECT=2
 assert_exit 10 "new restarts = warning" -- "$OG" monitor
 assert_contains "restarted 2 time" "$T_OUT" "says how many"
 assert_exit 0 "same count again is fine" -- "$OG" monitor
-assert_eq "2" "$(cat "$SB/.opengym-state/restarts-api")" "baseline moves up"
+assert_eq "2" "$(cat "$SB/.gymme-state/restarts-api")" "baseline moves up"
 
 # ---------- user count drop
 setup
 export MOCK_OUT_CURL='{"ok":true,"users":3}'
 "$OG" monitor >/dev/null 2>&1
-assert_eq "3" "$(cat "$SB/.opengym-state/users")" "reference is 3"
+assert_eq "3" "$(cat "$SB/.gymme-state/users")" "reference is 3"
 export MOCK_OUT_CURL='{"ok":true,"users":1}'
 assert_exit 20 "user count fell = 20" -- "$OG" monitor
 assert_contains "fell from 3 to 1" "$T_OUT" "explains the drop"
 assert_contains "restore db.json" "$T_OUT" "points to the restore"
-assert_eq "3" "$(cat "$SB/.opengym-state/users")" "reference is not lowered"
+assert_eq "3" "$(cat "$SB/.gymme-state/users")" "reference is not lowered"
 assert_exit 20 "keeps failing until fixed" -- "$OG" monitor
 export MOCK_OUT_CURL='{"ok":true,"users":4}'
 assert_exit 0 "a higher count clears it" -- "$OG" monitor
-assert_eq "4" "$(cat "$SB/.opengym-state/users")" "reference moves up"
+assert_eq "4" "$(cat "$SB/.gymme-state/users")" "reference moves up"
 export MOCK_OUT_CURL='{"ok":true,"users":2}'
 assert_exit 0 "--accept-users" -- "$OG" monitor --accept-users
-assert_eq "2" "$(cat "$SB/.opengym-state/users")" "reference reset on purpose"
+assert_eq "2" "$(cat "$SB/.gymme-state/users")" "reference reset on purpose"
 
 # ---------- push failures
 setup

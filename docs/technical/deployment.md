@@ -15,7 +15,7 @@ reference for administrators.
 
 ```bash
 git clone https://github.com/DuarteSantos8/openGym
-cd openGym
+cd Gymme
 cp .env.example .env            # edit RP_ID / ORIGIN, see configuration.md
 docker compose pull              # prebuilt images
 docker compose up -d
@@ -74,7 +74,7 @@ Notes:
 
 ## Reverse proxy and TLS
 
-openGym does **not** terminate TLS. Put a reverse proxy in front of `web` (`127.0.0.1:8080`) that:
+Gymme does **not** terminate TLS. Put a reverse proxy in front of `web` (`127.0.0.1:8080`) that:
 
 1. terminates **HTTPS** for exactly the hostname in `ORIGIN`/`RP_ID`;
 2. forwards to the `web` container (it proxies `/api/` itself — do not split routes at the front proxy);
@@ -105,8 +105,8 @@ gym.example.com {
 ### nginx (host-level)
 
 ```nginx
-limit_req_zone $binary_remote_addr zone=opengym_auth:10m rate=10r/m;
-limit_req_zone $binary_remote_addr zone=opengym_api:10m  rate=10r/s;
+limit_req_zone $binary_remote_addr zone=gymme_auth:10m rate=10r/m;
+limit_req_zone $binary_remote_addr zone=gymme_api:10m  rate=10r/s;
 
 server {
     listen 443 ssl http2;
@@ -123,14 +123,14 @@ server {
 
     # Throttle the endpoints that answer without a session and the invite oracle.
     location ~ ^/api/(register|login)/ {
-        limit_req zone=opengym_auth burst=10 nodelay;
+        limit_req zone=gymme_auth burst=10 nodelay;
         proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
     location /api/ {
-        limit_req zone=opengym_api burst=40 nodelay;
+        limit_req zone=gymme_api burst=40 nodelay;
         proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -173,7 +173,7 @@ Check state sizes: `ls -lS data/state-*.json | head`.
 ## Updating
 
 ```bash
-cd openGym
+cd Gymme
 git pull                                  # compose / config changes
 docker compose pull                       # new images
 docker compose up -d                      # recreates only changed services

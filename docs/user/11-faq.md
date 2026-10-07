@@ -39,7 +39,7 @@ iPhone Low Power Mode.
 Turn on **Settings → Notifications → Push notifications** and allow notifications in your browser. You need to be
 signed in and on an HTTPS address. On iPhone, the web app must be added to the home screen first.
 
-**The weight openGym suggests looks wrong.**
+**The weight Gymme suggests looks wrong.**
 Open the exercise in your routine and check its **Progression → Rule**. The note under the exercise in the
 workout explains the number. You can also set the rule to **No automatic progression**.
 
@@ -47,7 +47,7 @@ workout explains the number. You can also set the rule to **No automatic progres
 It is off by default. Turn it on in **Settings → During a workout → Effort per set**.
 
 **I closed the app in the middle of a workout.**
-Open openGym and tap **Resume**. The workout is saved on that device. If you started it on a different device,
+Gymmeme and tap **Resume**. The workout is saved on that device. If you started it on a different device,
 you will not see it on this one.
 
 **I logged a workout by mistake.**
@@ -75,7 +75,7 @@ to check it.
 No store app. Use the web app on your home screen. See [Install on your phone](10-install-on-your-phone.md).
 
 **Does it cost anything? Does it track me?**
-No subscription, no ads and no telemetry. openGym is free and open source (AGPL v3).
+No subscription, no ads and no telemetry. Gymme is free and open source (AGPL v3).
 
 **I found a bug or I want a feature.**
 Open an issue or a discussion at <https://github.com/DuarteSantos8/openGym>. When you report a login problem,

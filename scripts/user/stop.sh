@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# desc: Stop openGym (data is never touched)
+# desc: Stop Gymme (data is never touched)
 set -euo pipefail
 _here="${BASH_SOURCE[0]%/*}/.."
 # shellcheck source=../lib/config.sh
@@ -9,7 +9,7 @@ _here="${BASH_SOURCE[0]%/*}/.."
 
 usage() {
   cat <<'USAGE'
-Usage: opengym stop [--down] [service...]
+Usage: gymme stop [--down] [service...]
 
 Stops the stack (or only the given services: api, web). Your data in ./data is never touched.
 
@@ -41,4 +41,4 @@ elif [ "${#SERVICES[@]}" -gt 0 ]; then
 else
   compose_cmd stop || die "docker compose stop failed"
 fi
-ok "openGym stopped"
+ok "Gymme stopped"

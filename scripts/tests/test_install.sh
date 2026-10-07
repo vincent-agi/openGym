@@ -2,8 +2,8 @@
 set -u
 # shellcheck source=helpers.sh
 . "$(dirname "$0")/helpers.sh"
-OG="$REPO_ROOT/scripts/opengym"
-export OPENGYM_QUIET=0
+OG="$REPO_ROOT/scripts/gymme"
+export GYMME_QUIET=0
 
 setup() {
   new_sandbox
@@ -18,13 +18,13 @@ assert_exit 0 "install with flags" -- "$OG" install --rp-id gym.example.com --or
 assert_file "$SB/.env" ".env created"
 assert_contains "RP_ID=gym.example.com" "$(cat "$SB/.env")" "RP_ID written"
 assert_contains "ORIGIN=https://gym.example.com" "$(cat "$SB/.env")" "ORIGIN written"
-assert_contains "RP_NAME=openGym" "$(cat "$SB/.env")" "other .env.example lines kept"
+assert_contains "RP_NAME=Gymme" "$(cat "$SB/.env")" "other .env.example lines kept"
 assert_eq 1 "$(grep -c '^RP_ID=' "$SB/.env")" "RP_ID appears once"
 assert_eq "600" "$(mode_of "$SB/.env")" ".env mode 0600"
 assert_file "$SB/data" "data/ created"
 assert_file "$SB/backups" "backups/ created"
 assert_eq "700" "$(mode_of "$SB/backups")" "backups/ mode 0700"
-assert_contains "opengym start" "$T_OUT" "next step shown"
+assert_contains "gymme start" "$T_OUT" "next step shown"
 assert_contains "backup --quiet" "$T_OUT" "cron line for daily backup shown"
 assert_contains "passkeys" "$T_OUT" "warns that RP_ID/ORIGIN are bound to passkeys"
 assert_eq 0 "$(mock_calls 'compose up')" "install never starts the stack"
@@ -64,11 +64,11 @@ assert_contains "HTTPS" "$T_OUT" "warns that passkeys need HTTPS"
 
 # ---------- interactive prompts
 setup
-assert_exit 0 "interactive install" -- env OPENGYM_FORCE_TTY=1 "$BASH" -c 'printf "gym.example.com\nhttps://gym.example.com\n" | "$0" install' "$OG"
+assert_exit 0 "interactive install" -- env GYMME_FORCE_TTY=1 "$BASH" -c 'printf "gym.example.com\nhttps://gym.example.com\n" | "$0" install' "$OG"
 assert_contains "RP_ID=gym.example.com" "$(cat "$SB/.env")" "prompted RP_ID used"
 assert_contains "ORIGIN=https://gym.example.com" "$(cat "$SB/.env")" "prompted ORIGIN used"
 setup
-assert_exit 0 "empty answers take the defaults" -- env OPENGYM_FORCE_TTY=1 "$BASH" -c 'printf "\n\n" | "$0" install' "$OG"
+assert_exit 0 "empty answers take the defaults" -- env GYMME_FORCE_TTY=1 "$BASH" -c 'printf "\n\n" | "$0" install' "$OG"
 assert_contains "RP_ID=localhost" "$(cat "$SB/.env")" "default RP_ID on empty answer"
 
 # ---------- dependencies

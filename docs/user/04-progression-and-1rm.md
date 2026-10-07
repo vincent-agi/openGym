@@ -1,8 +1,8 @@
 # 4. Progression and 1RM
 
-## Progression: openGym suggests your next weight
+## Progression: Gymme suggests your next weight
 
-Getting stronger means doing a little more over time. openGym can work out the next target for you, so **the
+Getting stronger means doing a little more over time. Gymme can work out the next target for you, so **the
 weight is already right when you open the workout**. Every target comes with a short explanation of *why*
 it is that number.
 
@@ -24,11 +24,11 @@ Choose a rule for a whole routine (in the routine screen) or for one exercise (i
 
 - **Missed reps never move the weight up.** A set you did not tick, or finished with fewer reps than the
   target, counts as a miss.
-- **A stall triggers a deload.** After several sessions in a row with misses, openGym lowers the weight by about
+- **A stall triggers a deload.** After several sessions in a row with misses, Gymme lowers the weight by about
   10% (Greyskull does it after the first failure). It rounds to a weight you can really load.
 - **Step size.** Lower-body and back exercises jump by 5 kg (10 lb) by default; others by 2.5 kg (5 lb).
   You can set your own step per exercise.
-- **Bodyweight exercises grow in reps**, not weight. If you set a **top of the range**, openGym adds a *set*
+- **Bodyweight exercises grow in reps**, not weight. If you set a **top of the range**, Gymme adds a *set*
   when you reach it instead of another rep, up to 6 sets. After that the honest advice is "add weight or
   find a harder variation".
 - **Old workouts are read fairly.** Your suggestion is worked out from your history each time, so if you fix a
@@ -37,7 +37,7 @@ Choose a rule for a whole routine (in the routine screen) or for one exercise (i
 ## Estimated 1RM
 
 Your **1RM** ("one-rep max") is the heaviest weight you could lift one time. Most people never test it,
-because it is hard and risky. openGym estimates it from your normal sets with the **Epley formula**:
+because it is hard and risky. Gymme estimates it from your normal sets with the **Epley formula**:
 
 ```
 estimated 1RM = weight × (1 + reps ÷ 30)
@@ -59,4 +59,4 @@ Where to find it:
 ## Effort is separate
 
 The RIR/RPE column (see [Working out](03-workouts.md#how-hard-was-the-set-rir-and-rpe)) is only a note about how it felt.
-It does not change what openGym suggests next.
+It does not change what Gymme suggests next.

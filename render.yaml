@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: opengym
+    name: gymme
     env: docker
     # Was ./Dockerfile, which does not exist in the repo (broken deploy). The web image is
     # web/Dockerfile with the repo root as context. NOTE: this deploys the static web + nginx

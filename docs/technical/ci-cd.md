@@ -28,7 +28,7 @@ Triggers: every `pull_request`, and `push` to `main`. Concurrency: cancels super
 |---|---|
 | `Frontend (test + build)` | `npm ci` → `npm run test` (Vitest) → `npm run build` in `frontend/`. |
 | `API (syntax + boot smoke)` | `npm ci` → `node --check server.js` → start the server on port 3999 with a temp `DATA_DIR` and poll until it answers any HTTP status. |
-| `Scripts (shellcheck + tests) (ubuntu-latest / macos-latest)` | `shellcheck -S warning` on `scripts/`, then `scripts/tests/run.sh` under the system bash (3.2 on macOS) and `opengym help --check`. **Not required yet**: add it to branch protection once stable. |
+| `Scripts (shellcheck + tests) (ubuntu-latest / macos-latest)` | `shellcheck -S warning` on `scripts/`, then `scripts/tests/run.sh` under the system bash (3.2 on macOS) and `gymme help --check`. **Not required yet**: add it to branch protection once stable. |
 
 There is deliberately **no `paths:` filter**: a required check skipped by a path filter stays "pending" forever and blocks
 the merge.
@@ -56,7 +56,7 @@ Permissions: `contents: read`, `packages: write`.
 
 Matrix: `api` (context `./api`) and `web` (context `.`, dockerfile `web/Dockerfile`). For each:
 
-1. Lowercase the owner → `IMAGE=ghcr.io/<owner>/opengym-<name>` (GHCR requires lowercase).
+1. Lowercase the owner → `IMAGE=ghcr.io/<owner>/gymme-<name>` (GHCR requires lowercase).
 2. Set up QEMU and Buildx; log in to `ghcr.io` with the built-in `GITHUB_TOKEN` (no personal credentials).
 3. Derive tags: `latest` (only on `refs/heads/main`), `sha-<short>`, and — when `version` is given — `X.Y.Z` plus `X.Y`.
 4. **Build one amd64 image locally** (`load: true`) and **scan it with Trivy** (`HIGH,CRITICAL`, `ignore-unfixed: true`,
@@ -131,7 +131,7 @@ Exact settings are in [`BRANCH_PROTECTION.md`](../BRANCH_PROTECTION.md). In shor
 2. Enable **Dependabot alerts and security updates**, **secret scanning + push protection**, **code scanning**.
 3. Enable **private vulnerability reporting** (Settings → Advanced Security) — `SECURITY.md` links to it.
 4. Create a fine-grained PAT (Contents and Pull requests: write) and store it as `RELEASE_PLEASE_TOKEN`.
-5. After the first publish, make the GHCR packages `opengym-api` and `opengym-web` **public** so
+5. After the first publish, make the GHCR packages `gymme-api` and `gymme-web` **public** so
    `docker compose pull` works anonymously.
 6. Merge a `feat:`/`fix:` commit and confirm release-please opens its PR.
 

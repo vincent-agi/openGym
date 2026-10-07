@@ -2,9 +2,9 @@
 set -u
 # shellcheck source=helpers.sh
 . "$(dirname "$0")/helpers.sh"
-OG="$REPO_ROOT/scripts/opengym"
+OG="$REPO_ROOT/scripts/gymme"
 export WAIT_SLEEP=0
-export OPENGYM_QUIET=0
+export GYMME_QUIET=0
 
 # setup: healthy instance + a fresh backup in $ARCH, then the live data is damaged
 setup() {
@@ -12,7 +12,7 @@ setup() {
   use_fixture data_ok
   printf 'RP_ID=localhost\nORIGIN=http://localhost:8080\n' >"$SB/.env"
   printf 'sessionsecret' >"$SB/data/secret"
-  export LOG_FILE="$SB/logs/opengym.log"
+  export LOG_FILE="$SB/logs/gymme.log"
   export MOCK_OUT_CURL='{"ok":true,"users":2}'
   ARCH="$("$OG" backup --no-consistent --quiet 2>/dev/null | tail -1)"
   ORIG_DB="$(cat "$SB/data/db.json")"
@@ -51,7 +51,7 @@ assert_contains "api/health" "$log" "health probed"
 assert_contains "restored" "$T_OUT" "success message"
 assert_contains "data.broken" "$T_OUT" "tells where the old data is"
 assert_eq "600" "$("$BASH" -c '. "$0"; file_mode "$1"' "$REPO_ROOT/scripts/lib/common.sh" "$SB/data/secret")" "secret keeps mode 0600"
-left=0; for f in "$SB"/.opengym-state/restore.*; do [ -e "$f" ] && left=1; done
+left=0; for f in "$SB"/.gymme-state/restore.*; do [ -e "$f" ] && left=1; done
 assert_eq 0 "$left" "no temp dir left behind"
 
 # ---------- user count sanity
@@ -85,7 +85,7 @@ make_tar "$SB/evil.tgz" 'add("data/db.json", b"{\"users\":[]}"); add("../evil.tx
 assert_exit 1 "path traversal refused" -- "$OG" restore "$SB/evil.tgz" --yes
 assert_contains "unsafe" "$T_OUT" "says unsafe path"
 assert_no_file "$SB/../evil.txt" "nothing written outside"
-make_tar "$SB/abs.tgz" 'add("data/db.json", b"{\"users\":[]}"); add("/tmp/opengym-evil")'
+make_tar "$SB/abs.tgz" 'add("data/db.json", b"{\"users\":[]}"); add("/tmp/gymme-evil")'
 assert_exit 1 "absolute path refused" -- "$OG" restore "$SB/abs.tgz" --yes
 make_tar "$SB/link.tgz" 'add("data/db.json", b"{\"users\":[]}"); add("data/state-link.json", typ=tarfile.SYMTYPE, link="/etc/passwd")'
 assert_exit 1 "symlink refused" -- "$OG" restore "$SB/link.tgz" --yes
@@ -142,7 +142,7 @@ assert_eq "$ORIG_DB" "$(cat "$SB/data/db.json")" "restored data stays in place f
 setup; damage
 assert_exit 0 "docker down still restores the files" -- env MOCK_EXIT_DOCKER_INFO=1 "$OG" restore "$ARCH" --yes
 assert_eq "$ORIG_DB" "$(cat "$SB/data/db.json")" "files restored without docker"
-assert_contains "opengym start" "$T_OUT" "tells how to start"
+assert_contains "gymme start" "$T_OUT" "tells how to start"
 
 # ---------- usage
 assert_exit 2 "archive argument required" -- "$OG" restore

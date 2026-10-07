@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# desc: Start openGym and wait until it answers
+# desc: Start Gymme and wait until it answers
 set -euo pipefail
 _here="${BASH_SOURCE[0]%/*}/.."
 # shellcheck source=../lib/config.sh
@@ -9,7 +9,7 @@ _here="${BASH_SOURCE[0]%/*}/.."
 
 usage() {
   cat <<'USAGE'
-Usage: opengym start [--no-wait] [--timeout SECONDS]
+Usage: gymme start [--no-wait] [--timeout SECONDS]
 
 Starts the stack (docker compose up -d) and waits for /api/health.
 The first start downloads the exercise media (~140 MB) and can take a few minutes.
@@ -36,14 +36,14 @@ done
 case "$TIMEOUT" in '' | *[!0-9]*) die_usage "--timeout needs a number of seconds" ;; esac
 
 load_config
-daemon_up || die "Docker is not running. Start Docker, then run: opengym start"
-compose_cmd up -d || die "docker compose up failed. See: opengym logs"
+daemon_up || die "Docker is not running. Start Docker, then run: gymme start"
+compose_cmd up -d || die "docker compose up failed. See: gymme logs"
 
 if [ "$WAIT" = 1 ]; then
-  info "Waiting for openGym (up to ${TIMEOUT}s)…"
+  info "Waiting for Gymme (up to ${TIMEOUT}s)…"
   wait_health "$BASE_URL/api/health" "$TIMEOUT" ||
-    die "openGym did not answer at $BASE_URL within ${TIMEOUT}s. Check: opengym logs"
+    die "Gymme did not answer at $BASE_URL within ${TIMEOUT}s. Check: gymme logs"
 fi
-ok "openGym is up at $BASE_URL"
+ok "Gymme is up at $BASE_URL"
 [ -n "${ORIGIN:-}" ] && [ "$ORIGIN" != "$BASE_URL" ] && info "Public address (passkeys): $ORIGIN"
 exit 0

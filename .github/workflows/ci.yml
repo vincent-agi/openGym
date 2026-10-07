@@ -85,8 +85,8 @@ jobs:
             if [ "$RUNNER_OS" = macOS ]; then brew install "$t"; else sudo apt-get install -y "$t"; fi
           done
       - name: shellcheck
-        run: shellcheck -S warning scripts/opengym scripts/TEMPLATE.sh scripts/fetch-media.sh scripts/*/*.sh scripts/tests/mocks/*
+        run: shellcheck -S warning scripts/gymme scripts/TEMPLATE.sh scripts/fetch-media.sh scripts/*/*.sh scripts/tests/mocks/*
       - name: Unit tests (system bash)
         run: /bin/bash scripts/tests/run.sh
       - name: Command index (every command has a description, no duplicates)
-        run: scripts/opengym help --check
+        run: scripts/gymme help --check

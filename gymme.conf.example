@@ -1,4 +1,4 @@
-# opengym.conf — optional settings for the `opengym` CLI (copy to opengym.conf, git-ignored).
+# gymme.conf — optional settings for the `gymme` CLI (copy to gymme.conf, git-ignored).
 # Precedence: environment variable > this file > .env > default.
 # Plain KEY=value lines; values are never executed by a shell.
 
@@ -22,4 +22,4 @@
 #ALERT_COOLDOWN=3600               # seconds a given alert stays muted
 
 # --- logs ------------------------------------------------------------------
-#LOG_FILE=./logs/opengym.log
+#LOG_FILE=./logs/gymme.log

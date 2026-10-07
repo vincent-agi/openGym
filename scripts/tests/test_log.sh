@@ -6,7 +6,7 @@ LIB="$REPO_ROOT/scripts/lib/log.sh"
 COMMON="$REPO_ROOT/scripts/lib/common.sh"
 
 new_sandbox
-export LOG_FILE="$SB/logs/sub/opengym.log"
+export LOG_FILE="$SB/logs/sub/gymme.log"
 
 # file_mode helper (common.sh)
 touch "$SB/m" && chmod 640 "$SB/m"
@@ -30,17 +30,17 @@ assert_eq "" "$("$BASH" -c '. "$0"; log_info x' "$LIB" 2>/dev/null)" "log_info w
 assert_contains "WARN w1" "$(cat "$LOG_FILE")" "WARN level in file"
 assert_contains "ERROR e1" "$(cat "$LOG_FILE")" "ERROR level in file"
 
-# debug hidden unless OPENGYM_DEBUG=1
+# debug hidden unless GYMME_DEBUG=1
 : >"$LOG_FILE"
 "$BASH" -c '. "$0"; log_debug hidden' "$LIB" 2>/dev/null
 assert_eq "" "$(cat "$LOG_FILE")" "log_debug hidden by default"
-OPENGYM_DEBUG=1 "$BASH" -c '. "$0"; log_debug shown' "$LIB" 2>/dev/null
-assert_contains "DEBUG shown" "$(cat "$LOG_FILE")" "log_debug shown with OPENGYM_DEBUG=1"
+GYMME_DEBUG=1 "$BASH" -c '. "$0"; log_debug shown' "$LIB" 2>/dev/null
+assert_contains "DEBUG shown" "$(cat "$LOG_FILE")" "log_debug shown with GYMME_DEBUG=1"
 
 # quiet mode: no console output, file still written
 : >"$LOG_FILE"
-err="$(OPENGYM_QUIET=1 "$BASH" -c '. "$0"; log_warn quiet-msg' "$LIB" 2>&1)"
-assert_eq "" "$err" "OPENGYM_QUIET silences console"
+err="$(GYMME_QUIET=1 "$BASH" -c '. "$0"; log_warn quiet-msg' "$LIB" 2>&1)"
+assert_eq "" "$err" "GYMME_QUIET silences console"
 assert_contains "quiet-msg" "$(cat "$LOG_FILE")" "quiet mode still logs to file"
 
 # no colour codes when not a TTY
@@ -65,6 +65,6 @@ assert_not_contains "topsecret" "$err" "secret not echoed on console"
 new_sandbox
 unset LOG_FILE
 "$BASH" -c '. "$0"; log_info dflt' "$LIB" 2>/dev/null
-assert_file "$SB/logs/opengym.log" "default log location"
+assert_file "$SB/logs/gymme.log" "default log location"
 
 t_summary

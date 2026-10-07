@@ -50,19 +50,19 @@ mock_calls() { # pattern
   grep -c -- "$1" "$MOCK_LOG" || true
 }
 
-# Fresh sandbox: temp OPENGYM_ROOT with data/, mocks first in PATH, mock log.
+# Fresh sandbox: temp GYMME_ROOT with data/, mocks first in PATH, mock log.
 new_sandbox() {
   local v
   for v in $(compgen -v | grep '^MOCK_' || true); do unset "$v"; done
   SB="$(mktemp -d)"
-  export OPENGYM_ROOT="$SB"
+  export GYMME_ROOT="$SB"
   export MOCK_LOG="$SB/mock.log"
   mkdir -p "$SB/data"
   : >"$MOCK_LOG"
   PATH="$TESTS_DIR/mocks:$ORIG_PATH"
   export PATH
   unset ALERT_WEBHOOK_URL ALERT_EMAIL_TO ALERT_DESKTOP ALERT_COOLDOWN BACKUP_DIR BACKUP_KEEP_DAYS \
-    BASE_URL WEB_PORT DISK_WARN_PCT DISK_CRIT_PCT STATE_WARN_KB LOG_FILE OPENGYM_DEBUG NO_COLOR ASSUME_YES
+    BASE_URL WEB_PORT DISK_WARN_PCT DISK_CRIT_PCT STATE_WARN_KB LOG_FILE GYMME_DEBUG NO_COLOR ASSUME_YES
   # shellcheck disable=SC2154
   trap 'rm -rf "$SB"' EXIT
 }

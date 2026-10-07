@@ -2,7 +2,7 @@
 set -u
 # shellcheck source=helpers.sh
 . "$(dirname "$0")/helpers.sh"
-OG="$REPO_ROOT/scripts/opengym"
+OG="$REPO_ROOT/scripts/gymme"
 DATA="$REPO_ROOT/scripts/lib/data.sh"
 HEALTH='{"ok":true,"users":2}'
 STARTUP='api-1  | gym-api on :3000 (rpID=localhost, origin=http://localhost:8080)'
@@ -15,8 +15,8 @@ setup() {
   printf 'sessionsecret' >"$SB/data/secret"; chmod 600 "$SB/data/secret"
   printf '{"publicKey":"p","privateKey":"k"}' >"$SB/data/vapid.json"; chmod 600 "$SB/data/vapid.json"
   mkdir -p "$SB/media/img" && echo img >"$SB/media/img/x.jpg"
-  export OPENGYM_NOW=1000000
-  OPENGYM_NOW=$((1000000 - 3600)) "$BASH" -c '. "$0"; record_backup' "$DATA"
+  export GYMME_NOW=1000000
+  GYMME_NOW=$((1000000 - 3600)) "$BASH" -c '. "$0"; record_backup' "$DATA"
   export MOCK_OUT_DOCKER_COMPOSE_PS=abc123 MOCK_OUT_DOCKER_INSPECT=0
   export MOCK_OUT_CURL="$HEALTH"
   export MOCK_OUT_DOCKER_COMPOSE_LOGS="$STARTUP"
@@ -77,7 +77,7 @@ setup; rm "$SB/data/db.json"; run
 assert_eq FAIL "$(st db-json)" "missing db.json"
 setup; cp "$TESTS_DIR/fixtures/data_corrupt_db/db.json" "$SB/data/db.json"; run
 assert_eq FAIL "$(st db-json)" "corrupt db.json"
-assert_contains "opengym restore" "$(printf '%s' "$JSON_OUT" | jq -r '.checks[] | select(.id=="db-json") | .hint')" "hint points to restore"
+assert_contains "gymme restore" "$(printf '%s' "$JSON_OUT" | jq -r '.checks[] | select(.id=="db-json") | .hint')" "hint points to restore"
 if [ "$(id -u)" != 0 ]; then
   setup; chmod 500 "$SB/data"; run; chmod 700 "$SB/data"
   assert_eq FAIL "$(st data-dir)" "unwritable data dir"
@@ -119,9 +119,9 @@ setup; export DISK_WARN_PCT=0 DISK_CRIT_PCT=101; run
 assert_eq WARN "$(st disk-data)" "disk over warn"
 setup; export DISK_WARN_PCT=0 DISK_CRIT_PCT=1; run
 assert_eq FAIL "$(st disk-data)" "disk over crit"
-setup; rm -rf "$SB/.opengym-state"; run
+setup; rm -rf "$SB/.gymme-state"; run
 assert_eq WARN "$(st backup)" "no backup"
-setup; OPENGYM_NOW=$((1000000 - 100 * 3600)) "$BASH" -c '. "$0"; record_backup' "$DATA"; run
+setup; GYMME_NOW=$((1000000 - 100 * 3600)) "$BASH" -c '. "$0"; record_backup' "$DATA"; run
 assert_eq WARN "$(st backup)" "old backup"
 
 # TLS

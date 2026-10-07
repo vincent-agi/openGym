@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# desc: Show opengym and tool versions
-# Usage: opengym version
+# desc: Show gymme and tool versions
+# Usage: gymme version
 set -euo pipefail
 # shellcheck source=../lib/common.sh
 . "${BASH_SOURCE[0]%/*}/../lib/common.sh"
 
 case "${1:-}" in
   -h | --help)
-    echo "Usage: opengym version"
-    echo "Shows the opengym version and the versions of docker compose, jq and curl (n/a when absent)."
+    echo "Usage: gymme version"
+    echo "Shows the gymme version and the versions of docker compose, jq and curl (n/a when absent)."
     exit 0
     ;;
   '') ;;
@@ -17,7 +17,7 @@ esac
 
 row() { printf '%-16s %s\n' "$1" "$2"; }
 
-row opengym "$("${BASH_SOURCE[0]%/*}/../opengym" --version | cut -d' ' -f2)"
+row gymme "$("${BASH_SOURCE[0]%/*}/../gymme" --version | cut -d' ' -f2)"
 
 compose="n/a"
 if command -v docker >/dev/null 2>&1 && v="$(docker compose version --short 2>/dev/null)" && [ -n "$v" ]; then

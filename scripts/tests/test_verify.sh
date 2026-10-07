@@ -2,8 +2,8 @@
 set -u
 # shellcheck source=helpers.sh
 . "$(dirname "$0")/helpers.sh"
-OG="$REPO_ROOT/scripts/opengym"
-export OPENGYM_QUIET=0
+OG="$REPO_ROOT/scripts/gymme"
+export GYMME_QUIET=0
 
 setup() { new_sandbox; use_fixture data_ok; }
 run() { JSON_OUT="$("$OG" verify --json 2>/dev/null)"; RC=$?; }
@@ -65,7 +65,7 @@ live="$(snapshot)"
 assert_exit 0 "verify --backup of a healthy archive" -- "$OG" verify --backup "$A"
 assert_contains "$(basename "$A")" "$T_OUT" "names the archive"
 assert_eq "$live" "$(snapshot)" "live data untouched by verify --backup"
-left=0; for f in "$SB"/.opengym-state/verify.*; do [ -e "$f" ] && left=1; done
+left=0; for f in "$SB"/.gymme-state/verify.*; do [ -e "$f" ] && left=1; done
 assert_eq 0 "$left" "temp dir removed"
 printf 'x' >>"$A"
 assert_exit 1 "tampered archive refused" -- "$OG" verify --backup "$A"

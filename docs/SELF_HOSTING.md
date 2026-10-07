@@ -1,6 +1,6 @@
-# Self-hosting openGym
+# Self-hosting Gymme
 
-openGym is two small containers (a web server and an API) plus a folder of your data.
+Gymme is two small containers (a web server and an API) plus a folder of your data.
 This guide takes you from "just cloned it" to "using it from my phone over the internet".
 
 ## 1. Run it locally (5 minutes)
@@ -8,8 +8,8 @@ This guide takes you from "just cloned it" to "using it from my phone over the i
 Requirements: [Docker](https://docs.docker.com/get-docker/) with the Compose plugin.
 
 ```bash
-git clone https://github.com/DuarteSantos8/gym-app opengym
-cd opengym
+git clone https://github.com/DuarteSantos8/gym-app gymme
+cd gymme
 cp .env.example .env
 docker compose pull   # prebuilt images from ghcr.io (amd64 + arm64) — or skip and build from source
 docker compose up -d
@@ -29,25 +29,25 @@ curl http://localhost:8080/api/health      # {"ok":true,...}
 
 Logs: `docker compose logs -f`. Stop: `docker compose down`.
 
-> **Shortcut:** the [`opengym` CLI](technical/automation.md) wraps all of this: `scripts/opengym install`
-> (checks Docker, writes `.env`, asks for your domain), `opengym start`, `opengym status`, `opengym logs`, `opengym stop`.
+> **Shortcut:** the [`gymme` CLI](technical/automation.md) wraps all of this: `scripts/gymme install`
+> (checks Docker, writes `.env`, asks for your domain), `gymme start`, `gymme status`, `gymme logs`, `gymme stop`.
 
 ## 2. Understand the passkey requirement (important)
 
-openGym signs you in with **passkeys** (WebAuthn). Browsers enforce two rules:
+Gymme signs you in with **passkeys** (WebAuthn). Browsers enforce two rules:
 
 1. Passkeys are bound to an exact **hostname** (`RP_ID`).
 2. They only work over **HTTPS** — with one exception: `http://localhost`.
 
 So `http://localhost:8080` works on the machine running Docker, but **another device (your
 phone) cannot use `http://<your-LAN-ip>:8080`** — that's neither localhost nor HTTPS, so the
-passkey prompt won't appear. To use openGym from your phone you need a real HTTPS hostname.
+passkey prompt won't appear. To use Gymme from your phone you need a real HTTPS hostname.
 
 (You can still open it over LAN in **guest mode**, which stores data only in that browser.)
 
 ## 3. Expose it over HTTPS on your own domain
 
-Put openGym behind something that terminates TLS for a hostname you control, then point it at
+Put Gymme behind something that terminates TLS for a hostname you control, then point it at
 the `web` container. Pick whichever you already run:
 
 ### Option A — Cloudflare Tunnel (no open ports)
@@ -66,7 +66,7 @@ gym.example.com {
 ### Option C — Traefik / nginx / Nginx Proxy Manager
 
 Route `gym.example.com` (HTTPS) → `web:80` (or `<docker-host>:8080`). Any reverse proxy works —
-openGym only needs the browser to reach it over `https://gym.example.com`.
+Gymme only needs the browser to reach it over `https://gym.example.com`.
 
 Then set your domain in `.env` and restart:
 
@@ -75,7 +75,7 @@ Then set your domain in `.env` and restart:
 RP_ID=gym.example.com
 ORIGIN=https://gym.example.com
 WEB_PORT=8080
-RP_NAME=openGym
+RP_NAME=Gymme
 ```
 
 ```bash
@@ -115,19 +115,19 @@ Access…) in front still works, and composes with the above.
 Everything is in `./data`:
 
 ```bash
-tar czf opengym-backup-$(date +%F).tar.gz data/
+tar czf gymme-backup-$(date +%F).tar.gz data/
 ```
 
 That archive contains all profiles, passkeys and workout history. Restore by unpacking it back
 into the project folder. (Individual users can also export their own data as JSON from Settings.)
 
-With the CLI: `opengym backup` (checksum, 30-day retention, optional `age` encryption, optional copy off the machine) and
-`opengym restore <archive>` (validates the archive first and keeps your previous data as `data.broken.*`). Schedule it with
-the cron line `opengym install` prints.
+With the CLI: `gymme backup` (checksum, 30-day retention, optional `age` encryption, optional copy off the machine) and
+`gymme restore <archive>` (validates the archive first and keeps your previous data as `data.broken.*`). Schedule it with
+the cron line `gymme install` prints.
 
 ## 6. Notifications
 
-openGym can push two kinds of alert to your phone/desktop, even when the app isn't open:
+Gymme can push two kinds of alert to your phone/desktop, even when the app isn't open:
 rest-timer-over, and a reminder on days you have a workout planned but haven't logged one yet.
 Turn it on per-profile in **Settings → Notifications** (requires a signed-in passkey profile and
 HTTPS — see section 3).
@@ -162,7 +162,7 @@ docker compose up -d --build
 The app shell is versioned (`?v=N`) so clients pick up changes on next load. Your `./data` and the
 downloaded media are untouched.
 
-Or in one safe step: `opengym update` backs up, shows the CHANGELOG entry, pulls, restarts, checks the API and the user
+Or in one safe step: `gymme update` backs up, shows the CHANGELOG entry, pulls, restarts, checks the API and the user
 count, and tells you how to go back if anything fails.
 
 ## Troubleshooting

@@ -2,7 +2,7 @@
 set -u
 # shellcheck source=helpers.sh
 . "$(dirname "$0")/helpers.sh"
-OG="$REPO_ROOT/scripts/opengym"
+OG="$REPO_ROOT/scripts/gymme"
 export WAIT_SLEEP=0
 
 new_sandbox
@@ -24,7 +24,7 @@ assert_eq 0 "$(mock_calls 'compose up')" "nothing started without a daemon"
 
 assert_exit 1 "start fails when compose up fails" -- env MOCK_EXIT_DOCKER_COMPOSE_UP=1 "$OG" start
 assert_exit 1 "start fails when API never answers" -- env MOCK_EXIT_CURL=22 "$OG" start --timeout 4
-assert_contains "opengym logs" "$T_OUT" "failure points to opengym logs"
+assert_contains "gymme logs" "$T_OUT" "failure points to gymme logs"
 assert_exit 2 "start rejects bad timeout" -- "$OG" start --timeout abc
 assert_exit 2 "start rejects unknown option" -- "$OG" start --bogus
 assert_exit 0 "start --help" -- "$OG" start --help

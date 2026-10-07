@@ -2,8 +2,8 @@
 set -u
 # shellcheck source=helpers.sh
 . "$(dirname "$0")/helpers.sh"
-OG="$REPO_ROOT/scripts/opengym"
-export OPENGYM_QUIET=0
+OG="$REPO_ROOT/scripts/gymme"
+export GYMME_QUIET=0
 
 setup() {
   new_sandbox
@@ -26,10 +26,10 @@ count() { grep -c -- "$1" "$CRON_FILE" || true; }
 setup
 printf '0 1 * * * echo mine\n' >"$CRON_FILE"
 assert_exit 0 "install" -- "$OG" schedule install --yes
-assert_contains "# BEGIN opengym $SB" "$(cron)" "block start marker"
-assert_contains "# END opengym $SB" "$(cron)" "block end marker"
-assert_contains "15 3 * * * cd '$SB' && scripts/opengym backup --quiet >/dev/null" "$(cron)" "daily backup at 03:15"
-assert_contains "*/15 * * * * cd '$SB' && scripts/opengym monitor --quiet" "$(cron)" "monitor every 15 minutes"
+assert_contains "# BEGIN gymme $SB" "$(cron)" "block start marker"
+assert_contains "# END gymme $SB" "$(cron)" "block end marker"
+assert_contains "15 3 * * * cd '$SB' && scripts/gymme backup --quiet >/dev/null" "$(cron)" "daily backup at 03:15"
+assert_contains "*/15 * * * * cd '$SB' && scripts/gymme monitor --quiet" "$(cron)" "monitor every 15 minutes"
 assert_contains "PATH=" "$(cron)" "PATH set for cron"
 assert_contains "0 1 * * * echo mine" "$(cron)" "existing jobs preserved"
 assert_not_contains "report" "$(cron)" "no report job without the stats suite"
@@ -38,7 +38,7 @@ assert_not_contains "report" "$(cron)" "no report job without the stats suite"
 first="$(cron)"
 assert_exit 0 "install again" -- "$OG" schedule install --yes
 assert_eq "$first" "$(cron)" "identical crontab after a second install"
-assert_eq 1 "$(count "BEGIN opengym")" "a single block"
+assert_eq 1 "$(count "BEGIN gymme")" "a single block"
 
 # options
 setup
@@ -63,14 +63,14 @@ assert_exit 2 "bad user" -- "$OG" schedule install --yes --system --user 'a b'
 # report job only when the stats suite exists under the folder
 setup; mkdir -p "$SB/scripts/stats"; : >"$SB/scripts/stats/report.sh"
 "$OG" schedule install --yes >/dev/null 2>&1
-assert_contains "0 7 1 * * cd '$SB' && scripts/opengym report --quiet" "$(cron)" "monthly report when available"
+assert_contains "0 7 1 * * cd '$SB' && scripts/gymme report --quiet" "$(cron)" "monthly report when available"
 
 # ---------- confirmation
 setup
 assert_exit 1 "no TTY and no --yes aborts" -- "$OG" schedule install
 assert_contains "aborted" "$T_OUT" "says aborted"
 assert_no_file "$CRON_FILE" "nothing written"
-assert_exit 0 "yes on a terminal" -- env OPENGYM_FORCE_TTY=1 "$BASH" -c 'echo y | "$0" schedule install' "$OG"
+assert_exit 0 "yes on a terminal" -- env GYMME_FORCE_TTY=1 "$BASH" -c 'echo y | "$0" schedule install' "$OG"
 assert_file "$CRON_FILE" "written after yes"
 
 # ---------- remove
@@ -78,10 +78,10 @@ setup
 printf '0 1 * * * echo mine\n' >"$CRON_FILE"
 "$OG" schedule install --yes >/dev/null 2>&1
 assert_exit 0 "remove" -- "$OG" schedule remove
-assert_not_contains "opengym" "$(cron)" "block removed"
+assert_not_contains "gymme" "$(cron)" "block removed"
 assert_contains "0 1 * * * echo mine" "$(cron)" "user's own jobs kept"
 assert_exit 0 "remove when absent" -- "$OG" schedule remove
-assert_contains "no opengym jobs" "$T_OUT" "says nothing to remove"
+assert_contains "no gymme jobs" "$T_OUT" "says nothing to remove"
 setup
 assert_exit 0 "remove without any crontab" -- "$OG" schedule remove
 
@@ -89,31 +89,31 @@ assert_exit 0 "remove without any crontab" -- "$OG" schedule remove
 setup
 mkdir -p "$SB/other"
 "$OG" schedule install --yes >/dev/null 2>&1
-OPENGYM_ROOT="$SB/other" "$OG" schedule install --yes >/dev/null 2>&1
-assert_eq 2 "$(count "BEGIN opengym")" "two blocks for two folders"
-OPENGYM_ROOT="$SB/other" "$OG" schedule remove >/dev/null 2>&1
-assert_eq 1 "$(count "BEGIN opengym")" "only the other folder's block removed"
-assert_contains "# BEGIN opengym $SB" "$(cron)" "first folder's block intact"
+GYMME_ROOT="$SB/other" "$OG" schedule install --yes >/dev/null 2>&1
+assert_eq 2 "$(count "BEGIN gymme")" "two blocks for two folders"
+GYMME_ROOT="$SB/other" "$OG" schedule remove >/dev/null 2>&1
+assert_eq 1 "$(count "BEGIN gymme")" "only the other folder's block removed"
+assert_contains "# BEGIN gymme $SB" "$(cron)" "first folder's block intact"
 
 # ---------- show
 setup
 assert_exit 0 "show when nothing is scheduled" -- "$OG" schedule show
-assert_contains "No opengym jobs" "$T_OUT" "says none"
+assert_contains "No gymme jobs" "$T_OUT" "says none"
 "$OG" schedule install --yes >/dev/null 2>&1
 assert_exit 0 "show" -- "$OG" schedule show
 assert_contains "backup --quiet" "$T_OUT" "shows the jobs"
 assert_contains "monitor --quiet" "$T_OUT" "shows the monitor job"
 assert_exit 0 "show --systemd" -- "$OG" schedule show --systemd
 assert_contains "[Timer]" "$T_OUT" "prints timer units"
-assert_contains "ExecStart=$SB/scripts/opengym backup --quiet" "$T_OUT" "units point at this folder"
+assert_contains "ExecStart=$SB/scripts/gymme backup --quiet" "$T_OUT" "units point at this folder"
 assert_contains "OnCalendar=*-*-* 03:15:00" "$T_OUT" "daily time in the unit"
 
 # ---------- system mode
 setup
 mkdir -p "$SB/cron.d"
-export OPENGYM_CRON_D="$SB/cron.d"
+export GYMME_CRON_D="$SB/cron.d"
 assert_exit 0 "install --system" -- "$OG" schedule install --yes --system --user alice
-f="$(ls "$SB"/cron.d/opengym-* 2>/dev/null | head -1)"
+f="$(ls "$SB"/cron.d/gymme-* 2>/dev/null | head -1)"
 assert_file "$f" "cron.d file created"
 assert_contains "15 3 * * * alice cd '$SB'" "$(cat "$f")" "user field present"
 assert_no_file "$CRON_FILE" "user crontab untouched in system mode"
@@ -127,7 +127,7 @@ if [ "$(id -u)" != 0 ]; then
   assert_contains "sudo" "$T_OUT" "suggests sudo"
 fi
 chmod 700 "$SB/cron.d"
-unset OPENGYM_CRON_D
+unset GYMME_CRON_D
 
 # ---------- environment problems
 setup
@@ -136,9 +136,9 @@ assert_exit 1 "no crontab command" -- env PATH="$P" "$BASH" "$OG" schedule insta
 assert_contains "--system" "$T_OUT" "suggests --system or systemd"
 setup
 mkdir -p "$SB/we%ird"
-assert_exit 1 "path with a % is refused" -- env OPENGYM_ROOT="$SB/we%ird" "$OG" schedule install --yes
+assert_exit 1 "path with a % is refused" -- env GYMME_ROOT="$SB/we%ird" "$OG" schedule install --yes
 mkdir -p "$SB/it's"
-assert_exit 1 "path with a quote is refused" -- env OPENGYM_ROOT="$SB/it's" "$OG" schedule install --yes
+assert_exit 1 "path with a quote is refused" -- env GYMME_ROOT="$SB/it's" "$OG" schedule install --yes
 
 # ---------- usage
 assert_exit 2 "action required" -- "$OG" schedule

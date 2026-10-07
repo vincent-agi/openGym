@@ -1,18 +1,18 @@
 # 9. Your data
 
-openGym keeps your data under your control. This page explains where it lives and how to back it up, move it
+Gymme keeps your data under your control. This page explains where it lives and how to back it up, move it
 or share part of it.
 
 ## Where is my data?
 
-| How you use openGym | Where your data is |
+| How you use Gymme | Where your data is |
 |---|---|
-| **Signed in with a passkey** (web) | On the openGym server, in your profile. Also cached in your browser. Synced between your devices. |
+| **Signed in with a passkey** (web) | On the Gymme server, in your profile. Also cached in your browser. Synced between your devices. |
 | **Guest mode** (web) | **Only in this browser.** Clearing the browser data deletes it. |
 | **Android / iOS app** | **Only on your phone**, in the app's private storage. No server, no account. |
 | **Live demo** | Only in your browser, on example data. |
 
-openGym has **no telemetry**: it does not track you or send usage data anywhere.
+Gymme has **no telemetry**: it does not track you or send usage data anywhere.
 
 ### Who can see my data?
 
@@ -28,7 +28,7 @@ Do this now and then, especially in guest mode or the mobile app.
 
 1. Open **Settings → Data**.
 2. Tap **Export backup (JSON)**.
-3. Keep the file somewhere safe. It is named `opengym-backup-YYYY-MM-DD.json`.
+3. Keep the file somewhere safe. It is named `gymme-backup-YYYY-MM-DD.json`.
 
 On the mobile app, the backup goes out through your phone's **share sheet**, so you can send it to Files, email,
 cloud storage and so on.
@@ -40,7 +40,7 @@ cloud storage and so on.
 
 ## Move from guest mode to a profile
 
-Create a profile in **Settings → Account**. openGym moves the data from this device into the new profile.
+Create a profile in **Settings → Account**. Gymme moves the data from this device into the new profile.
 
 ## Bring your history from another app
 
@@ -55,12 +55,12 @@ Tap **Settings → Data → Import from another app** and choose the file you ex
 
 Other apps that export a CSV with a **date, an exercise name and a weight/reps/time** column often work too.
 
-Before anything is saved, openGym shows a preview: how many workouts, sets and exercises it found, and how many
+Before anything is saved, Gymme shows a preview: how many workouts, sets and exercises it found, and how many
 are new. Then:
 
 - Exercise names are matched to the library. Anything it cannot match becomes **one of your own exercises**, so
   nothing in the file is dropped.
-- If the file is in a different unit than your profile, weights are **converted** and openGym tells you so.
+- If the file is in a different unit than your profile, weights are **converted** and Gymme tells you so.
 - Days that already have data are **left alone**.
 - If the file records RPE, it is imported as effort.
 

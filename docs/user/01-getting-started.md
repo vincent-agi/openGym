@@ -1,8 +1,8 @@
 # 1. Getting started
 
-## Open openGym
+## Gymmeme
 
-Someone (you, a friend, or your gym buddy) runs openGym on a server and gives you a web address, for
+Someone (you, a friend, or your gym buddy) runs Gymme on a server and gives you a web address, for
 example `https://gym.example.com`. Open it in your phone or computer browser.
 
 You can also try the **live demo** first. It runs entirely in your browser on example data, so nothing you do
@@ -10,7 +10,7 @@ there is saved on a server.
 
 ## Three ways to sign in
 
-When you open openGym for the first time you see three choices.
+When you open Gymme for the first time you see three choices.
 
 | Button | What it does | Good for |
 |---|---|---|
@@ -29,7 +29,7 @@ device PIN**.
 - It can be saved in your password manager or phone keychain (iCloud Keychain, Google Password Manager…),
   which helps you keep it if you change phones.
 
-> **Important:** a profile has exactly one passkey, and openGym has no email or "forgot password" option.
+> **Important:** a profile has exactly one passkey, and Gymme has no email or "forgot password" option.
 > If you lose the passkey, nobody can open that profile again. Keep your passkey backed up in your
 > password manager, and use [Export backup](09-your-data.md#back-up-your-data) now and then.
 
@@ -40,7 +40,7 @@ device PIN**.
 3. If the server is **invite-only**, also type the **invite code** the owner gave you.
 4. Tap **Create passkey** and confirm with your face, finger or PIN.
 
-You are in. If you were using guest mode before and already had workouts on this device, openGym moves that
+You are in. If you were using guest mode before and already had workouts on this device, Gymme moves that
 data into your new profile.
 
 ### Sign in on a second device
@@ -76,7 +76,7 @@ Tap **Goal** to set a target weight. The target is drawn as a line on your weigh
 
 ### 3. Start a workout
 
-Tap **Start** in the bottom bar. openGym:
+Tap **Start** in the bottom bar. Gymme:
 
 1. asks for a quick weigh-in (you can skip it with **Start without weighing in**);
 2. opens today's workout with your weights and reps already filled in.
@@ -95,5 +95,5 @@ Tick each set when you finish it. The full walk-through is in [Working out](03-w
 
 ## Install it like an app
 
-openGym is a *web app* that you can add to your home screen so it opens full-screen like a normal app.
+Gymme is a *web app* that you can add to your home screen so it opens full-screen like a normal app.
 See [Install on your phone](10-install-on-your-phone.md).

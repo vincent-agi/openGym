@@ -1,4 +1,4 @@
-package ch.duartesantos.opengym;
+package app.viny.gymme;
 
 import com.getcapacitor.BridgeActivity;
 

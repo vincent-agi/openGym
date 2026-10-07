@@ -20,7 +20,7 @@ Services, health, user count, last backup age, disk %, one-line verdict. `--json
 
 ## Task 4 — `backup`
 `data/` + `.env` (never `media/`, never `*.tmp`), `umask 077`, optional consistent snapshot (stop api, always restart), optional `age`
-encryption, `.sha256`, retention, off-host hook, `.opengym-state/last-backup`, alert on failure, `--dry-run`, atomic write via `.partial`.
+encryption, `.sha256`, retention, off-host hook, `.gymme-state/last-backup`, alert on failure, `--dry-run`, atomic write via `.partial`.
 Mock `age` for tests.
 
 ## Task 5 — `restore`

@@ -13,12 +13,15 @@ import { t } from './i18n.js'
 
 export const MOBILE = import.meta.env.VITE_MOBILE === '1'
 
-const FILE = 'opengym-state.json'
+const FILE = 'gymme-state.json'
+const LEGACY_FILE = 'opengym-state.json'   // written before the rename — read once, then superseded
 
 export async function nativeLoad() {
   try {
     const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem')
-    const r = await Filesystem.readFile({ path: FILE, directory: Directory.Data, encoding: Encoding.UTF8 })
+    let r
+    try { r = await Filesystem.readFile({ path: FILE, directory: Directory.Data, encoding: Encoding.UTF8 }) }
+    catch (e) { r = await Filesystem.readFile({ path: LEGACY_FILE, directory: Directory.Data, encoding: Encoding.UTF8 }) }
     return JSON.parse(r.data)
   } catch (e) { return null }   // first launch, or unreadable — localStorage copy takes over
 }

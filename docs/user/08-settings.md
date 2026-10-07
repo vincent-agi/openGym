@@ -35,7 +35,7 @@ In guest mode you see the note *"Guest mode — data lives only in this browser.
 Needs a signed-in profile and a secure connection (not available in guest mode or on the mobile app's browser
 version without HTTPS).
 
-- **Push notifications** — rest-timer alerts, even when openGym is closed. The browser asks for permission.
+- **Push notifications** — rest-timer alerts, even when Gymme is closed. The browser asks for permission.
 - **Workout day reminder** — a nudge at a time you choose, **only on days with a planned routine where you have not
   logged a workout yet**. It uses your own time zone and follows you when you travel.
 - **Send test notification** — checks it works.

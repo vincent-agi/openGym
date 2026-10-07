@@ -15,9 +15,9 @@ _here="${BASH_SOURCE[0]%/*}/.."
 
 usage() {
   cat <<'USAGE'
-Usage: opengym restore <archive> [--dry-run] [--yes] [--no-start] [--identity FILE]
+Usage: gymme restore <archive> [--dry-run] [--yes] [--no-start] [--identity FILE]
 
-Restores data/ (and .env when the archive has one) from a backup made by `opengym backup`.
+Restores data/ (and .env when the archive has one) from a backup made by `gymme backup`.
 Nothing is touched until the archive passed every check: checksum, safe paths, valid JSON.
 The current data/ is moved to data.broken.<timestamp>, never deleted.
 
@@ -56,7 +56,7 @@ load_config
 secure_umask
 [ -f "$ARCHIVE" ] || die "archive not found: $ARCHIVE"
 
-STATE="$OPENGYM_ROOT/.opengym-state"
+STATE="$GYMME_ROOT/.gymme-state"
 (umask 077 && mkdir -p "$STATE")
 WORK="$(mktemp -d "$STATE/restore.XXXXXX")"
 cleanup() {
@@ -71,7 +71,7 @@ trap cleanup EXIT
 archive_open "$ARCHIVE" "$WORK" "$IDENTITY"
 
 arch_users="$(user_count "$WORK/x/data")"
-cur_users="$(user_count "$OPENGYM_ROOT/data")"
+cur_users="$(user_count "$GYMME_ROOT/data")"
 info "Archive: $(basename "$ARCHIVE") — ${arch_users:-?} users (current data: ${cur_users:-none or unreadable})"
 
 HAS_ENV=0
@@ -79,7 +79,7 @@ HAS_ENV=0
 if [ "$HAS_ENV" = 1 ]; then
   for k in RP_ID ORIGIN; do
     a="$(env_value "$WORK/x/.env" "$k")"
-    c="$(env_value "$OPENGYM_ROOT/.env" "$k")"
+    c="$(env_value "$GYMME_ROOT/.env" "$k")"
     if [ -n "$c" ] && [ "$a" != "$c" ]; then
       warn "$k differs: backup has '$a', current .env has '$c'. The backup's .env will be restored (passkeys are bound to it); yours is saved as .env.pre-restore.*"
     fi
@@ -105,43 +105,43 @@ else
   warn "Docker is not running: could not stop the stack (nothing should be using the data)"
 fi
 
-BROKEN="$OPENGYM_ROOT/data.broken.$TS"
+BROKEN="$GYMME_ROOT/data.broken.$TS"
 n=1
 while [ -e "$BROKEN" ]; do
-  BROKEN="$OPENGYM_ROOT/data.broken.$TS-$n"
+  BROKEN="$GYMME_ROOT/data.broken.$TS-$n"
   n=$((n + 1))
 done
 MOVED=0
-if [ -e "$OPENGYM_ROOT/data" ]; then
-  mv "$OPENGYM_ROOT/data" "$BROKEN" || die "could not move the current data aside. Nothing was changed."
+if [ -e "$GYMME_ROOT/data" ]; then
+  mv "$GYMME_ROOT/data" "$BROKEN" || die "could not move the current data aside. Nothing was changed."
   MOVED=1
 fi
-if ! mv "$WORK/x/data" "$OPENGYM_ROOT/data"; then
-  [ "$MOVED" = 1 ] && mv "$BROKEN" "$OPENGYM_ROOT/data"
+if ! mv "$WORK/x/data" "$GYMME_ROOT/data"; then
+  [ "$MOVED" = 1 ] && mv "$BROKEN" "$GYMME_ROOT/data"
   die "could not put the restored data in place; the previous data was put back."
 fi
 if [ "$HAS_ENV" = 1 ]; then
-  if [ -f "$OPENGYM_ROOT/.env" ]; then
-    cp -p "$OPENGYM_ROOT/.env" "$OPENGYM_ROOT/.env.pre-restore.$TS"
+  if [ -f "$GYMME_ROOT/.env" ]; then
+    cp -p "$GYMME_ROOT/.env" "$GYMME_ROOT/.env.pre-restore.$TS"
   fi
-  cp "$WORK/x/.env" "$OPENGYM_ROOT/.env"
-  chmod 600 "$OPENGYM_ROOT/.env" 2>/dev/null || true
+  cp "$WORK/x/.env" "$GYMME_ROOT/.env"
+  chmod 600 "$GYMME_ROOT/.env" 2>/dev/null || true
 fi
 log_info "restored data from $ARCHIVE (previous data: $BROKEN)"
 
-UNDO="opengym stop; mv data data.failed; mv $(basename "$BROKEN") data; opengym start"
+UNDO="gymme stop; mv data data.failed; mv $(basename "$BROKEN") data; gymme start"
 if [ "$START" = 0 ]; then
   ok "data restored; stack left stopped (--no-start). Previous data: $(basename "$BROKEN")"
   exit 0
 fi
 if ! daemon_up; then
-  ok "data restored. Docker is not running: start openGym with: opengym start"
+  ok "data restored. Docker is not running: start Gymme with: gymme start"
   exit 0
 fi
-compose_cmd up -d >/dev/null 2>&1 || die "data restored but the stack did not start. See: opengym logs. To undo: $UNDO"
+compose_cmd up -d >/dev/null 2>&1 || die "data restored but the stack did not start. See: gymme logs. To undo: $UNDO"
 if ! wait_health "$BASE_URL/api/health" 120; then
-  alert crit restore-health "openGym restore: API not answering" "Data was restored from $(basename "$ARCHIVE") but $BASE_URL/api/health does not answer."
-  die "data restored but the API does not answer at $BASE_URL. Check: opengym logs. To undo: $UNDO (previous data: $(basename "$BROKEN"))"
+  alert crit restore-health "Gymme restore: API not answering" "Data was restored from $(basename "$ARCHIVE") but $BASE_URL/api/health does not answer."
+  die "data restored but the API does not answer at $BASE_URL. Check: gymme logs. To undo: $UNDO (previous data: $(basename "$BROKEN"))"
 fi
 
 live_users=""

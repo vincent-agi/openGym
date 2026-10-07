@@ -4,7 +4,7 @@ Base path `/api`, served by `api/server.js` and reached through nginx on the sam
 are **JSON** (`Content-Type: application/json`); responses carry `Cache-Control: no-store`.
 
 There is no versioning, no OpenAPI document and no request-schema validation beyond the checks listed here. The
-API is an internal contract between the openGym frontend and backend — **treat it as unstable between releases**.
+API is an internal contract between the Gymme frontend and backend — **treat it as unstable between releases**.
 
 ## Conventions
 

@@ -9,7 +9,7 @@ _here="${BASH_SOURCE[0]%/*}/.."
 
 usage() {
   cat <<'USAGE'
-Usage: opengym logs [service...] [--tail N] [--no-follow] [--errors]
+Usage: gymme logs [service...] [--tail N] [--no-follow] [--errors]
 
 Shows container logs (services: api, web, media). Follows by default; press Ctrl-C to stop.
 
@@ -38,7 +38,7 @@ done
 case "$TAIL" in '' | *[!0-9]*) die_usage "--tail needs a number" ;; esac
 
 load_config
-daemon_up || die "Docker is not running. Start Docker, then run: opengym logs"
+daemon_up || die "Docker is not running. Start Docker, then run: gymme logs"
 
 ARGS=(logs)
 [ "$FOLLOW" = 1 ] && ARGS+=(-f)

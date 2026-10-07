@@ -1,16 +1,16 @@
 # Security guide for DevSecOps
 
 This page complements the root [`SECURITY.md`](../../SECURITY.md) (vulnerability reporting and the maintainers' own
-statement of the security model). Here the focus is **what an operator must do** to run openGym safely, and how to
+statement of the security model). Here the focus is **what an operator must do** to run Gymme safely, and how to
 verify it.
 
 ## Summary
 
-openGym is a small, self-hosted app with a deliberately short list of security features. It is safe for a personal or
+Gymme is a small, self-hosted app with a deliberately short list of security features. It is safe for a personal or
 family instance **if you supply what it intentionally leaves out**: TLS, rate limiting, security headers, encrypted
 backups and host protection.
 
-| Control | Provided by openGym | You must provide |
+| Control | Provided by Gymme | You must provide |
 |---|---|---|
 | Authentication | Passkeys (WebAuthn), server-verified | — |
 | Session integrity | HMAC-SHA256 signed cookie, constant-time compare | Keep `data/secret` secret |
@@ -188,7 +188,7 @@ docker inspect -f '{{.HostConfig.ReadonlyRootfs}} {{.HostConfig.CapDrop}}' $(doc
 | **Vulnerable dependency in an image** | Pull the patched image once published (`docker compose pull && up -d`); check `CHANGELOG.md`; if none, rebuild from source after bumping the dependency. |
 | **Suspected data corruption** | Stop the API, copy `data/` aside, validate with `jq empty`, restore from backup ([runbook](operations.md#restore)). |
 
-To report a vulnerability in openGym itself, follow [`SECURITY.md`](../../SECURITY.md).
+To report a vulnerability in Gymme itself, follow [`SECURITY.md`](../../SECURITY.md).
 
 ## Privacy and data protection
 
@@ -200,5 +200,5 @@ To report a vulnerability in openGym itself, follow [`SECURITY.md`](../../SECURI
   proxy logs you control.
 - **Data subject requests:** export = the user's own JSON export; erasure = [delete a user](data-model.md#delete-a-user-completely)
   plus purging backups according to your retention policy; the app has no self-service account deletion.
-- If you host openGym for others in a regulated context, you are the controller: write a retention policy, secure
+- If you host Gymme for others in a regulated context, you are the controller: write a retention policy, secure
   backups, and tell users who can read their data (admins and you).

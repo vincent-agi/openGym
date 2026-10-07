@@ -2,18 +2,18 @@
 set -u
 # shellcheck source=helpers.sh
 . "$(dirname "$0")/helpers.sh"
-OG="$REPO_ROOT/scripts/opengym"
+OG="$REPO_ROOT/scripts/gymme"
 DATA="$REPO_ROOT/scripts/lib/data.sh"
 
 setup() { # healthy baseline: both services up, API answers, fresh backup
   new_sandbox
   use_fixture data_ok
-  export OPENGYM_NOW=1000000
+  export GYMME_NOW=1000000
   export MOCK_OUT_DOCKER_COMPOSE_PS=abc123
   export MOCK_OUT_CURL='{"ok":true,"users":2}'
   backup_ago 3600
 }
-backup_ago() { OPENGYM_NOW=$((1000000 - $1)) "$BASH" -c '. "$0"; record_backup' "$DATA"; }
+backup_ago() { GYMME_NOW=$((1000000 - $1)) "$BASH" -c '. "$0"; record_backup' "$DATA"; }
 
 setup
 assert_exit 0 "healthy instance exits 0" -- "$OG" status
@@ -23,7 +23,7 @@ assert_contains "1 h ago" "$T_OUT" "last backup age"
 assert_contains "api" "$T_OUT" "lists api"
 assert_contains "web" "$T_OUT" "lists web"
 
-setup; rm -rf "$SB/.opengym-state"
+setup; rm -rf "$SB/.gymme-state"
 assert_exit 10 "no backup = attention" -- "$OG" status
 assert_contains "no backup" "$T_OUT" "says there is no backup"
 
@@ -58,7 +58,7 @@ assert_eq "ok" "$(printf '%s' "$T_OUT" | jq -r .verdict)" "json verdict"
 assert_eq "2" "$(printf '%s' "$T_OUT" | jq -r .health.users)" "json users"
 assert_eq "3600" "$(printf '%s' "$T_OUT" | jq -r .backup.age_seconds)" "json backup age"
 assert_eq "0" "$(printf '%s' "$T_OUT" | jq -r '.issues | length')" "json no issues"
-setup; rm -rf "$SB/.opengym-state"
+setup; rm -rf "$SB/.gymme-state"
 assert_exit 10 "--json keeps exit codes" -- "$OG" status --json
 assert_eq "attention" "$(printf '%s' "$T_OUT" | jq -r .verdict)" "json verdict attention"
 assert_eq "null" "$(printf '%s' "$T_OUT" | jq -r .backup.age_seconds)" "json age null without backup"

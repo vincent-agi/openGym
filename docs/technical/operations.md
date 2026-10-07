@@ -1,25 +1,25 @@
 # Operations runbook
 
-Day-2 operations for an openGym instance managed with Docker Compose. Commands assume you are in the project
+Day-2 operations for a Gymme instance managed with Docker Compose. Commands assume you are in the project
 directory.
 
 ## At a glance
 
-> The [`opengym` CLI](automation.md) automates these tasks. The raw commands below stay the reference for what the scripts do.
+> The [`gymme` CLI](automation.md) automates these tasks. The raw commands below stay the reference for what the scripts do.
 >
 > | Task | CLI |
 > |---|---|
-> | Status | `opengym status` (`--json`; exit 0 / 10 attention / 20 problem) |
-> | Start / stop / restart | `opengym start`, `opengym stop [--down]`, `opengym restart [service]` |
-> | Logs | `opengym logs [service]` (`--errors` for problems only) |
-> | Backup | `opengym backup` (`--consistent`, `--quiet` for cron) |
-> | Restore | `opengym restore <archive>` (`--dry-run`) |
-> | Update | `opengym update` (`--dry-run`) |
-> | Diagnose | `opengym doctor` (fix hint per problem), `opengym verify` (data integrity, `--backup ARCHIVE`) |
-> | Watch | `opengym monitor` (cron-friendly, alerts), `opengym schedule install` |
-> | Clean up | `opengym prune` |
-> | Rotate keys | `opengym rotate-keys session` / `vapid` |
-> | Roll back | `opengym rollback <tag>` (`--clear`, `--with-data ARCHIVE`) |
+> | Status | `gymme status` (`--json`; exit 0 / 10 attention / 20 problem) |
+> | Start / stop / restart | `gymme start`, `gymme stop [--down]`, `gymme restart [service]` |
+> | Logs | `gymme logs [service]` (`--errors` for problems only) |
+> | Backup | `gymme backup` (`--consistent`, `--quiet` for cron) |
+> | Restore | `gymme restore <archive>` (`--dry-run`) |
+> | Update | `gymme update` (`--dry-run`) |
+> | Diagnose | `gymme doctor` (fix hint per problem), `gymme verify` (data integrity, `--backup ARCHIVE`) |
+> | Watch | `gymme monitor` (cron-friendly, alerts), `gymme schedule install` |
+> | Clean up | `gymme prune` |
+> | Rotate keys | `gymme rotate-keys session` / `vapid` |
+> | Roll back | `gymme rollback <tag>` (`--clear`, `--with-data ARCHIVE`) |
 
 | Task | Command |
 |---|---|
@@ -28,7 +28,7 @@ directory.
 | Logs (follow) | `docker compose logs -f --tail=100 api web` |
 | Restart API | `docker compose restart api` |
 | Update | `git pull && docker compose pull && docker compose up -d` |
-| Backup | `tar czf opengym-$(date +%F).tgz data/` |
+| Backup | `tar czf gymme-$(date +%F).tgz data/` |
 | Resource use | `docker stats --no-stream` |
 
 ## Health and monitoring
@@ -48,9 +48,9 @@ Alert if the user count **drops** between checks — that is the signature of th
 
 ```bash
 n=$(curl -fsS https://gym.example.com/api/health | jq .users)
-last=$(cat /var/lib/opengym-users 2>/dev/null || echo 0)
+last=$(cat /var/lib/gymme-users 2>/dev/null || echo 0)
 [ "$n" -lt "$last" ] && echo "ALERT: user count fell $last -> $n"
-echo "$n" > /var/lib/opengym-users
+echo "$n" > /var/lib/gymme-users
 ```
 
 ### What to watch
@@ -104,14 +104,14 @@ across a multi-file operation could pair a newer `db.json` with an older state f
 ```bash
 # brief stop (seconds) — the simplest guarantee
 docker compose stop api
-tar czf "/backups/opengym-$(date +%F-%H%M).tgz" data/ .env
+tar czf "/backups/gymme-$(date +%F-%H%M).tgz" data/ .env
 docker compose start api
 ```
 
 Or take a live backup and accept per-file consistency (fine for most self-hosters):
 
 ```bash
-tar czf "/backups/opengym-$(date +%F-%H%M).tgz" data/ .env
+tar czf "/backups/gymme-$(date +%F-%H%M).tgz" data/ .env
 ```
 
 Filesystem or LVM/ZFS/btrfs **snapshots** of the volume give an atomic point-in-time copy without stopping anything.
@@ -119,8 +119,8 @@ Filesystem or LVM/ZFS/btrfs **snapshots** of the volume give an atomic point-in-
 ### Schedule and retention
 
 ```cron
-# /etc/cron.d/opengym-backup — daily at 03:15, keep 30 days
-15 3 * * *  root  cd /srv/openGym && tar czf /backups/opengym-$(date +\%F).tgz data/ .env && find /backups -name 'opengym-*.tgz' -mtime +30 -delete
+# /etc/cron.d/gymme-backup — daily at 03:15, keep 30 days
+15 3 * * *  root  cd /srv/Gymme && tar czf /backups/gymme-$(date +\%F).tgz data/ .env && find /backups -name 'gymme-*.tgz' -mtime +30 -delete
 ```
 
 - Keep at least one copy **off the host**.
@@ -134,7 +134,7 @@ Filesystem or LVM/ZFS/btrfs **snapshots** of the volume give an atomic point-in-
 ```bash
 docker compose down
 mv data data.broken.$(date +%F)        # keep, do not delete yet
-tar xzf /backups/opengym-2026-10-05.tgz     # restores data/ and .env
+tar xzf /backups/gymme-2026-10-05.tgz     # restores data/ and .env
 jq empty data/db.json && echo "db.json OK"
 for f in data/state-*.json; do jq empty "$f" || echo "BAD $f"; done
 docker compose up -d

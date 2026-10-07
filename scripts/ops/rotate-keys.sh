@@ -13,7 +13,7 @@ _here="${BASH_SOURCE[0]%/*}/.."
 
 usage() {
   cat <<'USAGE'
-Usage: opengym rotate-keys session|vapid [--dry-run] [--yes]
+Usage: gymme rotate-keys session|vapid [--dry-run] [--yes]
 
   session   delete data/secret and restart the API: every user is signed out and signs in again with their passkey.
             Use it after a suspected cookie or secret leak (this is the "instance-wide logout").
@@ -50,8 +50,8 @@ load_config
 secure_umask
 
 case "$KIND" in
-  session) FILE="$OPENGYM_ROOT/data/secret" IMPACT="Every user will be signed out and must sign in again with their passkey." ;;
-  vapid) FILE="$OPENGYM_ROOT/data/vapid.json" IMPACT="All push subscriptions will stop working: every user must re-enable notifications in Settings." ;;
+  session) FILE="$GYMME_ROOT/data/secret" IMPACT="Every user will be signed out and must sign in again with their passkey." ;;
+  vapid) FILE="$GYMME_ROOT/data/vapid.json" IMPACT="All push subscriptions will stop working: every user must re-enable notifications in Settings." ;;
 esac
 
 if [ ! -f "$FILE" ]; then
@@ -68,23 +68,23 @@ confirm "Rotate the $KIND key now?" || die "aborted. Nothing was changed."
 
 info "Backing up first…"
 BACKUP_FILE="$("${BASH:-bash}" "${BASH_SOURCE[0]%/*}/../user/backup.sh" --quiet --consistent 2>/dev/null | tail -n 1)" ||
-  die "the backup failed, so nothing was rotated. Fix it (opengym backup) and retry."
+  die "the backup failed, so nothing was rotated. Fix it (gymme backup) and retry."
 info "Backup: $BACKUP_FILE (contains the OLD key)"
 
 rm -f "$FILE"
 log_info "rotate-keys: removed $(basename "$FILE")"
 
 if ! daemon_up; then
-  warn "Docker is not running: the old key is gone; a new one is created at the next start (opengym start)."
+  warn "Docker is not running: the old key is gone; a new one is created at the next start (gymme start)."
   exit 0
 fi
-compose_cmd restart api >/dev/null 2>&1 || die "the key file was removed but the api failed to restart. Run: opengym start"
-wait_health "$BASE_URL/api/health" 120 || die "the key was rotated but the API does not answer at $BASE_URL. Check: opengym logs api --errors"
+compose_cmd restart api >/dev/null 2>&1 || die "the key file was removed but the api failed to restart. Run: gymme start"
+wait_health "$BASE_URL/api/health" 120 || die "the key was rotated but the API does not answer at $BASE_URL. Check: gymme logs api --errors"
 
 if [ ! -f "$FILE" ]; then
-  warn "the API did not create a new $(basename "$FILE"). Check: opengym logs api --errors"
+  warn "the API did not create a new $(basename "$FILE"). Check: gymme logs api --errors"
   exit 10
 fi
 [ "$(file_mode "$FILE")" = 600 ] || warn "$(basename "$FILE") has mode $(file_mode "$FILE"), expected 600"
-alert info "rotate-keys-$KIND" "openGym $KIND key rotated" "$IMPACT Backup: $(basename "$BACKUP_FILE")"
+alert info "rotate-keys-$KIND" "Gymme $KIND key rotated" "$IMPACT Backup: $(basename "$BACKUP_FILE")"
 ok "$KIND key rotated. $IMPACT"

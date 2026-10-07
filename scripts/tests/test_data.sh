@@ -64,8 +64,8 @@ assert_eq "" "$(d env_value "$SB/.env" C)" "env_value ignores comments"
 
 # last backup bookkeeping
 assert_eq "0" "$(d last_backup_epoch)" "no backup recorded = 0"
-OPENGYM_NOW=1234567 d record_backup
+GYMME_NOW=1234567 d record_backup
 assert_eq "1234567" "$(d last_backup_epoch)" "record_backup stores epoch"
-assert_eq "600" "$(d file_mode "$SB/.opengym-state/last-backup")" "state file mode 0600"
+assert_eq "600" "$(d file_mode "$SB/.gymme-state/last-backup")" "state file mode 0600"
 
 t_summary

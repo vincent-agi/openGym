@@ -11,7 +11,7 @@ _here="${BASH_SOURCE[0]%/*}/.."
 
 usage() {
   cat <<'USAGE'
-Usage: opengym verify [--backup ARCHIVE [--identity FILE]] [--json]
+Usage: gymme verify [--backup ARCHIVE [--identity FILE]] [--json]
 
 Read-only. Checks that db.json and every state file parse, that credentials, push subscriptions and invites point at existing
 users, that ids are unique, and reports state files that belong to no user. Nothing is ever repaired or deleted.
@@ -49,10 +49,10 @@ load_config
 require_cmd jq
 secure_umask
 
-DIR="$OPENGYM_ROOT/data"
+DIR="$GYMME_ROOT/data"
 SUBJECT="data/"
 if [ -n "$ARCHIVE" ]; then
-  STATE="$OPENGYM_ROOT/.opengym-state"
+  STATE="$GYMME_ROOT/.gymme-state"
   (umask 077 && mkdir -p "$STATE")
   WORK="$(mktemp -d "$STATE/verify.XXXXXX")"
   trap 'rm -rf "$WORK"' EXIT
@@ -67,7 +67,7 @@ list() { paste -sd' ' - | cut -c1-200; }
 
 problems="$(validate_data_dir "$DIR" || true)"
 if [ -n "$problems" ]; then
-  report FAIL json "$(printf '%s' "$problems" | list)" "Restore from a backup: opengym restore <archive> (data-model.md Integrity and failure modes)"
+  report FAIL json "$(printf '%s' "$problems" | list)" "Restore from a backup: gymme restore <archive> (data-model.md Integrity and failure modes)"
 else
   report OK json "db.json and all state files parse"
 fi
@@ -111,7 +111,7 @@ fi
 if [ "$JSON" = 1 ]; then
   render_json
 else
-  echo "openGym verify ($SUBJECT)"
+  echo "Gymme verify ($SUBJECT)"
   render_text
   echo
   case "$LEVEL" in

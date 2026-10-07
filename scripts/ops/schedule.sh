@@ -7,14 +7,14 @@ _here="${BASH_SOURCE[0]%/*}/.."
 
 usage() {
   cat <<'USAGE'
-Usage: opengym schedule install [options]
-       opengym schedule remove [--system]
-       opengym schedule show [--systemd]
+Usage: gymme schedule install [options]
+       gymme schedule remove [--system]
+       gymme schedule show [--systemd]
 
 Installs a marked block in YOUR crontab (nothing else in it is touched) that runs from this folder:
-  backup   daily at --backup-time (default 03:15)         opengym backup --quiet
-  monitor  every --monitor-every minutes (default 15)     opengym monitor --quiet
-  report   monthly, only when the stats suite is present  opengym report --quiet
+  backup   daily at --backup-time (default 03:15)         gymme backup --quiet
+  monitor  every --monitor-every minutes (default 15)     gymme monitor --quiet
+  report   monthly, only when the stats suite is present  gymme report --quiet
 Running install again replaces the block; remove deletes only that block. Several instances (folders) can coexist.
 
 install options:
@@ -22,7 +22,7 @@ install options:
   --monitor-every N     monitor period in minutes (1-60)
   --no-backup           do not schedule the backup
   --no-monitor          do not schedule the monitor
-  --system              write /etc/cron.d/opengym-<id> instead of a user crontab (needs root; Linux)
+  --system              write /etc/cron.d/gymme-<id> instead of a user crontab (needs root; Linux)
   --user NAME           account the system jobs run as (default: you)
   --yes, -y             do not ask for confirmation
 show options:
@@ -65,15 +65,15 @@ done
 export ASSUME_YES="${ASSUME_YES:-0}"
 
 load_config
-ROOT="$OPENGYM_ROOT"
+ROOT="$GYMME_ROOT"
 case "$ROOT" in
   *"'"* | *%* | *$'\n'*) die "the folder path contains a quote, a % or a newline, which cron cannot handle safely: $ROOT" ;;
 esac
 SLUG="$(printf '%s' "$ROOT" | cksum | cut -d' ' -f1)"
-BEGIN="# BEGIN opengym $ROOT"
-END="# END opengym $ROOT"
-CROND="${OPENGYM_CRON_D:-/etc/cron.d}"
-SYSFILE="$CROND/opengym-$SLUG"
+BEGIN="# BEGIN gymme $ROOT"
+END="# END gymme $ROOT"
+CROND="${GYMME_CRON_D:-/etc/cron.d}"
+SYSFILE="$CROND/gymme-$SLUG"
 
 build_block() { # user-field-or-empty
   local u="$1" h m
@@ -82,15 +82,15 @@ build_block() { # user-field-or-empty
   h=$((10#$h)); m=$((10#$m))
   echo "$BEGIN"
   echo "PATH=$PATH"
-  [ "$DO_BACKUP" = 1 ] && echo "$m $h * * * ${u}cd '$ROOT' && scripts/opengym backup --quiet >/dev/null"
+  [ "$DO_BACKUP" = 1 ] && echo "$m $h * * * ${u}cd '$ROOT' && scripts/gymme backup --quiet >/dev/null"
   if [ "$DO_MONITOR" = 1 ]; then
     if [ "$MONITOR_EVERY" -ge 60 ]; then
-      echo "0 * * * * ${u}cd '$ROOT' && scripts/opengym monitor --quiet"
+      echo "0 * * * * ${u}cd '$ROOT' && scripts/gymme monitor --quiet"
     else
-      echo "*/$MONITOR_EVERY * * * * ${u}cd '$ROOT' && scripts/opengym monitor --quiet"
+      echo "*/$MONITOR_EVERY * * * * ${u}cd '$ROOT' && scripts/gymme monitor --quiet"
     fi
   fi
-  [ -f "$ROOT/scripts/stats/report.sh" ] && echo "0 7 1 * * ${u}cd '$ROOT' && scripts/opengym report --quiet"
+  [ -f "$ROOT/scripts/stats/report.sh" ] && echo "0 7 1 * * ${u}cd '$ROOT' && scripts/gymme report --quiet"
   echo "$END"
 }
 
@@ -99,7 +99,7 @@ strip_block() { # reads stdin
   awk -v b="$BEGIN" -v e="$END" '$0 == b { skip = 1; next } $0 == e { skip = 0; next } !skip { print }'
 }
 need_crontab() {
-  command -v crontab >/dev/null 2>&1 || die "no crontab command on this machine. Use --system (Linux, /etc/cron.d) or the systemd units from: opengym schedule show --systemd"
+  command -v crontab >/dev/null 2>&1 || die "no crontab command on this machine. Use --system (Linux, /etc/cron.d) or the systemd units from: gymme schedule show --systemd"
 }
 
 case "$ACTION" in
@@ -129,7 +129,7 @@ case "$ACTION" in
     confirm "Install these jobs?" || die "aborted. Nothing was changed."
     new="$({ current_crontab | strip_block; printf '%s\n' "$block"; })"
     printf '%s\n' "$new" | crontab - || die "crontab refused the new table"
-    ok "cron jobs installed. See them with: opengym schedule show"
+    ok "cron jobs installed. See them with: gymme schedule show"
     ;;
   remove)
     if [ "$SYSTEM" = 1 ]; then
@@ -143,30 +143,30 @@ case "$ACTION" in
     fi
     need_crontab
     if ! current_crontab | grep -qxF "$BEGIN"; then
-      ok "no opengym jobs for this folder in your crontab"
+      ok "no gymme jobs for this folder in your crontab"
       exit 0
     fi
     new="$(current_crontab | strip_block)"
     printf '%s\n' "$new" | crontab - || die "crontab refused the new table"
-    ok "opengym cron jobs removed (the rest of your crontab was kept)"
+    ok "gymme cron jobs removed (the rest of your crontab was kept)"
     ;;
   show)
     if [ "$SYSTEMD" = 1 ]; then
       cat <<UNITS
-# Alternative to cron on Linux: save as /etc/systemd/system/opengym-backup.service and .timer, then:
-#   sudo systemctl daemon-reload && sudo systemctl enable --now opengym-backup.timer
-# ---- opengym-backup.service
+# Alternative to cron on Linux: save as /etc/systemd/system/gymme-backup.service and .timer, then:
+#   sudo systemctl daemon-reload && sudo systemctl enable --now gymme-backup.timer
+# ---- gymme-backup.service
 [Unit]
-Description=openGym backup
+Description=Gymme backup
 
 [Service]
 Type=oneshot
 WorkingDirectory=$ROOT
-ExecStart=$ROOT/scripts/opengym backup --quiet
+ExecStart=$ROOT/scripts/gymme backup --quiet
 
-# ---- opengym-backup.timer
+# ---- gymme-backup.timer
 [Unit]
-Description=Daily openGym backup
+Description=Daily Gymme backup
 
 [Timer]
 OnCalendar=*-*-* $BACKUP_TIME:00
@@ -175,18 +175,18 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 
-# ---- opengym-monitor.service
+# ---- gymme-monitor.service
 [Unit]
-Description=openGym monitor
+Description=Gymme monitor
 
 [Service]
 Type=oneshot
 WorkingDirectory=$ROOT
-ExecStart=$ROOT/scripts/opengym monitor --quiet
+ExecStart=$ROOT/scripts/gymme monitor --quiet
 
-# ---- opengym-monitor.timer
+# ---- gymme-monitor.timer
 [Unit]
-Description=openGym monitor every $MONITOR_EVERY minutes
+Description=Gymme monitor every $MONITOR_EVERY minutes
 
 [Timer]
 OnBootSec=2min
@@ -208,8 +208,8 @@ UNITS
       sed 's/^/  /' "$SYSFILE"
       shown=1
     fi
-    [ "$shown" = 1 ] || echo "No opengym jobs scheduled for $ROOT. Install them with: opengym schedule install"
-    [ "$(os_name)" = linux ] && echo "(On Linux you can use systemd timers instead: opengym schedule show --systemd)"
+    [ "$shown" = 1 ] || echo "No gymme jobs scheduled for $ROOT. Install them with: gymme schedule install"
+    [ "$(os_name)" = linux ] && echo "(On Linux you can use systemd timers instead: gymme schedule show --systemd)"
     exit 0
     ;;
 esac
