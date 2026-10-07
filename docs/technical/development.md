@@ -119,7 +119,7 @@ Rules of thumb:
 
 Keep decision logic here, not in components, and give it a `*.test.js` beside it.
 
-Friends module (every string it shows is checked in all 11 locales by `lib/i18n-coverage.test.js`; mark strings stored in tables with `T('…')`): `lib/social.js` (sharing settings rules), `lib/friends.js` (codes and links), `lib/crew.js` (leaderboard ranking: ties share a position, ordered only by name; people without a number are shown neutrally and never last; Consistency is a weekly metric only).
+Friends module (every string in the app is checked in all 11 locales by `lib/i18n-coverage.test.js`; mark strings stored in tables with `T('…')`; the English-only admin dashboard is skipped): `lib/social.js` (sharing settings rules), `lib/friends.js` (codes and links), `lib/crew.js` (leaderboard ranking: ties share a position, ordered only by name; people without a number are shown neutrally and never last; Consistency is a weekly metric only).
 
 | Module | Responsibility |
 |---|---|
