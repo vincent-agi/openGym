@@ -90,6 +90,13 @@ build; the three belong to one pull request. Then type the files in a separate c
 **Rebasing a feature branch over a rename:** `git rebase main` follows renames on its own. If a file you edited was renamed
 on `main`, resolve with `git rebase -X find-renames=40% main`, or `git cherry-pick -X find-renames=40% <commit>`.
 
+### Docker builds
+
+Both images are built from the **repository root** (`docker build -f api/Dockerfile .`, `docker compose up --build`), because the API and the frontend
+import `shared/`. The API image installs `api/package.json`, then copies `shared/` and `api/`. The web image builds the frontend
+inside `/repo/frontend` next to `/repo/shared`, so relative imports resolve exactly as on a developer machine. The root
+`.dockerignore` excludes `node_modules`, `.git`, `media`, `data`, `docs`, the native projects and `api/test`.
+
 ### Type checking
 
 ```bash

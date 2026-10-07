@@ -35,7 +35,7 @@ jobs:
       matrix:
         include:
           - name: api
-            context: ./api
+            context: .
             dockerfile: ./api/Dockerfile
           - name: web
             context: .

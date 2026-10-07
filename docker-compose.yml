@@ -26,8 +26,10 @@ services:
   # Images are built, Trivy-scanned and pushed by .github/workflows/publish.yml on every merge
   # to main: tags :latest, :sha-<short> and (releases) :X.Y.Z. Pin one to roll back.
   api:
-    # image: ghcr.io/duartesantos8/opengym-api:latest
-    build: ./api
+    image: ghcr.io/duartesantos8/opengym-api:latest
+    build:
+      context: .            # the repository root: the API imports ../shared
+      dockerfile: api/Dockerfile
     restart: unless-stopped
     env_file: .env
     environment:
@@ -39,7 +41,7 @@ services:
   # Builds the React frontend (multi-stage) and serves it, proxying /api → api
   # and the exercise media from the shared volume. Single origin for passkeys.
   web:
-    # image: ghcr.io/duartesantos8/opengym-web:latest
+    image: ghcr.io/duartesantos8/opengym-web:latest
     build:
       context: .
       dockerfile: web/Dockerfile

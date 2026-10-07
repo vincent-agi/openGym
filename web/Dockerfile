@@ -8,13 +8,16 @@
 # specific native binaries, which is what breaks `vite build` with unrelated-looking
 # module-resolution errors.
 FROM --platform=$BUILDPLATFORM node:22-alpine AS build
-WORKDIR /app
+# /repo/frontend and /repo/shared keep the layout of the repository, because the frontend imports ../shared.
+WORKDIR /repo/frontend
 COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm ci 2>/dev/null || npm install
+COPY shared/ /repo/shared/
+COPY tsconfig.base.json /repo/
 COPY frontend/ ./
 RUN npm run build
 
 FROM nginx:1.27-alpine
 COPY web/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /repo/frontend/dist /usr/share/nginx/html
 # exercise media (img/gif) is mounted at runtime from the media volume

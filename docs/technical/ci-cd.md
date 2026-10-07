@@ -60,7 +60,7 @@ Triggers: `push` to `main`, `workflow_dispatch`, and `workflow_call` (used by `r
 input). Concurrency group `publish-<ref>` with `cancel-in-progress: false` so a half-pushed release is never cancelled.
 Permissions: `contents: read`, `packages: write`.
 
-Matrix: `api` (context `./api`) and `web` (context `.`, dockerfile `web/Dockerfile`). For each:
+Matrix: `api` (context `.`, dockerfile `api/Dockerfile`) and `web` (context `.`, dockerfile `web/Dockerfile`). **Both images are built from the repository root**, because the API and the frontend import `shared/`; the root `.dockerignore` keeps the context small, and `scripts/tests/test_docker_context.sh` fails if a `COPY` source is missing or hidden by it. For each:
 
 1. Lowercase the owner → `IMAGE=ghcr.io/<owner>/gymme-<name>` (GHCR requires lowercase).
 2. Set up QEMU and Buildx; log in to `ghcr.io` with the built-in `GITHUB_TOKEN` (no personal credentials).

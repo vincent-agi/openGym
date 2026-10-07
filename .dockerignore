@@ -1,0 +1,16 @@
+# Both images (api and web) are built from the repository root, so everything not listed here is sent to the
+# Docker daemon. Keep this list in step with the COPY lines of api/Dockerfile and web/Dockerfile
+# (scripts/tests/test_docker_context.sh checks that nothing a Dockerfile needs is hidden).
+.git
+.github
+**/node_modules
+**/dist
+media
+data
+docs
+assets
+website
+scripts
+frontend/android
+frontend/ios
+api/test
