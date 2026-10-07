@@ -238,7 +238,7 @@ test('the numbers do not move with weight lifted, reps, effort, duration, body d
 
 /* ---- time zones: a person east of Greenwich is already "tomorrow" in UTC ---- */
 import { ownerTz } from '../summary.js';
-import { newEventsFromState } from '../feed.js';
+import { newEventsFromState } from '../feed.ts';
 
 test('ownerTz reads the zone the app stamped on the state, or the reminder one, or nothing', () => {
   assert.equal(ownerTz({ tz: 'Asia/Tokyo' }), 'Asia/Tokyo');

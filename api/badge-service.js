@@ -4,7 +4,7 @@
  */
 import { isSharing } from './social.js';
 import { ownerTz } from './summary.js';
-import { evaluateBadges, mergeEarned } from './badges.js';
+import { evaluateBadges, mergeEarned } from './badges.ts';
 
 /**
  * @param {object} ctx

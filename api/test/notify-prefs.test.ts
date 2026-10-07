@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   NOTIFY_KINDS, defaultNotify, validateNotify, minutesOf, inQuietHours, minutesUntilQuietEnds
-} from '../notify-prefs.js';
+} from '../notify-prefs.ts';
 
 test('every kind of notification is off by default, with quiet hours at night', () => {
   const d = defaultNotify();

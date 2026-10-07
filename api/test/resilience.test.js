@@ -2,7 +2,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { startTestServer } from './helpers.js';
 import { createNotifier } from '../notifier.js';
-import { defaultNotify } from '../notify-prefs.js';
+import { defaultNotify } from '../notify-prefs.ts';
 
 /**
  * The social module is an add-on: whatever goes wrong inside it must never stop someone from

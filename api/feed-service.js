@@ -8,7 +8,7 @@ import crypto from 'node:crypto';
 import { isSharing, requireSharing } from './social.js';
 import { ownerTz } from './summary.js';
 import { relationsOf } from './friends.js';
-import { validateCheer, newEventsFromState, pruneFeed, countCheers } from './feed.js';
+import { validateCheer, newEventsFromState, pruneFeed, countCheers } from './feed.ts';
 
 /** Events returned per page of the feed. */
 export const PAGE_SIZE = 30;

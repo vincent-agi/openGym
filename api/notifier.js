@@ -15,8 +15,8 @@
 import crypto from 'node:crypto';
 import { isoInZone, ownerTz } from './summary.js';
 import { isSharing } from './social.js';
-import { inQuietHours, minutesUntilQuietEnds } from './notify-prefs.js';
-import { pushText } from './push-messages.js';
+import { inQuietHours, minutesUntilQuietEnds } from './notify-prefs.ts';
+import { pushText } from './push-messages.ts';
 
 /** Social pushes one recipient can get in a day. */
 export const DAILY_CAP = 3;

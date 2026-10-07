@@ -13,7 +13,7 @@ import { createFeedService } from './feed-service.js';
 import { createNotifier } from './notifier.js';
 import { createBadgeService } from './badge-service.js';
 import { eraseSocialFootprint } from './social-erase.js';
-import { createLimiter, createGuard } from './rate-limit.js';
+import { createLimiter, createGuard } from './rate-limit.ts';
 import { emptySocialCollections } from './types.ts';
 
 /**

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CHEER_EMOJI, EVENT_TTL_DAYS, validateCheer, newEventsFromState, pruneFeed, countCheers } from '../feed.js';
+import { CHEER_EMOJI, EVENT_TTL_DAYS, validateCheer, newEventsFromState, pruneFeed, countCheers } from '../feed.ts';
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');
 const session = (d, id = 'w' + d) => ({ id, d, entries: [{ id: 'x', sets: [{ done: true }] }] });

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createLimiter, clientIp, RULES } from '../rate-limit.js';
+import { createLimiter, clientIp, RULES } from '../rate-limit.ts';
 
 const clock = () => { const c = { t: 1_000_000 }; c.now = () => c.t; return c; };
 

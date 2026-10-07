@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BADGES, evaluateBadges, CHEERLEADER_AT, mergeEarned, validateShowBadges } from '../badges.js';
+import { BADGES, evaluateBadges, CHEERLEADER_AT, mergeEarned, validateShowBadges } from '../badges.ts';
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');          // Wednesday; this week starts Monday 5 Oct
 const session = d => ({ id: 'w' + d, d, entries: [{ id: 'x', sets: [{ done: true }] }] });

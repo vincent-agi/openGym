@@ -10,8 +10,8 @@
  */
 
 import { HANDLE_RE, DISPLAY_NAME_MAX, SHARE_KEYS } from '../shared/constants.ts';
-import { defaultNotify, validateNotify } from './notify-prefs.js';
-import { validateShowBadges } from './badges.js';
+import { defaultNotify, validateNotify } from './notify-prefs.ts';
+import { validateShowBadges } from './badges.ts';
 
 // Handle format, display name length and the share switches live in shared/constants.ts, where the
 // Settings screen reads them too.
@@ -29,7 +29,7 @@ const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/;
  * @property {{sessions: boolean, streak: boolean, consistency: boolean, prs: boolean}} share
  *   Which summary fields friends may see.
  * @property {boolean} hideRank     When true the user sees lists without positions ("cheer-only mode").
- * @property {import('./notify-prefs.js').NotifyPrefs} notify  Which events may send a push notification, all off by default.
+ * @property {import('./notify-prefs.ts').NotifyPrefs} notify  Which events may send a push notification, all off by default.
  * @property {string[]} showBadges  Earned badges friends may see; none by default.
  * @property {Array<{id: string, date: string}>} earned  Badges earned so far. Written by the server only.
  * @property {number} [cheersSent]  Server-side counter behind the Cheerleader badge; never sent to clients.
