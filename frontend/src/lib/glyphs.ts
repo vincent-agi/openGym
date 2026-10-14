@@ -15,7 +15,7 @@ export const DEFAULT_GLYPH = 'figureStrength'
 // the kind of session. The first version offered trophy/medal/crown/flag/star,
 // which say how a workout went, not what it is; nobody names a routine "crown".
 // Grouped, because 20 loose icons is a wall — you scan the group first.
-export const GLYPH_GROUPS = [
+export const GLYPH_GROUPS: Array<{ key: string; items: string[] }> = [
   { key: 'Strength',  items: ['figureStrength', 'arm', 'abs', 'legs', 'pullup'] },
   { key: 'Equipment', items: ['dumbbell', 'barbell', 'kettlebell', 'plate', 'machine'] },
   { key: 'Cardio',    items: ['figureRun', 'bike', 'swim', 'boxing', 'timer'] },
@@ -25,7 +25,7 @@ export const GLYPHS = GLYPH_GROUPS.flatMap(g => g.items)
 
 // Legacy emoji → icon key, so routines created before the redesign keep a
 // sensible glyph instead of all collapsing onto the default.
-const LEGACY = {
+const LEGACY: Record<string, string> = {
   '💪': 'arm', '🦾': 'arm', '🫸': 'figureStrength', '🫷': 'pullup',
   '🏋️': 'dumbbell', '🏋': 'dumbbell', '🏋️‍♀️': 'dumbbell',
   '🦵': 'legs', '🍑': 'legs',
@@ -39,11 +39,11 @@ const LEGACY = {
   '🐺': 'figureRun', '🦈': 'swim', '🤖': 'machine',
 }
 
-export function glyphOf(v) {
+export function glyphOf(v: string | null | undefined): string {
   if (!v) return DEFAULT_GLYPH
   if (ICON_NAMES.includes(v)) return v
   if (LEGACY[v]) return LEGACY[v]
   // strip variation selectors / ZWJ sequences and retry the base emoji
   const base = [...v].filter(c => c !== '️' && c !== '‍')[0]
-  return LEGACY[base] || DEFAULT_GLYPH
+  return LEGACY[base!] || DEFAULT_GLYPH
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { estimate1RM, bestSetOf, e1rmSeries, best1RM, is1RMRecord, REP_CAP, FORMULAS } from './onerm.ts'
+import { partialState } from './test-state.ts'
 
 describe('estimate1RM', () => {
   it('returns the load unchanged for a single rep', () => {
@@ -48,8 +49,8 @@ describe('estimate1RM', () => {
   })
 
   it('keeps the formulas within a few percent up to 8 reps, and diverges most at the cap', () => {
-    const spread = r => Math.max(...Object.keys(FORMULAS).map(f => estimate1RM(100, r, f)))
-      - Math.min(...Object.keys(FORMULAS).map(f => estimate1RM(100, r, f)))
+    const spread = r => Math.max(partialState(partialState(partialState)(partialState(...Object.keys(FORMULAS)))).map(f => estimate1RM(100, r, f)))
+      - Math.min(partialState(partialState(partialState)(partialState(...Object.keys(FORMULAS)))).map(f => estimate1RM(100, r, f)))
     expect(spread(1)).toBe(0)                       // one rep is measured, not estimated
     for (let r = 2; r <= 8; r++) expect(spread(r)).toBeLessThan(6)
     const upTo = []

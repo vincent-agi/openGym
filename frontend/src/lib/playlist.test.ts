@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { parsePlaylistUrl, restEndPlaylist } from './playlist.ts'
+import { partialState } from './test-state.ts'
 
 describe('parsePlaylistUrl', () => {
   it('recognizes Spotify links, with or without www', () => {
@@ -47,28 +48,28 @@ describe('restEndPlaylist', () => {
   const base = { routines: [{ id: 'r1', playlist }], active: { routineId: 'r1' }, playlistCue: true }
 
   it('returns the active routine\'s playlist when the cue is on', () => {
-    expect(restEndPlaylist(base)).toBe(playlist)
+    expect(restEndPlaylist(partialState(base))).toBe(playlist)
   })
 
   it('returns null when the cue is explicitly off', () => {
-    expect(restEndPlaylist({ ...base, playlistCue: false })).toBe(null)
+    expect(restEndPlaylist(partialState({ ...base, playlistCue: false }))).toBe(null)
   })
 
   it('treats a missing playlistCue as on (default true)', () => {
     const { playlistCue, ...rest } = base
-    expect(restEndPlaylist(rest)).toBe(playlist)
+    expect(restEndPlaylist(partialState(rest))).toBe(playlist)
   })
 
   it('returns null when there is no active session', () => {
-    expect(restEndPlaylist({ ...base, active: null })).toBe(null)
+    expect(restEndPlaylist(partialState({ ...base, active: null }))).toBe(null)
   })
 
   it('returns null when the active routine has no playlist', () => {
     const S = { routines: [{ id: 'r1' }], active: { routineId: 'r1' }, playlistCue: true }
-    expect(restEndPlaylist(S)).toBe(null)
+    expect(restEndPlaylist(partialState(S))).toBe(null)
   })
 
   it('returns null when the active routine id matches nothing (deleted routine)', () => {
-    expect(restEndPlaylist({ ...base, active: { routineId: 'gone' } })).toBe(null)
+    expect(restEndPlaylist(partialState({ ...base, active: { routineId: 'gone' } }))).toBe(null)
   })
 })

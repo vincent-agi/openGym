@@ -6,8 +6,8 @@
 // whose training has no meaningful heart-rate or lower-body load signal to fall back on.
 // Stored as `workout.sessionRpe` (1-10, or absent if never logged).
 export const BORG_SCALE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-export const BORG_LABELS = {
+export const BORG_LABELS: Record<number, string> = {
   1: 'Very light', 2: 'Light', 3: 'Light', 4: 'Moderate', 5: 'Somewhat hard',
   6: 'Hard', 7: 'Hard', 8: 'Very hard', 9: 'Very hard', 10: 'Maximal effort',
 }
-export const borgLabel = n => BORG_LABELS[n] || ''
+export const borgLabel = (n: number): string => BORG_LABELS[n] || ''

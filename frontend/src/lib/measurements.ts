@@ -1,7 +1,12 @@
+import type { AppState, Measurement, MeasurementField } from './state.ts'
+
+/** `S.measurements`: one entry per ISO date. */
+type Measurements = AppState['measurements']
+
 // S.measurements is keyed by ISO date, one entry per day: { waist?, chest?, arms?, hips?,
 // bodyFatPct? } — every field optional, same "absent means not logged, not zero" rule as the
 // nutrition targets.
-export const MEASUREMENT_FIELDS = [
+export const MEASUREMENT_FIELDS: Array<{ key: MeasurementField; label: string; unit: string }> = [
   { key: 'waist', label: 'Waist', unit: 'cm' },
   { key: 'chest', label: 'Chest', unit: 'cm' },
   { key: 'arms', label: 'Arms', unit: 'cm' },
@@ -11,21 +16,21 @@ export const MEASUREMENT_FIELDS = [
 
 // Chart points for one field, oldest first, skipping dates where that field wasn't logged —
 // a gap in waist measurements shouldn't interpolate through days only chest was logged.
-export function seriesFor(measurements, field) {
+export function seriesFor(measurements: Measurements | null | undefined, field: MeasurementField): Array<{ t: number; y: number; d: string }> {
   return Object.entries(measurements || {})
     .filter(([, entry]) => entry && entry[field] != null)
-    .map(([iso, entry]) => ({ t: new Date(iso + 'T12:00:00').getTime(), y: entry[field], d: iso }))
+    .map(([iso, entry]) => ({ t: new Date(iso + 'T12:00:00').getTime(), y: entry![field] as number, d: iso }))
     .sort((a, b) => a.t - b.t)
 }
 
 // Merges a partial reading into the day's entry — set fields are added/overwritten, fields
 // left out of `patch` keep whatever was already logged for that day (a second entry adding
 // just hips shouldn't erase a waist reading logged earlier the same day).
-export function setMeasurement(measurements, iso, patch) {
+export function setMeasurement(measurements: Measurements | null | undefined, iso: string, patch: Measurement): Measurements {
   return { ...measurements, [iso]: { ...(measurements || {})[iso], ...patch } }
 }
 
-export function deleteMeasurement(measurements, iso) {
+export function deleteMeasurement(measurements: Measurements, iso: string): Measurements {
   const next = { ...measurements }
   delete next[iso]
   return next
